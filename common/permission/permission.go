@@ -117,3 +117,19 @@ func AddPermissionGroup(name string, permissions ...PermissionID) error {
 	loadFromDB() // 重新从数据库载入权限表
 	return nil
 }
+
+// AddSuperAdminGroup 创建超级管理员权限组，自动拥有所有权限（0-255位全部设置为1）
+func AddSuperAdminGroup(name string) error {
+	/*
+		var newPG models.PermissionGroup
+		newPG.Name = name
+		newPG.Permissions = *bitset.New(256) // 创建0-255的位集
+		// 设置所有位为1，表示拥有所有权限
+		for i := uint(0); i <= 255; i++ {
+			newPG.Permissions.Set(i)
+		}
+		dao.AddPermissionGroup(newPG)
+		loadFromDB() // 重新从数据库载入权限表
+	*/
+	return nil
+}

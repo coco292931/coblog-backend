@@ -6,6 +6,7 @@ import (
 	"JHETBackend/services/userService"
 	"JHETBackend/utils"
 	"errors"
+	"fmt"
 
 	"strconv"
 
@@ -126,10 +127,12 @@ func GetAccountInfo(c *gin.Context, userIDStr string, confidentiality bool) (mod
 func GetAccountIDFromContext(c *gin.Context) (uint64, error) {
 	accountIDObj, ok := c.Get("AccountID")
 	if !ok { // 用户id不存在，视为未登录
+		fmt.Println("用户id不存在，视为未登录")
 		return 0, exception.UsrNotLogin
 	}
 	accountID, ok := accountIDObj.(uint64)
 	if !ok { // 用户id不合法，视为未登录
+		fmt.Println("用户id不合法，视为未登录")
 		return 0, exception.UsrNotLogin
 	}
 	return accountID, nil

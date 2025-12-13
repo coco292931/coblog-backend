@@ -31,6 +31,6 @@ go.work.sum
 # .idea/
 # .vscode/
 
-configs/configs/appConfigs.yaml
-configs/configReader/appConfigs_fortest.yaml
+*appConfigs.yaml
+*appConfigs_fortest.yaml
 *.bat
