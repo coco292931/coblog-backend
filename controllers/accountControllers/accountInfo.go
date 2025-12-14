@@ -55,6 +55,7 @@ func GetAccountInfoUser(c *gin.Context) {
 		utils.JsonSuccessResponse(c, "查询成功", accountInfo)
 		return
 	}
+
 	//传入了别人的id
 	confidentiality := true //保密信息--是
 	accountInfo, err = GetAccountInfo(c, c.Query("id"), confidentiality)
@@ -97,24 +98,19 @@ func GetAccountInfo(c *gin.Context, userIDStr string, confidentiality bool) (mod
 	} else {
 		result.TwoFactorAuth = "don't have"
 	}
-	if result.WechatOpenID != "" {
-		result.WechatOpenID = "have"
+	if result.GithubOpenID != "" {
+		result.GithubOpenID = "have"
 	} else {
-		result.WechatOpenID = "don't have"
+		result.GithubOpenID = "don't have"
 	}
 	//result.DeletedAt = {}
 
 	if confidentiality { //保密信息
 		result.ID = 0
-		result.RealName = "保密"
 		result.PermGroupID = 0
 		result.Email = "保密"
-		result.PhoneNumber = "保密"
-		result.Major = "保密"
-		result.PhoneNumber = "保密"
-		result.StudentID = "保密"
-		result.Department = "保密"
-		result.Grade = "保密"
+		result.RSSToken = "保密"
+		result.RequestTime = 0
 		result.CreatedAt = result.CreatedAt.Truncate(0)
 		result.UpdatedAt = result.UpdatedAt.Truncate(0)
 	}

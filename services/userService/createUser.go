@@ -13,13 +13,9 @@ import (
 
 // 向数据库保存用户信息
 func CreateUser(
-	studentID string,
 	password string,
-	realName,
-	email,
-	userName,
-	major,
-	phoneNumber string,
+	email string,
+	userName string,
 	permGroupID uint32,
 ) (*models.AccountInfo, error) {
 
@@ -32,7 +28,7 @@ func CreateUser(
 	// 	return nil, exception.ApiParamError
 	// }
 
-	_, err = GetUserByNum(studentID) //判断编号是否重复
+	_, err = GetUserByUserName(userName) //判断昵称是否重复
 	if err == nil {
 		return nil, exception.UsrAlreadyExisted
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -56,19 +52,11 @@ func CreateUser(
 	// 	return nil, exception.SysPwdHashFailed
 	// }
 	//fmt.Println(string(hashedPassword))
-
-	if userName == "" {
-		userName = realName
-	}
-
+	
 	user := &models.AccountInfo{
-		StudentID:    studentID,
 		PasswordHash: string(hashedPassword),
-		RealName:     realName,
 		Email:        email,
 		UserName:     userName,
-		Major:        major,
-		PhoneNumber:  phoneNumber,
 		PermGroupID:  permGroupID,
 	}
 

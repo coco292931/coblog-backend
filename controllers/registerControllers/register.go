@@ -11,17 +11,14 @@ import (
 )
 
 type UserInfo struct {
-	StudentID   string `json:"studentID"   binding:"required"`
-	RealName    string `json:"realname"  binding:"required"`
-	Email       string `json:"email"  binding:"required"`
-	Password    string `json:"password"   binding:"required"`
-	UserName    string `json:"username"`
-	Major       string `json:"major"`       //专业
-	PhoneNumber string `json:"phoneNumber"` //手机号
+	Email            string `json:"email"  binding:"required"`
+	VerificationCode string `json:"verificationCode"` //验证码，还没想好是先验证还是后验证注册
+	UserName         string `json:"username"`
+	Password         string `json:"password"   binding:"required"`
 	//PermGroupID
 }
 
-func CreateStudentUser(c *gin.Context) { //学生用户注册,强制绑定权限组PermGroupID=1
+func CreateNormalUser(c *gin.Context) { //用户注册,强制绑定权限组PermGroupID=2
 	var postForm UserInfo
 	err := c.ShouldBindJSON(&postForm)
 	if err != nil {
@@ -29,16 +26,15 @@ func CreateStudentUser(c *gin.Context) { //学生用户注册,强制绑定权限
 		fmt.Println("参数错误0:", err)
 		return
 	}
+
+	//在此处加入验证码判断逻辑（如有
+
 	fmt.Println("注册信息:", postForm)
 	user, err := userService.CreateUser(
-		postForm.StudentID,
 		postForm.Password,
-		postForm.RealName,
-		postForm.Email,
+		postForm.Email, 
 		postForm.UserName,
-		postForm.Major,
-		postForm.PhoneNumber,
-		1, //用户类型 PermGroupID 需要修改
+		2, //用户类型， PermGroupID 需要修改
 	)
 	if err != nil {
 		if errors.Is(err, exception.ApiParamError) {
@@ -50,7 +46,6 @@ func CreateStudentUser(c *gin.Context) { //学生用户注册,强制绑定权限
 		} else {
 			fmt.Println("读取失败0:", err)
 			c.Error(exception.SysCannotLoadFromDB)
-
 		}
 		return
 	}
