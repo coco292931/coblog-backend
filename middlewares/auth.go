@@ -5,6 +5,7 @@ import (
 	"JHETBackend/common/webtoken"
 
 	"github.com/gin-gonic/gin"
+	"fmt"
 )
 
 func Auth(c *gin.Context) {
@@ -12,7 +13,7 @@ func Auth(c *gin.Context) {
 	if authHeader == "" {
 		c.Error(exception.UsrNotLogin)
 		c.Abort()
-		//fmt.Println("鉴权失败: 未登录")
+		fmt.Println("鉴权失败: 未登录")
 		return
 	}
 	if !webtoken.VerifyWt(authHeader) {
@@ -26,8 +27,8 @@ func Auth(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	//fmt.Println("鉴权成功")
+	fmt.Println("鉴权成功")
 	c.Set("AccountID", uid)
-	c.Set("PermissionGroupID", pgid)
+	c.Set("PermissionGroupID", pgid
 	c.Next()
 }

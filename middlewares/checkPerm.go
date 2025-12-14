@@ -5,6 +5,7 @@ import (
 	"JHETBackend/common/permission"
 
 	"github.com/gin-gonic/gin"
+	"fmt"
 )
 
 func NeedPerm(needed ...permission.PermissionID) gin.HandlerFunc {
@@ -12,6 +13,7 @@ func NeedPerm(needed ...permission.PermissionID) gin.HandlerFunc {
 		pgid := uint32(c.GetUint("PermissionGroupID"))
 		if pgid == 0 {
 			//c.Redirect(401, "/login") 感觉放进错误处理中间件?
+			fmt.Println("权限校验失败: 未登录")
 			c.Error(exception.UsrNotLogin)
 			c.AbortWithStatus(401) // 直接返回401
 			return

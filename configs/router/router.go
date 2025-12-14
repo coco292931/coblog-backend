@@ -40,7 +40,7 @@ func InitEngine() *gin.Engine {
 	ginEngine.POST("/api/auth/login/combo", middleware.UnifiedErrorHandler(), loginControllers.AuthByCombo)
 	ginEngine.GET("/api/auth/login/combo", middleware.UnifiedErrorHandler(), SayHello)
 
-	ginEngine.POST("/api/auth/register", middleware.UnifiedErrorHandler(), registerControllers.CreateStudentUser)
+	ginEngine.POST("/api/auth/register", middleware.UnifiedErrorHandler(), registerControllers.CreateNormalUser)
 
 	//上传图片这一块
 	//ginEngine.POST("/api/upload/image", middleware.UnifiedErrorHandler(), middleware.Auth, fileControllers.UploadImage)
