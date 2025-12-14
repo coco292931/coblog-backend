@@ -2,11 +2,16 @@ package database
 
 import (
 	configreader "JHETBackend/configs/configReader"
+	"JHETBackend/models"
+	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
-	"gorm.io/driver/mysql"
+	_ "github.com/microsoft/go-mssqldb"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 )
 
@@ -31,25 +36,66 @@ func initDatabase() {
 	port := configreader.GetConfig().Database.Port     // 数据库端口
 	name := configreader.GetConfig().Database.DBName   // 数据库名称
 
-	// 构建数据源名称 (DSN)
-	dsn := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8mb4&parseTime=True&loc=Local",
-		user, pass, host, port, name)
+	// 构建 Azure SQL Database 连接字符串（添加连接超时参数，适配 Serverless 数据库唤醒时间）
+	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;connection timeout=60;",
+		host, user, pass, port, name)
 
-	log.Printf("[INFO][DB] 尝试连接到数据库, dsn=%v", dsn)
+	log.Printf("[INFO][DB] 尝试连接到 Azure SQL Database (Serverless 数据库唤醒可能需要120s，请稍候...)")
+
+	// 创建连接池
+	db, err := sql.Open("sqlserver", connString)
+	if err != nil {
+		log.Panicf("[FATAL] Error creating connection pool: %v", err.Error())
+	}
+
+	// 设置连接池参数
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(100)
+
+	// 测试连接（使用带超时的 context，给 Serverless 数据库足够的唤醒时间）
+	ctx, cancel := context.WithTimeout(context.Background(), 130*time.Second)
+	defer cancel()
+
+	log.Printf("[INFO][DB] 正在测试数据库连接...")
+	err = db.PingContext(ctx)
+	if err != nil {
+		log.Panicf("[FATAL] Database connection failed: %v", err.Error())
+	}
+
+	log.Printf("[INFO][DB] 成功连接到 Azure SQL Database")
+
+	// 使用 GORM 包装 SQL Server 连接
 	var dbtmp *gorm.DB
-	var err error
-	// 使用 GORM 打开数据库连接
-	dbtmp, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
+	dbtmp, err = gorm.Open(sqlserver.New(sqlserver.Config{
+		Conn: db,
+	}), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true, // 关闭外键约束以提升迁移速度
 	})
 	if err != nil {
-		log.Panicf("[FATAL] Open database failed. Err: %v", err)
+		log.Panicf("[FATAL] Open database with GORM failed. Err: %v", err)
 	}
-	// // 自动迁移数据库结构
-	// if err = autoMigrate(db); err != nil {
-	// 	return fmt.Errorf("database migrate failed: %w", err)
-	// }
+
 	log.Printf("[INFO][DB] 数据库连接成功, 当前数据库: %s", name)
 	//连接成功传递到全局指针
 	DataBase = dbtmp
+
+	// 自动迁移数据库表结构
+	log.Printf("[INFO][DB] 开始自动迁移数据库表结构...")
+	err = autoMigrate(dbtmp)
+	if err != nil {
+		log.Panicf("[FATAL] 数据库表迁移失败: %v", err)
+	}
+	log.Printf("[INFO][DB] 数据库表迁移完成！")
+}
+
+// autoMigrate 自动迁移所有数据表
+func autoMigrate(db *gorm.DB) error {
+	//迁移一次就行了
+	log.Printf("[INFO][DB] 本次跳过迁移")
+	return nil
+	// 迁移所有模型
+	return db.AutoMigrate(
+		&models.AccountInfo{},
+		// 如果有其他模型，在这里继续添加
+	)
 }
