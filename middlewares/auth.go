@@ -29,6 +29,6 @@ func Auth(c *gin.Context) {
 	}
 	fmt.Println("鉴权成功")
 	c.Set("AccountID", uid)
-	c.Set("PermissionGroupID", pgid
+	c.Set("PermissionGroupID", pgid)
 	c.Next()
 }
