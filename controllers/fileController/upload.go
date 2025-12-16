@@ -22,7 +22,7 @@ func UpdateAvatar(c *gin.Context) {
 		c.Error(exception.ApiNoFormFile)
 		return
 	}
-	if fileHeader.Size > int64(102400) { // 对头像文件限制 100kb
+	if fileHeader.Size > int64(1024000) { // 对头像文件限制 1Mib
 		c.Error(exception.ApiFileTooLarge)
 	}
 	fileHandler, err := getFileHandler(fileHeader)
@@ -36,6 +36,25 @@ func UpdateAvatar(c *gin.Context) {
 		return
 	}
 	userService.UploadAvatar(accountID, fileHandler)
+}
+
+func UploadImage(c *gin.Context) {   //TODO: 完善图片上传接口
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.Error(exception.ApiNoFormFile)
+		return
+	}
+	fileHandler, err := getFileHandler(fileHeader)
+	if err != nil {
+		c.Error(err) // 由于 getFileHandler 也使用统一错误，因此可以直接返回
+		return
+	}
+	accountID, err := accountcontroller.GetAccountIDFromContext(c)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+	//userService.UploadAvatar(accountID, fileHandler)
 }
 
 func getFileHandler(fileHeader *multipart.FileHeader) (io.Reader, error) {
