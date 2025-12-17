@@ -8,6 +8,7 @@ import (
 	"JHETBackend/controllers/accountControllers"
 	"JHETBackend/controllers/loginControllers"
 	"JHETBackend/controllers/registerControllers"
+	"JHETBackend/controllers/fileController"
 
 	"github.com/gin-gonic/gin"
 	//"github.com/silenceper/wechat/v2/openplatform/account"
@@ -43,7 +44,7 @@ func InitEngine() *gin.Engine {
 	ginEngine.POST("/api/auth/register", middleware.UnifiedErrorHandler(), registerControllers.CreateNormalUser)
 
 	//上传图片这一块
-	//ginEngine.POST("/api/upload/image", middleware.UnifiedErrorHandler(), middleware.Auth, fileControllers.UploadImage)
+	ginEngine.POST("/api/upload/image", middleware.UnifiedErrorHandler(), middleware.Auth, middleware.NeedPerm(permission.Perm_UploadImage),fileController.UploadImage)
 
 	//用户信息这一块
 	// 无需权限 测试用
@@ -59,6 +60,10 @@ func InitEngine() *gin.Engine {
 		middleware.Auth,
 		middleware.NeedPerm(permission.Perm_GetProfile),
 		accountControllers.GetAccountInfoUser)
+	ginEngine.PUT("/api/user/info/", middleware.UnifiedErrorHandler(),
+		middleware.Auth,
+		middleware.NeedPerm(permission.Perm_UpdateProfile))  
+		//accountControllers.GetAccountInfoUser)
 
 	//管理员获取用户信息
 	ginEngine.GET("/api/admin/users/", middleware.UnifiedErrorHandler(),
@@ -66,6 +71,17 @@ func InitEngine() *gin.Engine {
 		middleware.NeedPerm(permission.Perm_GetAnyProfile),
 		accountControllers.GetAccountInfoAdmin)
 
+
+	
+	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(),
+		middleware.Auth)
+	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(),
+		middleware.Auth)
+	
+	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(),
+		middleware.Auth)
+
+	
 	return ginEngine
 
 }
