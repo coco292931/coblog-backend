@@ -60,10 +60,11 @@ func InitEngine() *gin.Engine {
 		middleware.Auth,
 		middleware.NeedPerm(permission.Perm_GetProfile),
 		accountControllers.GetAccountInfoUser)
+	//普通用户更新自己信息
 	ginEngine.PUT("/api/user/info/", middleware.UnifiedErrorHandler(),
 		middleware.Auth,
-		middleware.NeedPerm(permission.Perm_UpdateProfile))  
-		//accountControllers.GetAccountInfoUser)
+		middleware.NeedPerm(permission.Perm_UpdateProfile),
+		accountControllers.EditAccountInfoUser)
 
 	//管理员获取用户信息
 	ginEngine.GET("/api/admin/users/", middleware.UnifiedErrorHandler(),
@@ -72,14 +73,14 @@ func InitEngine() *gin.Engine {
 		accountControllers.GetAccountInfoAdmin)
 
 
+	//文章这一块
+	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(), //文章列表
+	middleaware.LooseAuth())
+	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(), //文章页面
+	middleware.LooseAuth())
 	
-	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(),
-		middleware.Auth)
-	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(),
-		middleware.Auth)
-	
-	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(),
-		middleware.Auth)
+	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(), //底栏
+	middleware.LooseAuth())
 
 	
 	return ginEngine
