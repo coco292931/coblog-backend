@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 type Post struct {

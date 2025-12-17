@@ -2,8 +2,6 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
