@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"coblog-backend/controllers/accountControllers"
+	"coblog-backend/controllers/fileController"
 	"coblog-backend/controllers/loginControllers"
 	"coblog-backend/controllers/registerControllers"
-	"coblog-backend/controllers/fileController"
 
 	"github.com/gin-gonic/gin"
 	//"github.com/silenceper/wechat/v2/openplatform/account"
@@ -37,57 +37,51 @@ func InitEngine() *gin.Engine {
 			permission.Perm_ForTestOnly1,
 			permission.Perm_ForTestOnly2), SayHello)
 
-	//登录注册这一块
-	ginEngine.POST("/api/auth/login/combo", middleware.UnifiedErrorHandler(), loginControllers.AuthByCombo)
-	ginEngine.GET("/api/auth/login/combo", middleware.UnifiedErrorHandler(), SayHello)
+	// API分组
+	api := ginEngine.Group("/api", middleware.UnifiedErrorHandler())
+	{
+		// 认证相关分组
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login/combo", loginControllers.AuthByCombo)
+			auth.GET("/login/combo", SayHello)
+			auth.POST("/register", registerControllers.CreateNormalUser)
+		}
 
-	ginEngine.POST("/api/auth/register", middleware.UnifiedErrorHandler(), registerControllers.CreateNormalUser)
+		// 上传相关分组
+		upload := api.Group("/upload", middleware.Auth, middleware.NeedPerm(permission.Perm_UploadFile))
+		{
+			upload.POST("/image", fileController.UploadImage)
+		}
 
-	//上传图片这一块,暂时和文件共用权限
-	ginEngine.POST("/api/upload/image", middleware.UnifiedErrorHandler(), middleware.Auth, middleware.NeedPerm(permission.Perm_UploadFile),fileController.UploadImage)
+		// 普通用户相关分组
+		user := api.Group("/user", middleware.Auth)
+		{
+			user.GET("/info/", middleware.NeedPerm(permission.Perm_GetProfile), accountControllers.GetAccountInfoUser)
+			user.PUT("/info/", middleware.NeedPerm(permission.Perm_UpdateProfile), accountControllers.EditAccountInfoUser)
+			user.PUT("/pwd/", middleware.NeedPerm(permission.Perm_ChangePassword), accountControllers.EditAccountInfoUser)
+		}
 
-	//用户信息这一块
-	// 无需权限 测试用
-	// ginEngine.GET("/api/user/info/", middleware.UnifiedErrorHandler(),
-	// 	middleware.Auth,
-	// 	accountControllers.GetAccountInfoUser)
-	// ginEngine.GET("/api/admin/users/", middleware.UnifiedErrorHandler(),
-	// 	middleware.Auth,
-	// 	accountControllers.GetAccountInfoAdmin)
+		// 文章相关分组
+		articles := api.Group("/articles", middleware.LooseAuth)
+		{
+			articles.GET("", SayHello)              // 文章列表
+			articles.GET("/{article_id}", SayHello) // 文章页面
+		}
 
-	//普通用户获取用户信息
-	ginEngine.GET("/api/user/info/", middleware.UnifiedErrorHandler(),
-		middleware.Auth,
-		middleware.NeedPerm(permission.Perm_GetProfile),
-		accountControllers.GetAccountInfoUser)
-	//普通用户更新自己信息
-	ginEngine.PUT("/api/user/info/", middleware.UnifiedErrorHandler(),
-		middleware.Auth,
-		middleware.NeedPerm(permission.Perm_UpdateProfile),
-		accountControllers.EditAccountInfoUser)
-	ginEngine.PUT("/api/user/pwd/", middleware.UnifiedErrorHandler(),
-		middleware.Auth,
-		middleware.NeedPerm(permission.Perm_ChangePassword),
-		accountControllers.EditAccountInfoUser)
+		// 站点信息分组
+		site := api.Group("/site", middleware.LooseAuth)
+		{
+			site.GET("/info", SayHello) // 底栏
+		}
 
-	//管理员获取用户信息
-	ginEngine.GET("/api/admin/users/", middleware.UnifiedErrorHandler(),
-		middleware.Auth,
-		middleware.NeedPerm(permission.Perm_GetAnyProfile),
-		accountControllers.GetAccountInfoAdmin)
+		// 管理员相关分组
+		admin := api.Group("/admin", middleware.Auth)
+		{
+			admin.GET("/users/", middleware.NeedPerm(permission.Perm_GetAnyProfile), accountControllers.GetAccountInfoAdmin)
+		}
+	}
 
-
-	//文章这一块
-	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(), //文章列表
-	middleware.LooseAuth)
-	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(), //文章页面
-	middleware.LooseAuth)
-	
-	//站点信息
-	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(), //底栏
-	middleware.LooseAuth)
-
-	
 	return ginEngine
 
 }
