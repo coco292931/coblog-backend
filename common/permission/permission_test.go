@@ -22,9 +22,8 @@ func Test_AddPermission(t *testing.T) {
 func Test_AddUserPG(t *testing.T) {
 	permission.AddPermissionGroup("USER", permission.Perm_GetProfile,
 		permission.Perm_Login,
-		permission.Perm_UploadImage,
-		permission.Perm_UpdateAvatar,
-		permission.Perm_SubmitFeedback)
+		permission.Perm_UploadFile,
+		permission.Perm_UpdateAvatar,)
 	log.Printf("%v", permission.GetAllPermissionGroups())
 }
 

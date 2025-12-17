@@ -79,7 +79,7 @@ func InitEngine() *gin.Engine {
 
 	//文章这一块
 	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(), //文章列表
-	middleaware.LooseAuth)
+	middleware.LooseAuth)
 	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(), //文章页面
 	middleware.LooseAuth)
 	

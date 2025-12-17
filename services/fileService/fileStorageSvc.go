@@ -1,4 +1,4 @@
-package fileservice
+package fileService
 
 import (
 	configreader "coblog-backend/configs/configReader"

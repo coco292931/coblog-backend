@@ -2,10 +2,12 @@ package fileController
 
 import (
 	"coblog-backend/common/exception"
-	accountcontroller "coblog-backend/controllers/accountControllers"
+	"coblog-backend/controllers/accountControllers"
+	"coblog-backend/services/fileService"
 	"coblog-backend/services/userService"
-	fileservice "coblog-backend/services/fileService"
+	"coblog-backend/utils"
 	"io"
+	"log"
 	"mime/multipart"
 
 	//"crypto/md5" hash算法库 <<< 请使用sha256!(MucheXD)
@@ -31,7 +33,7 @@ func UpdateAvatar(c *gin.Context) {
 		c.Error(err) // 由于 getFileHandler 也使用统一错误，因此可以直接返回
 		return
 	}
-	accountID, err := accountcontroller.GetAccountIDFromContext(c)
+	accountID, err := accountControllers.GetAccountIDFromContext(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -54,13 +56,18 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 	//TODO
-	fileName, err := fileservice.SaveUploadedFile(&fileHandler)
+	fileName, err := fileService.SaveUploadedFile(&fileHandler)
 	if err != nil {
 		log.Printf("[ERROR][FileSvc] 不能保存图片 %v", err)
-		return exception.ApiFileNotSaved // 转换成统一错误返回，原error信息丢失
+		c.Error(exception.ApiFileNotSaved) // 转换成统一错误返回，原error信息丢失
+		return
 	}
-}
+	utils.JsonSuccessResponse(c, "上传成功", gin.H{
+		"imageId": fileName,
+		"url":     "/static/uploads/" + fileName,
+	})
 
+}
 
 func getFileHandler(fileHeader *multipart.FileHeader) (io.Reader, error) {
 	// initOnce.Do(initFileController)
