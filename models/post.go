@@ -22,10 +22,8 @@ type Post struct {
 
 	Views     uint64         `json:"views" gorm:"column:views"`
 	Likes      uint64         `json:"likes" gorm:"column:likes"`
-<<<<<<< HEAD
 
 	Comments     datatypes.JSON `json:"-"`//{"id":1,"content":"xxxx","creator":{"content":1,"images":{和上面的格式一样},"createdAt":"time.Time"}
-=======
 
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
