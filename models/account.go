@@ -27,10 +27,10 @@ type AccountInfo struct {
 	Behaviors []string `json:"behaviors"` // 喜欢的主页标签，保留
 	RequestTime int64 `json:"requestTime"` // 请求文章次数 暂时不用
 	likes []string `json:"likes"` // 喜欢的文章列表
-	stars []string `json:"stars"` // 收藏的文章列表
+	//stars []string `json:"stars"` // 收藏的文章列表
 
 	// 用户关联信息
-	CreatedAt time.Time    `json:"createdAt" gorm:"index"`
+	CreatedAt time.Time    `json:"createdAt"`
 	UpdatedAt time.Time    `json:"updatedAt"`
 	DeletedAt sql.NullTime `json:"deletedAt,omitempty"`
 
