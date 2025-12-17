@@ -5,5 +5,5 @@ import(
 )
 
 func EditAccountInfoUser(c *gin.Context) {
-return
+	return
 }
