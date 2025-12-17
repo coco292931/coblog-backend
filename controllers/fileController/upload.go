@@ -4,6 +4,7 @@ import (
 	"JHETBackend/common/exception"
 	accountcontroller "JHETBackend/controllers/accountControllers"
 	"JHETBackend/services/userService"
+	fileservice "JHETBackend/services/fileService"
 	"io"
 	"mime/multipart"
 
@@ -47,19 +48,17 @@ func UploadImage(c *gin.Context) {
 	if fileHeader.Size > int64(10240000) { // 对文件限制 10Mib
 		c.Error(exception.ApiFileTooLarge)
 	}
-	
 	fileHandler, err := getFileHandler(fileHeader)
 	if err != nil {
 		c.Error(err) // 由于 getFileHandler 也使用统一错误，因此可以直接返回
 		return
 	}
-	accountID, err := accountcontroller.GetAccountIDFromContext(c)
-	if err != nil {
-		c.Error(err)
-		return
-	}
 	//TODO
-	userService.UploadAvatar(accountID, fileHandler)
+	fileName, err := fileservice.SaveUploadedFile(&fileHandler)
+	if err != nil {
+		log.Printf("[ERROR][FileSvc] 不能保存图片 %v", err)
+		return exception.ApiFileNotSaved // 转换成统一错误返回，原error信息丢失
+	}
 }
 
 
