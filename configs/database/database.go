@@ -1,8 +1,8 @@
 package database
 
 import (
-	configreader "JHETBackend/configs/configReader"
-	"JHETBackend/models"
+	configreader "coblog-backend/configs/configReader"
+	"coblog-backend/models"
 	"context"
 	"database/sql"
 	"fmt"

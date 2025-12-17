@@ -1,10 +1,10 @@
 package accountControllers
 
 import (
-	"JHETBackend/common/exception"
-	"JHETBackend/models"
-	"JHETBackend/services/userService"
-	"JHETBackend/utils"
+	"coblog-backend/common/exception"
+	"coblog-backend/models"
+	"coblog-backend/services/userService"
+	"coblog-backend/utils"
 	"errors"
 	"fmt"
 

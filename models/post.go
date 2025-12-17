@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 type Post struct {
@@ -22,11 +21,9 @@ type Post struct {
 
 	Views     uint64         `json:"views" gorm:"column:views"`
 	Likes      uint64         `json:"likes" gorm:"column:likes"`
-	Stars	  uint64         `json:"stars" gorm:"column:stars"`
 
-	Comments     datatypes.JSON `json:"-"`//保留位 {"id":1,"content":"xxxx","creator":{"content":1,"images":{和上面的格式一样},"createdAt":"time.Time"}
+	Comments     datatypes.JSON `json:"-"`//{"id":1,"content":"xxxx","creator":{"content":1,"images":{和上面的格式一样},"createdAt":"time.Time"}
 
 	CreatedAt   time.Time      `json:"createdAt"`
 	UpdatedAt   time.Time      `json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `json:"-"` //估计用不到
 }

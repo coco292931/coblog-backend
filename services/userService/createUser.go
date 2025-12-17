@@ -1,9 +1,9 @@
 package userService
 
 import (
-	"JHETBackend/common/exception"
-	"JHETBackend/configs/database"
-	"JHETBackend/models"
+	"coblog-backend/common/exception"
+	"coblog-backend/configs/database"
+	"coblog-backend/models"
 	"crypto/sha256"
 	"errors"
 	"fmt"

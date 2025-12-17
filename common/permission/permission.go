@@ -2,10 +2,10 @@
 package permission
 
 import (
-	//"JHETBackend/common/basics"
-	"JHETBackend/common/exception"
-	"JHETBackend/dao"
-	"JHETBackend/models"
+	//"coblog-backend/common/basics"
+	"coblog-backend/common/exception"
+	"coblog-backend/dao"
+	"coblog-backend/models"
 	"fmt"
 	"log"
 	"sync"
@@ -28,21 +28,23 @@ const (
 	Perm_GetProfile    PermissionID = 010 // 获取个人信息
 	Perm_UpdateProfile PermissionID = 011 // 修改个人信息
 	Perm_UpdateAvatar  PermissionID = 012 // 更改头像
+	Perm_ChangePassword PermissionID = 013 // 修改密码
 
-	//附件
-	Perm_UploadImage PermissionID = 021 // 上传图片
+	//文件相关
+	Perm_UploadFile PermissionID = 021 // 上传图片
+	//Perm_UploadFile PermissionID = 020 // 上传文件（含图片）
+	//Perm_DownloadImage PermissionID = 022 // 下载图片  要考虑权限继承，暂时不做
+	Perm_DownloadFile  PermissionID = 027 // 下载文件（含图片）
 
-	// 问题反馈
-	Perm_SubmitFeedback   PermissionID = 031 // 提交反馈
-	Perm_ViewFeedback     PermissionID = 032 // 查看反馈（反馈详情）
-	Perm_AcceptOrder      PermissionID = 033 // 接单
-	Perm_MarkAsSpam       PermissionID = 034 // 标记垃圾
-	Perm_ReplyFeedback    PermissionID = 035 // 回复反馈
-	Perm_RateFeedback     PermissionID = 036 // 评价反馈
-	Perm_QueryFeedbackLog PermissionID = 037 // 查询反馈记录
+	//帖子（文章）相关
+	Perm_PostPost     PermissionID = 031 // 发帖
+	Perm_ViewDeep     PermissionID = 032 // 查看深度
+	Perm_Like      PermissionID = 033 // 点赞
+	Perm_CommentPost    PermissionID = 034 // 评论
+
+	Perm_DownloadArticle PermissionID = 037 // 下载md文章
 
 	// 管理面板
-	// 超管 - 用户
 	Perm_GetUserList        PermissionID = 100 // 获取用户列表
 	Perm_AddUser            PermissionID = 101 // 新增用户
 	Perm_EditUser           PermissionID = 102 // 编辑用户
@@ -50,16 +52,6 @@ const (
 	Perm_GetUserPermission  PermissionID = 104 // 获取用户权限
 	Perm_EditUserPermission PermissionID = 105 // 编辑用户权限
 	Perm_GetAnyProfile      PermissionID = 106 // 获取个人的所有信息
-
-	// 超管 - 垃圾审核
-	Perm_GetPendingSpam PermissionID = 110 // 获取待审核垃圾
-	Perm_ReviewSpam     PermissionID = 111 // 审核垃圾
-
-	// 预设
-	Perm_EditPreset   PermissionID = 200 // 编辑预设
-	Perm_ViewPreset   PermissionID = 210 // 查看预设
-	Perm_AddPreset    PermissionID = 220 // 新增预设
-	Perm_DeletePreset PermissionID = 230 // 删除预设
 
 	// 往下继续加...
 )

@@ -1,9 +1,9 @@
 package userService
 
 import (
-	"JHETBackend/common/exception"
-	"JHETBackend/dao"
-	fileservice "JHETBackend/services/fileService"
+	"coblog-backend/common/exception"
+	"coblog-backend/dao"
+	fileservice "coblog-backend/services/fileService"
 	"io"
 	"log"
 )

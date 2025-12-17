@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"JHETBackend/common/exception"
-	"JHETBackend/configs/database"
-	"JHETBackend/models"
+	"coblog-backend/common/exception"
+	"coblog-backend/configs/database"
+	"coblog-backend/models"
 	"errors"
 
 	"gorm.io/gorm"

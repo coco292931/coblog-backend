@@ -1,7 +1,7 @@
 package permission_test
 
 import (
-	"JHETBackend/common/permission"
+	"coblog-backend/common/permission"
 	"log"
 	"testing"
 )

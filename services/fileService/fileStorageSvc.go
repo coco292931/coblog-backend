@@ -1,7 +1,7 @@
 package fileservice
 
 import (
-	configreader "JHETBackend/configs/configReader"
+	configreader "coblog-backend/configs/configReader"
 	"crypto/rand"
 	"io"
 	"log"
