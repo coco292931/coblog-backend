@@ -1,10 +1,10 @@
 package fileController
 
 import (
-	"JHETBackend/common/exception"
-	accountcontroller "JHETBackend/controllers/accountControllers"
-	"JHETBackend/services/userService"
-	fileservice "JHETBackend/services/fileService"
+	"coblog-backend/common/exception"
+	accountcontroller "coblog-backend/controllers/accountControllers"
+	"coblog-backend/services/userService"
+	fileservice "coblog-backend/services/fileService"
 	"io"
 	"mime/multipart"
 

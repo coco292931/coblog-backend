@@ -1,12 +1,12 @@
 package main
 
 import (
-	"JHETBackend/configs/router"
+	"coblog-backend/configs/router"
 
 	"github.com/gin-gonic/gin"
 )
 
-//import "JHETBackend/configs/database"
+//import "coblog-backend/configs/database"
 
 func main() {
 	ginEng := router.InitEngine()

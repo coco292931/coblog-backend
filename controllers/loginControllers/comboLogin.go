@@ -1,11 +1,11 @@
 package loginControllers
 
 import (
-	"JHETBackend/common/exception"
-	"JHETBackend/common/webtoken"
-	"JHETBackend/models"
-	"JHETBackend/services/userService"
-	"JHETBackend/utils"
+	"coblog-backend/common/exception"
+	"coblog-backend/common/webtoken"
+	"coblog-backend/models"
+	"coblog-backend/services/userService"
+	"coblog-backend/utils"
 	"errors"
 	"fmt"
 	"strconv"

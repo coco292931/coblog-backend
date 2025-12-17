@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"JHETBackend/common/exception"
-	"JHETBackend/common/webtoken"
+	"coblog-backend/common/exception"
+	"coblog-backend/common/webtoken"
 
 	"github.com/gin-gonic/gin"
 	"fmt"

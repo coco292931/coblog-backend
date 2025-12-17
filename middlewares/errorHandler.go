@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"JHETBackend/common/exception"
+	"coblog-backend/common/exception"
 	"errors"
 	"log"
 	"net/http"

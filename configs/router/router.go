@@ -1,14 +1,14 @@
 package router
 
 import (
-	"JHETBackend/common/permission"
-	middleware "JHETBackend/middlewares"
+	"coblog-backend/common/permission"
+	middleware "coblog-backend/middlewares"
 	"fmt"
 
-	"JHETBackend/controllers/accountControllers"
-	"JHETBackend/controllers/loginControllers"
-	"JHETBackend/controllers/registerControllers"
-	"JHETBackend/controllers/fileController"
+	"coblog-backend/controllers/accountControllers"
+	"coblog-backend/controllers/loginControllers"
+	"coblog-backend/controllers/registerControllers"
+	"coblog-backend/controllers/fileController"
 
 	"github.com/gin-gonic/gin"
 	//"github.com/silenceper/wechat/v2/openplatform/account"
@@ -43,8 +43,8 @@ func InitEngine() *gin.Engine {
 
 	ginEngine.POST("/api/auth/register", middleware.UnifiedErrorHandler(), registerControllers.CreateNormalUser)
 
-	//上传图片这一块
-	ginEngine.POST("/api/upload/image", middleware.UnifiedErrorHandler(), middleware.Auth, middleware.NeedPerm(permission.Perm_UploadImage),fileController.UploadImage)
+	//上传图片这一块,暂时和文件共用权限
+	ginEngine.POST("/api/upload/image", middleware.UnifiedErrorHandler(), middleware.Auth, middleware.NeedPerm(permission.Perm_UploadFile),fileController.UploadImage)
 
 	//用户信息这一块
 	// 无需权限 测试用
@@ -65,6 +65,10 @@ func InitEngine() *gin.Engine {
 		middleware.Auth,
 		middleware.NeedPerm(permission.Perm_UpdateProfile),
 		accountControllers.EditAccountInfoUser)
+	ginEngine.PUT("/api/user/pwd/", middleware.UnifiedErrorHandler(),
+		middleware.Auth,
+		middleware.NeedPerm(permission.Perm_ChangePassword),
+		accountControllers.EditAccountInfoUser)
 
 	//管理员获取用户信息
 	ginEngine.GET("/api/admin/users/", middleware.UnifiedErrorHandler(),
@@ -75,12 +79,13 @@ func InitEngine() *gin.Engine {
 
 	//文章这一块
 	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(), //文章列表
-	middleaware.LooseAuth())
+	middleaware.LooseAuth)
 	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(), //文章页面
-	middleware.LooseAuth())
+	middleware.LooseAuth)
 	
+	//站点信息
 	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(), //底栏
-	middleware.LooseAuth())
+	middleware.LooseAuth)
 
 	
 	return ginEngine

@@ -1,9 +1,9 @@
 package registerControllers
 
 import (
-	"JHETBackend/common/exception"
-	"JHETBackend/services/userService"
-	"JHETBackend/utils"
+	"coblog-backend/common/exception"
+	"coblog-backend/services/userService"
+	"coblog-backend/utils"
 	"errors"
 	"fmt"
 

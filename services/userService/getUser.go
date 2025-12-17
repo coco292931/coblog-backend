@@ -1,9 +1,9 @@
 package userService
 
 import (
-	"JHETBackend/configs/database"
-	"JHETBackend/dao"
-	"JHETBackend/models"
+	"coblog-backend/configs/database"
+	"coblog-backend/dao"
+	"coblog-backend/models"
 )
 
 // GetAccountInfoByUID 根据AccountID 获取用户信息

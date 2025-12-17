@@ -1,4 +1,4 @@
-module JHETBackend
+module coblog-backend
 
 go 1.25.1
 

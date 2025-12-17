@@ -1,7 +1,7 @@
 package webtoken
 
 import (
-	configreader "JHETBackend/configs/configReader"
+	configreader "coblog-backend/configs/configReader"
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
