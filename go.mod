@@ -5,6 +5,7 @@ go 1.25.1
 require (
 	github.com/bits-and-blooms/bitset v1.24.0
 	github.com/fsnotify/fsnotify v1.9.0
+	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
 	github.com/microsoft/go-mssqldb v1.9.5
 	github.com/spf13/viper v1.21.0
