@@ -38,7 +38,7 @@ const (
 
 	//帖子（文章）相关
 	Perm_PostPost     PermissionID = 031 // 发帖
-	Perm_ViewDeep     PermissionID = 032 // 查看深度
+	Perm_ViewDeep     PermissionID = 032 // 查看深度。一般不使用该权限，而通过账户数据来判断。这个仅适用于需要深度才能访问的路由
 	Perm_Like      PermissionID = 033 // 点赞
 	Perm_CommentPost    PermissionID = 034 // 评论
 

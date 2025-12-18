@@ -96,6 +96,8 @@ func autoMigrate(db *gorm.DB) error {
 	// 迁移所有模型
 	return db.AutoMigrate(
 		&models.AccountInfo{},
+		&models.Post{},
+		&models.Comments{},
 		// 如果有其他模型，在这里继续添加
 	)
 }

@@ -120,6 +120,8 @@ func GetAccountInfo(c *gin.Context, userIDStr string, confidentiality bool) (mod
 
 // 从 gin 的上下文中取 AccountID
 // 其它 Controller 也会用到这个函数
+// 账户信息是在auth时存入的.
+// 普通auth未检测token时报错，直接返回，不经过这里。松校验looseAuth返回id=0
 func GetAccountIDFromContext(c *gin.Context) (uint64, error) {
 	accountIDObj, ok := c.Get("AccountID")
 	if !ok { // 用户id不存在，视为未登录

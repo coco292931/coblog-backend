@@ -24,10 +24,10 @@ type AccountInfo struct {
 	Sex        string `json:"sex"`        // 性别
 	SexInfo    string `json:"sexInfo"`    // 自定义
 
-	Behaviors   []string `json:"behaviors"`   // 喜欢的主页标签，保留
-	RequestTime int64    `json:"requestTime"` // 请求文章次数 暂时不用
-	Likes       []string `json:"likes"`       // 喜欢的文章列表
-	//stars []string `json:"stars"` // 收藏的文章列表
+	Behaviors   string `json:"behaviors" gorm:"type:text"`   // 喜欢的主页标签，保留  `["tech","music","sports"]`
+	RequestTime int64  `json:"requestTime"`                  // 请求文章次数 暂时不用
+	Likes       string `json:"likes" gorm:"type:text"`       // 喜欢的文章id列表 `[1,2]`
+	//stars string `json:"stars"` // 收藏的文章列表
 
 	// 用户关联信息
 	CreatedAt time.Time    `json:"createdAt"`
