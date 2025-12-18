@@ -6,7 +6,9 @@ import (
 )
 
 func GetSiteInfo() models.SiteInfo {
-	// 这里是模拟数据，实际应用中应从数据库或其他数据源获取
-	siteInfo := siteInfoService.GetSiteInfo()
+	siteInfo ,err := siteInfoService.GetSiteInfo()
+	if err != nil {
+		
+	}
 	return siteInfo
 }

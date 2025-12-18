@@ -4,13 +4,30 @@ import (
 	"coblog-backend/common/exception"
 	"coblog-backend/common/permission"
 
-	"github.com/gin-gonic/gin"
 	"fmt"
+
+	"github.com/gin-gonic/gin"
 )
 
 func NeedPerm(needed ...permission.PermissionID) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		pgid := uint32(c.GetUint("PermissionGroupID"))
+		// 直接使用类型断言获取 uint32 类型的值
+		rawVal, exists := c.Get("PermissionGroupID")
+		if !exists {
+			fmt.Println("权限校验失败: 未找到权限组ID")
+			c.Error(exception.UsrNotLogin)
+			c.AbortWithStatus(401)
+			return
+		}
+		
+		pgid, ok := rawVal.(uint32)
+		if !ok {
+			fmt.Printf("权限校验失败: 权限组ID类型错误, 实际类型: %T\n", rawVal)
+			c.Error(exception.UsrNotLogin)
+			c.AbortWithStatus(401)
+			return
+		}
+		
 		if pgid == 0 {
 			//c.Redirect(401, "/login") 感觉放进错误处理中间件?
 			fmt.Println("权限校验失败: 未登录")
