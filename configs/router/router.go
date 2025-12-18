@@ -6,13 +6,12 @@ import (
 	"fmt"
 
 	"coblog-backend/controllers/accountControllers"
+	"coblog-backend/controllers/articlesControllers"
 	"coblog-backend/controllers/fileController"
 	"coblog-backend/controllers/loginControllers"
 	"coblog-backend/controllers/registerControllers"
 	"coblog-backend/controllers/rssController"
 	"coblog-backend/controllers/siteInfoController"
-
-
 
 	"github.com/gin-gonic/gin"
 	//"github.com/silenceper/wechat/v2/openplatform/account"
@@ -64,17 +63,22 @@ func InitEngine() *gin.Engine {
 	{
 		user.GET("/info/", middleware.NeedPerm(permission.Perm_GetProfile),
 			accountControllers.GetAccountInfoUser)
-
 		//普通用户更新自己信息
 		user.PUT("/info/", middleware.NeedPerm(permission.Perm_UpdateProfile),
 			accountControllers.EditAccountInfoUser)
 		user.PUT("/pwd/", middleware.NeedPerm(permission.Perm_ChangePassword),
-			accountControllers.EditAccountInfoUser)
+			accountControllers.ChangePwd)
+
+		//普通用户重置RSS Token
+		user.PUT("/rst-rss/", middleware.NeedPerm(permission.Perm_UpdateProfile),
+			accountControllers.RstRSSToken)
 	}
 
 	//文章这一块
-	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(), middleware.LooseAuth)              //文章列表
-	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(), middleware.LooseAuth) //文章页面
+	ginEngine.GET("/api/articles", middleware.UnifiedErrorHandler(), middleware.LooseAuth,
+		articlesControllers.GetArticleList) //文章列表
+	ginEngine.GET("/api/articles/:id", middleware.UnifiedErrorHandler(), middleware.LooseAuth,
+		articlesControllers.GetArticleContent) //文章页面
 
 	//站点信息
 	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(),
