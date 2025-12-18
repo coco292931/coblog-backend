@@ -43,3 +43,17 @@ func GetUserByUserName(userName string) (*models.AccountInfo, error) {
 	}
 	return &user, nil
 }
+
+// GetUserByToken 根据用户token获取用户
+func GetUserByToken(token string) (*models.AccountInfo, error) {
+	user := models.AccountInfo{}
+	result := database.DataBase.Where(
+		&models.AccountInfo{
+			RSSToken: token,
+		},
+	).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}
