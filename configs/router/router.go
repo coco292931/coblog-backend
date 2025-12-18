@@ -9,6 +9,7 @@ import (
 	"coblog-backend/controllers/fileController"
 	"coblog-backend/controllers/loginControllers"
 	"coblog-backend/controllers/registerControllers"
+	"coblog-backend/controllers/rssController"
 
 	"github.com/gin-gonic/gin"
 	//"github.com/silenceper/wechat/v2/openplatform/account"
@@ -74,10 +75,15 @@ func InitEngine() *gin.Engine {
 	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(), middleware.LooseAuth) //文章页面
 
 	//站点信息
-	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(), middleware.LooseAuth) //底栏
+	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(), 
+		middleware.LooseAuth) //底栏,
+
+	ginEngine.GET("/api/rss", middleware.UnifiedErrorHandler(), 
+		middleware.LooseAuth,
+		rssController.GetRSS) //RSS订阅
 
 	//管理员相关
-	//获取用户信息
+	//获取用户列表
 	ginEngine.GET("/api/admin/users/", middleware.UnifiedErrorHandler(),
 		middleware.Auth,
 		middleware.NeedPerm(permission.Perm_GetAnyProfile),
