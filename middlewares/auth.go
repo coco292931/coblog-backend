@@ -39,8 +39,8 @@ func LooseAuth(c *gin.Context) { //松校验，针对无登录的文章访问情
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
 		fmt.Println("松鉴权失败: 未登录，已放行")
-		c.Set("AccountID", 0)
-		c.Set("PermissionGroupID", 0)
+		c.Set("AccountID", uint64(0))
+		c.Set("PermissionGroupID", uint64(0))
 		c.Next()
 		return
 	}

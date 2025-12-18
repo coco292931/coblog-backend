@@ -27,6 +27,7 @@ var (
 	SysCannotReadDB        = NewException(5005, "内部异常: 无法读取数据库")
 	SysCannotGetSiteInfo   = NewException(5006, "内部异常: 无法获取站点信息")
 	SysCannotLoadRssFile   = NewException(5007, "内部异常: 无法加载RSS文件")
+	SysCannotGetArticle    = NewException(5008, "内部异常: 无法获取文章")
 
 	FileCannotSaveUploaded = NewException(6001, "文件系统错误: 无法保存上传的文件")
 )

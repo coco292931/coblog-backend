@@ -23,7 +23,7 @@ func GetSiteInfo() (models.SiteInfo, error) {
 
 	result := database.DataBase.Last(&siteInfo)
 	if result.Error != nil {
-		return defSiteInfo, result.Error //目前返回def其实是无效的
+		return defSiteInfo, result.Error //目前返回def其实是无效的，因为直接返回err
 	}
 	return siteInfo, nil
 }

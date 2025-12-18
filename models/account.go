@@ -24,17 +24,17 @@ type AccountInfo struct {
 	Sex        string `json:"sex"`        // 性别
 	SexInfo    string `json:"sexInfo"`    // 自定义
 
-	Behaviors   string `json:"behaviors" gorm:"type:text"`   // 喜欢的主页标签，保留  `["tech","music","sports"]`
-	RequestTime int64  `json:"requestTime"`                  // 请求文章次数 暂时不用
-	Likes       string `json:"likes" gorm:"type:text"`       // 喜欢的文章id列表 `[1,2]`
+	Behaviors   string `json:"behaviors" gorm:"type:text"` // 喜欢的主页标签，保留  `["tech","music","sports"]`
+	RequestTime int64  `json:"requestTime"`                // 请求文章次数 暂时不用
+	Likes       string `json:"likes" gorm:"type:text"`     // 喜欢的文章id列表 `[1,2]`
 	//stars string `json:"stars"` // 收藏的文章列表
+
+	// 备用
+	TwoFactorAuth string `json:"twoFactorAuth"` // 双因素认证密钥  F:7J64V3P3E77J3LKNUGSZ5QANTLRLTKVL
+	GithubOpenID  string `json:"githubOpenID"`  // GitHubopenid，留给第三方做的
 
 	// 用户关联信息
 	CreatedAt time.Time    `json:"createdAt"`
 	UpdatedAt time.Time    `json:"updatedAt"`
 	DeletedAt sql.NullTime `json:"deletedAt,omitempty"`
-
-	// 备用
-	TwoFactorAuth string `json:"twoFactorAuth"` // 双因素认证密钥  F:7J64V3P3E77J3LKNUGSZ5QANTLRLTKVL
-	GithubOpenID  string `json:"githubOpenID"`  // GitHubopenid，留给第三方做的
 }

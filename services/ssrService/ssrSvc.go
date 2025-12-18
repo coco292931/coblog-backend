@@ -34,12 +34,12 @@ func GetDeepRSS(c *gin.Context) (string, error) {
 	return loadFile(file)
 }
 
-func loadFile(file *os.File)(string, error){
-    content, err := io.ReadAll(file)
+func loadFile(file *os.File) (string, error) {
+	content, err := io.ReadAll(file)
 	if err != nil {
 		fmt.Println("无法读取RSS内容", err)
 		return "", err
-    }
-    return string(content), nil
+	}
+	return string(content), nil
 
 }

@@ -7,7 +7,6 @@ import (
 )
 
 // GetAccountInfoByUID 根据AccountID 获取用户信息
-
 func GetUserByID(uid uint64) (*models.AccountInfo, error) {
 	accountInfo, err := dao.GetAccountInfoByID(uid)
 	if err != nil {
@@ -30,7 +29,7 @@ func GetUserByEmail(email string) (*models.AccountInfo, error) {
 	return &user, nil
 }
 
-// GetUserByEmail 根据用户邮箱获取用户
+// GetUserByUserName 根据用户名获取用户
 func GetUserByUserName(userName string) (*models.AccountInfo, error) {
 	user := models.AccountInfo{}
 	result := database.DataBase.Where(

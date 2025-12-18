@@ -52,12 +52,13 @@ func CreateUser(
 	// 	return nil, exception.SysPwdHashFailed
 	// }
 	//fmt.Println(string(hashedPassword))
-	
+
 	user := &models.AccountInfo{
 		PasswordHash: string(hashedPassword),
 		Email:        email,
 		UserName:     userName,
 		PermGroupID:  permGroupID,
+		RSSToken:     GenToken(email),
 	}
 
 	res := database.DataBase.Create(user)
