@@ -13,6 +13,7 @@ import (
 	"coblog-backend/controllers/rssController"
 	"coblog-backend/controllers/siteInfoController"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	//"github.com/silenceper/wechat/v2/openplatform/account"
 )
@@ -26,6 +27,19 @@ func SayHello(c *gin.Context) {
 
 func InitEngine() *gin.Engine {
 	ginEngine := gin.Default()
+
+	// CORS配置 - 必须在所有路由之前配置
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{
+		"http://localhost:5173",     // 本地开发
+		"https://blog.coco-29.wang", // 生产环境前端
+		"http://blog.coco-29.wang",  // 生产环境前端（HTTP）
+	}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	corsConfig.ExposeHeaders = []string{"Content-Length"}
+	corsConfig.AllowCredentials = true
+	ginEngine.Use(cors.New(corsConfig))
 
 	fmt.Println(gin.Context{})
 	// // 添加中间件处理字符编码
