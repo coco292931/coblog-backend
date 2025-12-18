@@ -10,6 +10,9 @@ import (
 	"coblog-backend/controllers/loginControllers"
 	"coblog-backend/controllers/registerControllers"
 	"coblog-backend/controllers/rssController"
+	"coblog-backend/controllers/siteInfoController"
+
+
 
 	"github.com/gin-gonic/gin"
 	//"github.com/silenceper/wechat/v2/openplatform/account"
@@ -38,7 +41,6 @@ func InitEngine() *gin.Engine {
 			permission.Perm_ForTestOnly1,
 			permission.Perm_ForTestOnly2), SayHello)
 
-	
 	//登录注册这一块
 	auth := ginEngine.Group("/api/auth", middleware.UnifiedErrorHandler())
 	{
@@ -54,20 +56,20 @@ func InitEngine() *gin.Engine {
 	//上传图片这一块,暂时和文件共用权限
 	ginEngine.POST("/api/upload/image", middleware.UnifiedErrorHandler(),
 		middleware.Auth,
-		middleware.NeedPerm(permission.Perm_UploadFile), 
+		middleware.NeedPerm(permission.Perm_UploadFile),
 		fileController.UploadImage)
 
 	//普通用户获取用户信息
 	user := ginEngine.Group("/api/user", middleware.UnifiedErrorHandler(), middleware.Auth)
 	{
-		user.GET("/info/", middleware.NeedPerm(permission.Perm_GetProfile), 
-		accountControllers.GetAccountInfoUser)
+		user.GET("/info/", middleware.NeedPerm(permission.Perm_GetProfile),
+			accountControllers.GetAccountInfoUser)
 
 		//普通用户更新自己信息
-		user.PUT("/info/", middleware.NeedPerm(permission.Perm_UpdateProfile), 
-		accountControllers.EditAccountInfoUser)
-		user.PUT("/pwd/", middleware.NeedPerm(permission.Perm_ChangePassword), 
-		accountControllers.EditAccountInfoUser)
+		user.PUT("/info/", middleware.NeedPerm(permission.Perm_UpdateProfile),
+			accountControllers.EditAccountInfoUser)
+		user.PUT("/pwd/", middleware.NeedPerm(permission.Perm_ChangePassword),
+			accountControllers.EditAccountInfoUser)
 	}
 
 	//文章这一块
@@ -75,10 +77,11 @@ func InitEngine() *gin.Engine {
 	ginEngine.GET("/api/articles/{article_id}", middleware.UnifiedErrorHandler(), middleware.LooseAuth) //文章页面
 
 	//站点信息
-	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(), 
-		middleware.LooseAuth) //底栏,
+	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(),
+		middleware.LooseAuth,
+		siteInfoController.GetSiteInfo) //底栏,
 
-	ginEngine.GET("/api/rss", middleware.UnifiedErrorHandler(), 
+	ginEngine.GET("/api/rss", middleware.UnifiedErrorHandler(),
 		middleware.LooseAuth,
 		rssController.GetRSS) //RSS订阅
 

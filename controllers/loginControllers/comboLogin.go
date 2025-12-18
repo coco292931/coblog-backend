@@ -74,7 +74,7 @@ func AuthByCombo(c *gin.Context) {
 	}
 	//TODO:解决秘钥签名错误的问题
 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
-		"token":    webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, 100000000),
+		"token":    webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, 100000000),//194年
 		"userID":   accountInfo.ID,
 		"username": accountInfo.UserName,
 		"userType": strconv.FormatUint(uint64(accountInfo.PermGroupID), 10),

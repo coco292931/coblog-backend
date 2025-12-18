@@ -56,7 +56,7 @@ func initDatabase() {
 	ctx, cancel := context.WithTimeout(context.Background(), 130*time.Second)
 	defer cancel()
 
-	log.Printf("[INFO][DB] 正在测试数据库连接...")
+	log.Printf("[INFO][DB] 正在连接数据库...")
 	err = db.PingContext(ctx)
 	if err != nil {
 		log.Panicf("[FATAL] Database connection failed: %v", err.Error())
@@ -80,7 +80,6 @@ func initDatabase() {
 	DataBase = dbtmp
 
 	// 自动迁移数据库表结构
-	log.Printf("[INFO][DB] 开始自动迁移数据库表结构...")
 	err = autoMigrate(dbtmp)
 	if err != nil {
 		log.Panicf("[FATAL] 数据库表迁移失败: %v", err)
@@ -94,6 +93,7 @@ func autoMigrate(db *gorm.DB) error {
 	log.Printf("[INFO][DB] 本次跳过迁移")
 	return nil
 	// 迁移所有模型
+	log.Printf("[INFO][DB] 开始自动迁移数据库表结构...")
 	return db.AutoMigrate(
 		&models.AccountInfo{},
 		&models.Post{},

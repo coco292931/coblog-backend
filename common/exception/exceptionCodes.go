@@ -7,9 +7,10 @@ var (
 	UsrNotLogin       = NewException(1001, "用户未登录")
 	UsrNotPermitted   = NewException(1002, "用户无此权限")
 	UsrNotExisted     = NewException(1003, "用户不存在")
-	UsrAlreadyExisted = NewException(1004, "用户已存在") //邮箱或者人员编号(学生ID)重复
+	UsrAlreadyExisted = NewException(1004, "用户已存在") //邮箱重复
 	UsrPasswordErr    = NewException(1005, "用户密码错误")
 	UsrLoginInvalid   = NewException(1006, "用户登录无效")
+	UsrTokenInvalid   = NewException(1007, "用户令牌无效")
 
 	ApiNoFormFile       = NewException(4001, "无文件字段")
 	ApiFileTooLarge     = NewException(4002, "上传文件过大")
@@ -24,6 +25,8 @@ var (
 	SysPwdHashFailed       = NewException(5003, "内部异常: 密码加密失败")  //暂且留着
 	SysCannotUpdate        = NewException(5004, "内部异常: 无法更新数据库") //暂且留着
 	SysCannotReadDB        = NewException(5005, "内部异常: 无法读取数据库")
+	SysCannotGetSiteInfo   = NewException(5006, "内部异常: 无法获取站点信息")
+	SysCannotLoadRssFile   = NewException(5007, "内部异常: 无法加载RSS文件")
 
 	FileCannotSaveUploaded = NewException(6001, "文件系统错误: 无法保存上传的文件")
 )
