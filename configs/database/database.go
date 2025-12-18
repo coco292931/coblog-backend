@@ -98,6 +98,8 @@ func autoMigrate(db *gorm.DB) error {
 		&models.AccountInfo{},
 		&models.Post{},
 		&models.Comments{},
+		&models.SiteInfo{},
+		//&models.PermissionGroup{},  //应该按dao里的模型配置
 		// 如果有其他模型，在这里继续添加
 	)
 }

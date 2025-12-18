@@ -5,11 +5,11 @@ import (
 	"time"
 )
 
-func GetSiteInfo() models.SiteInfo {
+func GetSiteInfo() (models.SiteInfo, error) {
 	// 这里是模拟数据，实际应用中应从数据库或其他数据源获取
 	uptimeTime, _ := time.Parse(time.RFC3339, "2024-01-01T00:00:00Z")
 	startedTime, _ := time.Parse(time.RFC3339, "2025-12-20T00:00:00Z")
-	
+
 	siteInfo := models.SiteInfo{
 		Articles:    "1234",
 		Words:       "567890",
@@ -18,5 +18,6 @@ func GetSiteInfo() models.SiteInfo {
 		Uptime:      uptimeTime,
 		StartedTime: startedTime,
 	}
-	return siteInfo
+	
+	return siteInfo,nil
 }

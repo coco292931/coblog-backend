@@ -28,6 +28,7 @@ func Auth(c *gin.Context) {
 		return
 	}
 	fmt.Println("鉴权成功")
+	//fmt.Println("用户ID:", uid, "权限组ID:", pgid)
 	c.Set("AccountID", uid)
 	c.Set("PermissionGroupID", pgid)
 	c.Next()
