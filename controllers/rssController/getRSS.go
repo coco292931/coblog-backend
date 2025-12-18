@@ -2,7 +2,7 @@ package rssController
 
 import (
 	"coblog-backend/common/exception"
-	"coblog-backend/services/SSRService"
+	"coblog-backend/services/ssrService"
 	"coblog-backend/services/userService"
 	"fmt"
 
@@ -37,10 +37,10 @@ func returnRss(c *gin.Context, status string) {
 	var err error
 	if status == "def" {
 		//默认RSS
-		content, err = SSRService.GetDefRSS(c)
+		content, err = ssrService.GetDefRSS(c)
 	} else if status == "deep" {
 		//深度RSS
-		content, err = SSRService.GetDeepRSS(c)
+		content, err = ssrService.GetDeepRSS(c)
 	} else {
 		fmt.Println("status不准确！")
 		c.Error(exception.SysUknExc)
