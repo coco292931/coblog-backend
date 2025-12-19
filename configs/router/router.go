@@ -31,29 +31,31 @@ func InitEngine() *gin.Engine {
 	// CORS配置 - 必须在所有路由之前配置
 	corsConfig := cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			// 允许 localhost 的所有端口
-			if len(origin) >= 16 && origin[:16] == "http://localhost" {
-				return true
-			}
-			if len(origin) >= 17 && origin[:17] == "https://localhost" {
-				return true
-			}
-			// 允许 127.0.0.1 的所有端口
-			if len(origin) >= 14 && origin[:14] == "http://127.0.0" {
-				return true
-			}
-			// 允许 192.168.*.* 的所有端口
-			if len(origin) >= 12 && origin[:12] == "http://192.168" {
-				return true
-			}
-			// 允许所有 coco-29.wang 的子域名（包括根域名）
-			if len(origin) >= 19 && origin[len(origin)-14:] == "coco-29.wang" {
-				return true
-			}
-			if len(origin) >= 20 && origin[len(origin)-15:] == ".coco-29.wang" {
-				return true
-			}
-			return false
+			/*
+				// 允许 localhost 的所有端口
+				if len(origin) >= 16 && origin[:16] == "http://localhost" {
+					return true
+				}
+				if len(origin) >= 17 && origin[:17] == "https://localhost" {
+					return true
+				}
+				// 允许 127.0.0.1 的所有端口
+				if len(origin) >= 14 && origin[:14] == "http://127.0.0" {
+					return true
+				}
+				// 允许 192.168.*.* 的所有端口
+				if len(origin) >= 12 && origin[:12] == "http://192.168" {
+					return true
+				}
+				// 允许所有 coco-29.wang 的子域名（包括根域名）
+				if len(origin) >= 19 && origin[len(origin)-14:] == "coco-29.wang" {
+					return true
+				}
+				if len(origin) >= 20 && origin[len(origin)-15:] == ".coco-29.wang" {
+					return true
+				}
+				return false*/
+			return true // 允许所有来源，生产环境请根据实际情况调整
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
