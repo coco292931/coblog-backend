@@ -17,7 +17,6 @@ import (
 type passwordLoginForm struct {
 	Account  string `json:"account" binding:"required"` //返回的姓名或id
 	Password string `json:"password" binding:"required"`
-	Remember bool   `json:"rememberMe" binding:"required"` //记住我
 }
 
 // AuthByPassword 通过密码认证

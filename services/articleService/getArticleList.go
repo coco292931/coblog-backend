@@ -45,7 +45,7 @@ func GetArticleList(status string, requestParams RequestParams) (*ArticleListRes
 	// 根据 q 搜索关键词（在标题或内容中搜索）
 	if requestParams.Q != "" {
 		query = query.Where("title LIKE ? OR content LIKE ? OR subtitle LIKE ? OR summary LIKE ?",
-		 "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%")
+			"%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%")
 	}
 
 	// 获取总数
@@ -73,6 +73,10 @@ func GetArticleList(status string, requestParams RequestParams) (*ArticleListRes
 		return nil, err
 	}
 
+	//删去 content 字段，节省带宽
+	for i := range articles {
+		articles[i].Content = ""
+	}
 	// 构建响应
 	response := &ArticleListResponse{
 		Articles: articles,
