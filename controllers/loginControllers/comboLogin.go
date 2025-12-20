@@ -34,15 +34,15 @@ func AuthByCombo(c *gin.Context) {
 	//matched, _ := regexp.MatchString(`^\d+$`, postForm.Account) 正则,已弃用
 	//_, err = strconv.ParseUint(postForm.Account, 10, 64)
 	//if err != nil {
-		// Convert id string to uint64
+	// Convert id string to uint64
 
-		// if err != nil {
-		// 	c.Error(exception.ApiParamError)
-		// 	return
-		// }
+	// if err != nil {
+	// 	c.Error(exception.ApiParamError)
+	// 	return
+	// }
 
-		fmt.Println("邮箱登录:", postForm.Account)
-		user, userErr = userService.GetUserByEmail(postForm.Account) //从数据库获取用户信息,判断用户存在
+	fmt.Println("邮箱登录:", postForm.Account)
+	user, userErr = userService.GetUserByEmail(postForm.Account) //从数据库获取用户信息,判断用户存在
 	//}
 
 	if errors.Is(userErr, gorm.ErrRecordNotFound) {
@@ -73,7 +73,7 @@ func AuthByCombo(c *gin.Context) {
 	}
 	//TODO:解决秘钥签名错误的问题
 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
-		"token":    webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, 100000000),//194年
+		"token":    webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, 100000000), //194年
 		"userID":   accountInfo.ID,
 		"username": accountInfo.UserName,
 		"userType": strconv.FormatUint(uint64(accountInfo.PermGroupID), 10),
