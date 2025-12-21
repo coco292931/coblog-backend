@@ -1,8 +1,8 @@
 package webtoken
 
 import (
-	configreader "coblog-backend/configs/configReader"
 	"bytes"
+	configreader "coblog-backend/configs/configReader"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
@@ -20,6 +20,7 @@ var readKeyOnce sync.Once
 ** ######## #### ######## #### ########################
 ** 0-------8----12-------20---24----------------------48
 ** 用户ID--权限组--过期时间-预留-24字节签名
+** TODO预留位改为token版本号
 ** 签名方式: SHA256(Metadata(即前24位字节)+Key(48字节))取前24字节
 ** 全部占据48字节, 转换到base64刚好64字符
 */
@@ -50,8 +51,7 @@ func GenerateWt(uid uint64, permGroupID uint32, validSecs uint64) string {
 	return base64.RawURLEncoding.EncodeToString(tokenResult[:])
 }
 
-
-//TODO:使用redis对token做废除机制
+// TODO:使用redis对token做废除机制
 // Verify 校验 token，返回载荷与是否有效
 func VerifyWt(webtoken string) (isValid bool) {
 
@@ -81,7 +81,6 @@ func VerifyWt(webtoken string) (isValid bool) {
 	log.Printf("[INFO][wtService] A token verified. It will expire in %vsec", int64(validBefore)-time.Now().Unix())
 	return true
 }
-
 
 func GetWtPayload(webtoken string) (uid uint64, permGroupID uint32, err error) {
 	tokdec, err := base64.RawURLEncoding.DecodeString(webtoken)

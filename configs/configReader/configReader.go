@@ -39,10 +39,15 @@ type FileObjectCfg struct {
 	LargeFileSize int    `mapstructure:"large_file_size"`
 }
 
+type AccountCfg struct {
+	ValidSecs uint64 `mapstructure:"valid_secs"`
+}
+
 type InternalAppCfg struct {
 	Database       DatabaseCfg   `mapstructure:"database"`
 	FileObject     FileObjectCfg `mapstructure:"fileobject"`
 	WebtokenSigkey string        `mapstructure:"webtoken_sigkey"`
+	Account        AccountCfg    `mapstructure:"account"`
 }
 
 // Get 并发安全返回最新配置，这是configReader的唯一对外接口
