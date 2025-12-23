@@ -44,8 +44,8 @@ func GetArticleList(status string, requestParams RequestParams) (*ArticleListRes
 	}
 	// 根据 q 搜索关键词（在标题或内容中搜索）
 	if requestParams.Q != "" {
-		query = query.Where("title LIKE ? OR content LIKE ? OR subtitle LIKE ? OR summary LIKE ?",
-			"%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%")
+		query = query.Where("title LIKE ? OR subtitle LIKE ? OR content LIKE ? OR summary LIKE ? OR category LIKE ? OR tags LIKE ?",
+			"%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%")
 	}
 
 	// 获取总数
