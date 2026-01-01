@@ -3,7 +3,18 @@ package articleService
 import (
 	"coblog-backend/configs/database"
 	"coblog-backend/models"
+	"strings"
 )
+
+// EscapeLike 转义LIKE查询中的特殊字符，防止通配符注入和性能攻击
+func EscapeLike(s string) string {
+	// 先转义反斜杠（必须最先处理）
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	// 转义 SQL LIKE 的特殊字符 % 和 _
+	s = strings.ReplaceAll(s, "%", "\\%")
+	s = strings.ReplaceAll(s, "_", "\\_")
+	return s
+}
 
 type RequestParams struct {
 	Page     uint64 `form:"page"`
@@ -34,18 +45,31 @@ func GetArticleList(status string, requestParams RequestParams) (*ArticleListRes
 
 	// 根据 category 筛选（JSON 数组包含查询）
 	if requestParams.Category != "" {
-		// SQL Server 使用 JSON_VALUE 或 LIKE 查询 JSON 数组
-		query = query.Where("category LIKE ?", "%\""+requestParams.Category+"\"%")
+		// 转义特殊字符防止LIKE注入
+		escapedCategory := EscapeLike(requestParams.Category)
+		// MySQL 使用 LIKE 查询 JSON 数组（默认用反斜杠转义）
+		query = query.Where("category LIKE ?", "%\""+escapedCategory+"\"%")
 	}
 
 	// 根据 tag 筛选（JSON 数组包含查询）
 	if requestParams.Tag != "" {
-		query = query.Where("tags LIKE ?", "%\""+requestParams.Tag+"\"%")
+		// 转义特殊字符防止LIKE注入
+		escapedTag := EscapeLike(requestParams.Tag)
+		query = query.Where("tags LIKE ?", "%\""+escapedTag+"\"%")
 	}
+
 	// 根据 q 搜索关键词（在标题或内容中搜索）
 	if requestParams.Q != "" {
+		// 限制搜索关键词长度，防止超长查询攻击
+		if len(requestParams.Q) > 100 {
+			return nil, nil // 或返回特定错误
+		}
+		// 转义特殊字符防止LIKE注入和性能DoS攻击
+		escapedQ := EscapeLike(requestParams.Q)
+		searchPattern := "%" + escapedQ + "%"
+		// MySQL 默认用反斜杠转义，不需要 ESCAPE 子句
 		query = query.Where("title LIKE ? OR subtitle LIKE ? OR content LIKE ? OR summary LIKE ? OR category LIKE ? OR tags LIKE ?",
-			"%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%", "%"+requestParams.Q+"%")
+			searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern)
 	}
 
 	// 获取总数
