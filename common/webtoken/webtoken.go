@@ -83,6 +83,7 @@ func VerifyWt(webtoken string) (isValid bool) {
 }
 
 func GetWtPayload(webtoken string) (uid uint64, permGroupID uint32, err error) {
+	//这里只做数据头的获取, 使用前必须先使用VerifyWt校验有效性
 	tokdec, err := base64.RawURLEncoding.DecodeString(webtoken)
 	if err != nil || len(tokdec) != 48 {
 		return 0, 0, err

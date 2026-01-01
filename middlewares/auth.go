@@ -37,26 +37,24 @@ func Auth(c *gin.Context) {
 
 func LooseAuth(c *gin.Context) { //松校验，针对无登录的文章访问情况，为了深度返回账户和权限
 	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		fmt.Println("松鉴权失败: 未登录，已放行")
-		c.Set("AccountID", uint64(0))
-		c.Set("PermissionGroupID", uint64(0))
-		c.Next()
-		return
+
+	// 默认设置为未登录状态
+	//c.Set("IsAuthenticated", false)
+	c.Set("AccountID", uint64(0))
+	c.Set("PermissionGroupID", uint64(0))
+
+	// 如果有token且验证通过，才设置真实信息
+	if authHeader != "" && webtoken.VerifyWt(authHeader) {
+		uid, pgid, err := webtoken.GetWtPayload(authHeader)
+		if err == nil {
+			fmt.Println("松鉴权成功")
+			//c.Set("IsAuthenticated", true)
+			c.Set("AccountID", uid)
+			c.Set("PermissionGroupID", pgid)
+		}
+	}else {
+		fmt.Println("松鉴权失败: 用户登录无效，已放行")
 	}
-	if !webtoken.VerifyWt(authHeader) {
-		c.Error(exception.UsrLoginInvalid)
-		c.Abort()
-		return
-	}
-	uid, pgid, err := webtoken.GetWtPayload(authHeader)
-	if err != nil {
-		c.Error(exception.UsrLoginInvalid)
-		c.Abort()
-		return
-	}
-	fmt.Println("松鉴权成功")
-	c.Set("AccountID", uid)
-	c.Set("PermissionGroupID", pgid)
+
 	c.Next()
 }

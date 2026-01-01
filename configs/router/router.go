@@ -55,7 +55,7 @@ func InitEngine() *gin.Engine {
 					return true
 				}
 				return false*/
-			return true // 允许所有来源，生产环境请根据实际情况调整
+			return true // 允许所有来源
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},

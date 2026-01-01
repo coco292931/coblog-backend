@@ -21,6 +21,7 @@ func GetArticleList(c *gin.Context) {
 		fmt.Println("参数错误:", err)
 		return
 	}
+	fmt.Println(requestForm.Q)
 
 	accountId, err := accountControllers.GetAccountIDFromContext(c)
 	if err != nil {
