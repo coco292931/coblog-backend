@@ -4,6 +4,7 @@ import (
 	"coblog-backend/common/permission"
 	middleware "coblog-backend/middlewares"
 	"fmt"
+	"strings"
 
 	"coblog-backend/controllers/accountControllers"
 	"coblog-backend/controllers/articlesControllers"
@@ -31,37 +32,65 @@ func InitEngine() *gin.Engine {
 	// CORS配置 - 必须在所有路由之前配置
 	corsConfig := cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			/*
-				// 允许 localhost 的所有端口
-				if len(origin) >= 16 && origin[:16] == "http://localhost" {
+			// 开发环境：允许 localhost 的所有端口
+			if strings.HasPrefix(origin, "http://localhost") ||
+				strings.HasPrefix(origin, "https://localhost") {
+				return true
+			}
+			// 开发环境：允许 127.0.0.1 的所有端口
+			if strings.HasPrefix(origin, "http://127.0.0.1") ||
+				strings.HasPrefix(origin, "https://127.0.0.1") {
+				return true
+			}
+			// 开发环境：允许局域网 192.168.*.* 的所有端口
+			if strings.HasPrefix(origin, "http://192.168.") ||
+				strings.HasPrefix(origin, "https://192.168.") {
+				return true
+			}
+
+			// 生产环境：允许你的域名 coco-29.wang 及其所有子域名
+			if origin == "http://coco-29.wang" ||
+				origin == "https://coco-29.wang" ||
+				strings.HasSuffix(origin, ".coco-29.wang") {// && strings.HasPrefix(origin, "https://") { 强制使用HTTPS
+				return true
+			}
+
+			// 可选：添加其他允许的域名
+			allowedOrigins := []string{
+				// "https://blog.example.com",
+			}
+			for _, allowed := range allowedOrigins {
+				if origin == allowed {
 					return true
 				}
-				if len(origin) >= 17 && origin[:17] == "https://localhost" {
-					return true
-				}
-				// 允许 127.0.0.1 的所有端口
-				if len(origin) >= 14 && origin[:14] == "http://127.0.0" {
-					return true
-				}
-				// 允许 192.168.*.* 的所有端口
-				if len(origin) >= 12 && origin[:12] == "http://192.168" {
-					return true
-				}
-				// 允许所有 coco-29.wang 的子域名（包括根域名）
-				if len(origin) >= 19 && origin[len(origin)-14:] == "coco-29.wang" {
-					return true
-				}
-				if len(origin) >= 20 && origin[len(origin)-15:] == ".coco-29.wang" {
-					return true
-				}
-				return false*/
-			return true // 允许所有来源
+			}
+
+			// 其他来源拒绝
+			return false
 		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
-		ExposeHeaders:    []string{"Content-Length", "Content-Type"},
-		AllowCredentials: true, // 指定域名时可以开启
-		MaxAge:           12 * 3600,
+		AllowMethods: []string{
+			"GET",
+			"POST",
+			"PUT",
+			"DELETE",
+			"OPTIONS",
+			"PATCH",
+		},
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Type",
+			"Authorization",
+			"Accept",
+			"X-Requested-With",
+			"Content-Length",
+		},
+		ExposeHeaders: []string{
+			"Content-Length",
+			"Content-Type",
+			"Authorization",
+		},
+		AllowCredentials: true,      // 允许携带cookie和Authorization
+		MaxAge:           12 * 3600, // 预检请求缓存12小时
 	}
 	ginEngine.Use(cors.New(corsConfig))
 
