@@ -6,6 +6,7 @@ import (
 	"coblog-backend/services/articleService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -45,8 +46,20 @@ func GetArticleList(c *gin.Context) {
 	// 已登录用户，检查深度权限
 	accountInfo, err := userService.GetUserByID(accountId)
 	if err != nil {
-		fmt.Println("获取用户信息失败")
-		c.Error(exception.SysUknExc)
+		fmt.Println("获取用户信息出错")
+		if errors.Is(err, exception.SysCannotReadDB) {
+			c.Error(exception.SysCannotReadDB)
+			return
+		}
+		data, err = articleService.GetArticleList("def", requestForm)
+		if errors.Is(err, exception.UsrNotPermitted) {
+			c.Error(exception.UsrNotPermitted)
+			return
+		} else if err != nil {
+			c.Error(exception.SysCannotGetArticle)
+			return
+		}
+		utils.JsonSuccessResponse(c, "获取成功", data)
 		return
 	}
 
