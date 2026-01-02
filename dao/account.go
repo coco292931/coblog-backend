@@ -29,17 +29,13 @@ func UpdateAccountAvatar(accountID uint64, fileName string) error {
 }
 
 func GetAccountInfoByID(accountID uint64) (*models.AccountInfo, error) {
-	var accountInfo []models.AccountInfo
-	err := database.DataBase.Where("id = ?", accountID).Find(&accountInfo).Error
+	var accountInfo models.AccountInfo
+	err := database.DataBase.Where("id = ?", accountID).First(&accountInfo).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, exception.UsrNotExisted
 		}
 		return nil, exception.SysCannotReadDB
 	}
-	if len(accountInfo) > 1 {
-		// 一般情况下不可能出现，出现了数据库包有问题的情况
-		panic("[!][FATAL][DAO/Account] 查询用户时返回了多于一行记录，请检查数据库完整性")
-	}
-	return &accountInfo[0], nil
+	return &accountInfo, nil
 }
