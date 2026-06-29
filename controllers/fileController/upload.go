@@ -1,6 +1,7 @@
 package fileController
 
 import (
+	"bytes"
 	"coblog-backend/common/exception"
 	"coblog-backend/controllers/accountControllers"
 	"coblog-backend/services/fileService"
@@ -9,15 +10,11 @@ import (
 	"io"
 	"log"
 	"mime/multipart"
-
-	//"crypto/md5" hash算法库 <<< 请使用sha256!(MucheXD)
+	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
-
-// UploadFile 处理单文件上传  POST /upload
-
-// var initOnce sync.Once
 
 func UpdateAvatar(c *gin.Context) {
 	fileHeader, err := c.FormFile("file")
@@ -25,12 +22,13 @@ func UpdateAvatar(c *gin.Context) {
 		c.Error(exception.ApiNoFormFile)
 		return
 	}
-	if fileHeader.Size > int64(1024090) { // 对头像文件限制 1Mib
+	if fileHeader.Size > int64(1024090) { // 头像限制 1 MiB
 		c.Error(exception.ApiFileTooLarge)
+		return
 	}
-	fileHandler, err := getFileHandler(fileHeader)
+	data, _, err := readFileData(fileHeader)
 	if err != nil {
-		c.Error(err) // 由于 getFileHandler 也使用统一错误，因此可以直接返回
+		c.Error(err)
 		return
 	}
 	accountID, err := accountControllers.GetAccountIDFromContext(c)
@@ -38,7 +36,11 @@ func UpdateAvatar(c *gin.Context) {
 		c.Error(err)
 		return
 	}
-	userService.UploadAvatar(accountID, fileHandler)
+	if err := userService.UploadAvatar(accountID, toReader(data)); err != nil {
+		c.Error(err)
+		return
+	}
+	utils.JsonSuccessResponse(c, "上传成功", nil)
 }
 
 func UploadImage(c *gin.Context) {
@@ -47,37 +49,53 @@ func UploadImage(c *gin.Context) {
 		c.Error(exception.ApiNoFormFile)
 		return
 	}
-	if fileHeader.Size > int64(10240000) { // 对文件限制 10Mib
+	if fileHeader.Size > int64(10240000) { // 图片限制 10 MiB
 		c.Error(exception.ApiFileTooLarge)
-	}
-	fileHandler, err := getFileHandler(fileHeader)
-	if err != nil {
-		c.Error(err) // 由于 getFileHandler 也使用统一错误，因此可以直接返回
 		return
 	}
-	//TODO
-	fileName, err := fileService.SaveUploadedFile(&fileHandler)
+	data, ext, err := readFileData(fileHeader)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	result, err := fileService.SaveImageWithCompression(data, ext)
 	if err != nil {
 		log.Printf("[ERROR][FileSvc] 不能保存图片 %v", err)
-		c.Error(exception.ApiFileNotSaved) // 转换成统一错误返回，原error信息丢失
+		c.Error(exception.ApiFileNotSaved)
 		return
 	}
-	utils.JsonSuccessResponse(c, "上传成功", gin.H{
-		"imageId": fileName,
-		"url":     "/static/uploads/" + fileName,
-	})
 
-}
-
-func getFileHandler(fileHeader *multipart.FileHeader) (io.Reader, error) {
-	// initOnce.Do(initFileController)
-	// 打开文件
-	fileHandler, err := fileHeader.Open()
-	if err != nil {
-		return nil, exception.ApiFileCannotOpen
+	// 优先返回压缩图 URL；无压缩图时返回原图
+	serveURL := "/static/uploads/" + result.OriginalName
+	if result.CompressedName != "" {
+		serveURL = "/static/uploads/" + result.CompressedName
 	}
 
-	defer fileHandler.Close() // 返回时关闭文件
+	utils.JsonSuccessResponse(c, "上传成功", gin.H{
+		"imageId":       result.OriginalName,
+		"url":           serveURL,
+		"original_url":  "/static/uploads/" + result.OriginalName,
+	})
+}
 
-	return fileHandler, nil
+// readFileData 读取 multipart 文件的全部字节并返回小写扩展名
+func readFileData(fileHeader *multipart.FileHeader) ([]byte, string, error) {
+	f, err := fileHeader.Open()
+	if err != nil {
+		return nil, "", exception.ApiFileCannotOpen
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, "", exception.ApiFileCannotOpen
+	}
+
+	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
+	return data, ext, nil
+}
+
+func toReader(data []byte) io.Reader {
+	return bytes.NewReader(data)
 }
