@@ -511,7 +511,7 @@ docker run -d \
 
 ## 📮 联系方式
 
-- 项目主页: coco@coco-29.wang
+- E-mail: coco@coco-29.wang
 - 问题反馈: [GitHub Issues]
 
 ---

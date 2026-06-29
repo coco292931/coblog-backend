@@ -10,6 +10,7 @@ import (
 	"coblog-backend/controllers/articlesControllers"
 	"coblog-backend/controllers/fileController"
 	"coblog-backend/controllers/loginControllers"
+	"coblog-backend/controllers/markdownController"
 	"coblog-backend/controllers/registerControllers"
 	"coblog-backend/controllers/rssController"
 	"coblog-backend/controllers/siteInfoController"
@@ -51,7 +52,7 @@ func InitEngine() *gin.Engine {
 			// 生产环境：允许你的域名 coco-29.wang 及其所有子域名
 			if origin == "http://coco-29.wang" ||
 				origin == "https://coco-29.wang" ||
-				strings.HasSuffix(origin, ".coco-29.wang") {// && strings.HasPrefix(origin, "https://") { 强制使用HTTPS
+				strings.HasSuffix(origin, ".coco-29.wang") { // && strings.HasPrefix(origin, "https://") { 强制使用HTTPS
 				return true
 			}
 
@@ -114,9 +115,15 @@ func InitEngine() *gin.Engine {
 		auth.GET("/login/combo", SayHello)
 
 		auth.POST("/login/email", loginControllers.AuthByEmail)
-		auth.POST("/login/email/verify/", loginControllers.AuthByEmail) //发送验证码
 
 		auth.POST("/register", registerControllers.CreateNormalUser)
+
+		// 发送邮箱验证码（注册 / 找回密码），purpose 区分用途
+		auth.POST("/code/send", loginControllers.SendCode)
+		// 通过邮箱验证码重置密码（找回密码，无需登录）
+		auth.POST("/pwd/reset", loginControllers.ResetPwdByEmail)
+		// 邮件激活账户
+		auth.GET("/activate", loginControllers.ActivateAccount)
 	}
 
 	//上传图片这一块,暂时和文件共用权限
@@ -146,6 +153,23 @@ func InitEngine() *gin.Engine {
 		articlesControllers.GetArticleList) //文章列表
 	ginEngine.GET("/api/articles/:id", middleware.UnifiedErrorHandler(), middleware.LooseAuth,
 		articlesControllers.GetArticleContent) //文章页面
+	ginEngine.POST("/api/articles", middleware.UnifiedErrorHandler(), middleware.Auth,
+		middleware.NeedPerm(permission.Perm_PostPost),
+		articlesControllers.CreateArticle) //发布文章
+	ginEngine.PUT("/api/articles/:id", middleware.UnifiedErrorHandler(), middleware.Auth,
+		middleware.NeedPerm(permission.Perm_PostPost),
+		articlesControllers.UpdateArticle) //修改文章
+	ginEngine.DELETE("/api/articles/:id", middleware.UnifiedErrorHandler(), middleware.Auth,
+		middleware.NeedPerm(permission.Perm_PostPost),
+		articlesControllers.DeleteArticle) //删除文章
+	ginEngine.GET("/api/articles/:id/edit", middleware.UnifiedErrorHandler(), middleware.Auth,
+		middleware.NeedPerm(permission.Perm_PostPost),
+		articlesControllers.GetArticleForEdit) //获取文章原文(含md)供编辑回填
+
+	//Markdown 渲染预览（需登录且有发帖权限）
+	ginEngine.POST("/api/markdown/render", middleware.UnifiedErrorHandler(), middleware.Auth,
+		middleware.NeedPerm(permission.Perm_PostPost),
+		markdownController.MarkdownToHTMLHandler) //Markdown转HTML预览
 
 	//站点信息
 	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(),
@@ -154,7 +178,7 @@ func InitEngine() *gin.Engine {
 
 	ginEngine.GET("/api/rss", middleware.UnifiedErrorHandler(),
 		middleware.LooseAuth,
-		rssController.GetRSS) //RSS订阅
+		rssController.GenerateRSSHandler) //RSS订阅
 
 	//管理员相关
 	//获取用户列表
