@@ -1,11 +1,17 @@
 package accountControllers
 
 import (
+	"coblog-backend/common/exception"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
+
+type changePwdForm struct {
+	OldPassword string `json:"oldPassword" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required"`
+}
 
 func ChangePwd(c *gin.Context) {
 	accountID, err := GetAccountIDFromContext(c)
@@ -14,9 +20,13 @@ func ChangePwd(c *gin.Context) {
 		return
 	}
 
-	//var err error
-	err = userService.ChangePwd(accountID, c.PostForm("oldPassword"), c.PostForm("newPassword"))
-	if err != nil {
+	var form changePwdForm
+	if err := c.ShouldBindJSON(&form); err != nil {
+		c.Error(exception.ApiParamError)
+		return
+	}
+
+	if err := userService.ChangePwd(accountID, form.OldPassword, form.NewPassword); err != nil {
 		c.Error(err)
 		return
 	}
