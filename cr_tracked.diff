@@ -1,0 +1,1342 @@
+diff --git a/README.md b/README.md
+index 83124ec..48ae888 100644
+--- a/README.md
++++ b/README.md
+@@ -511,7 +511,7 @@ docker run -d \
+ 
+ ## 📮 联系方式
+ 
+-- 项目主页: coco@coco-29.wang
++- E-mail: coco@coco-29.wang
+ - 问题反馈: [GitHub Issues]
+ 
+ ---
+diff --git a/common/exception/exceptionCodes.go b/common/exception/exceptionCodes.go
+index a2a1dde..d2ac62a 100644
+--- a/common/exception/exceptionCodes.go
++++ b/common/exception/exceptionCodes.go
+@@ -11,6 +11,9 @@ var (
+ 	UsrPasswordErr    = NewException(1005, "用户密码错误")
+ 	UsrLoginInvalid   = NewException(1006, "用户登录无效")
+ 	UsrTokenInvalid   = NewException(1007, "用户令牌无效")
++	UsrCodeInvalid    = NewException(1008, "验证码错误或已过期")
++	UsrCodeTooFreq    = NewException(1009, "验证码发送过于频繁，请稍后再试")
++	UsrNotActivated   = NewException(1010, "账户未激活，激活邮件已重新发送")
+ 
+ 	ApiNoFormFile       = NewException(4001, "无文件字段")
+ 	ApiFileTooLarge     = NewException(4002, "上传文件过大")
+@@ -28,6 +31,8 @@ var (
+ 	SysCannotGetSiteInfo   = NewException(5006, "内部异常: 无法获取站点信息")
+ 	SysCannotLoadRssFile   = NewException(5007, "内部异常: 无法加载RSS文件")
+ 	SysCannotGetArticle    = NewException(5008, "内部异常: 无法获取文章")
++	SysCannotSaveArticle   = NewException(5009, "内部异常: 无法保存文章")
++	SysCannotSendMail      = NewException(5010, "内部异常: 邮件发送失败")
+ 
+ 	FileCannotSaveUploaded = NewException(6001, "文件系统错误: 无法保存上传的文件")
+ )
+diff --git a/configs/configReader/configReader.go b/configs/configReader/configReader.go
+index f5811ad..1783dc8 100644
+--- a/configs/configReader/configReader.go
++++ b/configs/configReader/configReader.go
+@@ -35,19 +35,43 @@ type DatabaseCfg struct {
+ }
+ 
+ type FileObjectCfg struct {
+-	Dir           string `mapstructure:"dir"`
+-	LargeFileSize int    `mapstructure:"large_file_size"`
++	Dir              string `mapstructure:"dir"`
++	LargeFileSize    int    `mapstructure:"large_file_size"`
++	CompressThreshold int64 `mapstructure:"compress_threshold"` // 超过此字节数时压缩，0 表示始终压缩
++	CompressMaxWidth  int   `mapstructure:"compress_max_width"`  // 压缩后最大宽度（像素），0 表示不限制宽度
++	CompressQuality   int   `mapstructure:"compress_quality"`    // JPEG 压缩质量 1-100，0 使用默认值 80
+ }
+ 
+ type AccountCfg struct {
+ 	ValidSecs uint64 `mapstructure:"valid_secs"`
+ }
+ 
++type SiteCfg struct {
++	BaseURL     string `mapstructure:"base_url"`    // 站点前端地址，用于拼接文章链接，如 https://coco-29.wang
++	Title       string `mapstructure:"title"`       // 站点标题
++	Description string `mapstructure:"description"` // 站点描述
++	Author      string `mapstructure:"author"`      // 作者名
++	Email       string `mapstructure:"email"`       // 作者邮箱
++	RSSMaxItems int    `mapstructure:"rss_max_items"` // RSS 最多输出条数，0 表示使用默认值
++}
++
++// SMTPCfg 邮件发送配置，用于注册/找回密码等验证码邮件
++type SMTPCfg struct {
++	Host     string `mapstructure:"host"`      // SMTP 服务器地址，如 smtp.qq.com
++	Port     int    `mapstructure:"port"`      // SMTP 端口，常见 465(SSL) / 587(STARTTLS) / 25
++	Username string `mapstructure:"username"`  // 登录用户名（通常是发件邮箱）
++	Password string `mapstructure:"password"`  // 授权码 / 密码
++	From     string `mapstructure:"from"`      // 发件人地址，留空时使用 username
++	FromName string `mapstructure:"from_name"` // 发件人显示名称
++}
++
+ type InternalAppCfg struct {
+ 	Database       DatabaseCfg   `mapstructure:"database"`
+ 	FileObject     FileObjectCfg `mapstructure:"fileobject"`
+ 	WebtokenSigkey string        `mapstructure:"webtoken_sigkey"`
+ 	Account        AccountCfg    `mapstructure:"account"`
++	Site           SiteCfg       `mapstructure:"site"`
++	SMTP           SMTPCfg       `mapstructure:"smtp"`
+ }
+ 
+ // Get 并发安全返回最新配置，这是configReader的唯一对外接口
+diff --git a/configs/configs/appConfigs_example.yaml b/configs/configs/appConfigs_example.yaml
+index a20a5da..75883e3 100644
+--- a/configs/configs/appConfigs_example.yaml
++++ b/configs/configs/appConfigs_example.yaml
+@@ -11,4 +11,25 @@ account:
+   valid_secs: 2592000  # 30天，单位秒
+ 
+ fileobjects:
+-  dir: D:/JHET_TESTONLY
+\ No newline at end of file
++  dir: D:/JHET_TESTONLY
++  compress_threshold: 524288   # 超过 512 KiB 时自动压缩，0 表示始终压缩
++  compress_max_width: 1920     # 压缩后最大宽度（像素），超宽等比缩小，0 表示不限宽
++  compress_quality: 80         # JPEG 输出质量 1-100
++
++# 站点信息，用于 RSS 生成等
++site:
++  base_url: https://coco-29.wang      # 前端站点地址，用于拼接文章链接
++  title: coco的避风港                  # 站点标题
++  description: coco的个人博客           # 站点描述
++  author: coco                        # 作者名
++  email: coco@coco-29.wang            # 作者邮箱
++  rss_max_items: 30                   # RSS 最多输出条数
++
++# SMTP 邮件发送配置（用于激活账户、找回密码等）
++smtp:
++  host: smtp.qq.com            # SMTP 服务器地址，如 smtp.qq.com / smtp.163.com / smtp.gmail.com
++  port: 465                    # 465=隐式TLS，587=STARTTLS，25=明文
++  username: your@qq.com        # 发件邮箱 / 登录名
++  password: your_auth_code     # 授权码（QQ邮箱在"账户-生成授权码"处获取，非登录密码）
++  from: your@qq.com            # 发件人地址，留空则用 username
++  from_name: coco的避风港        # 发件人显示名称
+\ No newline at end of file
+diff --git a/configs/router/router.go b/configs/router/router.go
+index 8fb8a7a..5580414 100644
+--- a/configs/router/router.go
++++ b/configs/router/router.go
+@@ -10,6 +10,7 @@ import (
+ 	"coblog-backend/controllers/articlesControllers"
+ 	"coblog-backend/controllers/fileController"
+ 	"coblog-backend/controllers/loginControllers"
++	"coblog-backend/controllers/markdownController"
+ 	"coblog-backend/controllers/registerControllers"
+ 	"coblog-backend/controllers/rssController"
+ 	"coblog-backend/controllers/siteInfoController"
+@@ -51,7 +52,7 @@ func InitEngine() *gin.Engine {
+ 			// 生产环境：允许你的域名 coco-29.wang 及其所有子域名
+ 			if origin == "http://coco-29.wang" ||
+ 				origin == "https://coco-29.wang" ||
+-				strings.HasSuffix(origin, ".coco-29.wang") {// && strings.HasPrefix(origin, "https://") { 强制使用HTTPS
++				strings.HasSuffix(origin, ".coco-29.wang") { // && strings.HasPrefix(origin, "https://") { 强制使用HTTPS
+ 				return true
+ 			}
+ 
+@@ -114,9 +115,15 @@ func InitEngine() *gin.Engine {
+ 		auth.GET("/login/combo", SayHello)
+ 
+ 		auth.POST("/login/email", loginControllers.AuthByEmail)
+-		auth.POST("/login/email/verify/", loginControllers.AuthByEmail) //发送验证码
+ 
+ 		auth.POST("/register", registerControllers.CreateNormalUser)
++
++		// 发送邮箱验证码（注册 / 找回密码），purpose 区分用途
++		auth.POST("/code/send", loginControllers.SendCode)
++		// 通过邮箱验证码重置密码（找回密码，无需登录）
++		auth.POST("/pwd/reset", loginControllers.ResetPwdByEmail)
++		// 邮件激活账户
++		auth.GET("/activate", loginControllers.ActivateAccount)
+ 	}
+ 
+ 	//上传图片这一块,暂时和文件共用权限
+@@ -146,6 +153,23 @@ func InitEngine() *gin.Engine {
+ 		articlesControllers.GetArticleList) //文章列表
+ 	ginEngine.GET("/api/articles/:id", middleware.UnifiedErrorHandler(), middleware.LooseAuth,
+ 		articlesControllers.GetArticleContent) //文章页面
++	ginEngine.POST("/api/articles", middleware.UnifiedErrorHandler(), middleware.Auth,
++		middleware.NeedPerm(permission.Perm_PostPost),
++		articlesControllers.CreateArticle) //发布文章
++	ginEngine.PUT("/api/articles/:id", middleware.UnifiedErrorHandler(), middleware.Auth,
++		middleware.NeedPerm(permission.Perm_PostPost),
++		articlesControllers.UpdateArticle) //修改文章
++	ginEngine.DELETE("/api/articles/:id", middleware.UnifiedErrorHandler(), middleware.Auth,
++		middleware.NeedPerm(permission.Perm_PostPost),
++		articlesControllers.DeleteArticle) //删除文章
++	ginEngine.GET("/api/articles/:id/edit", middleware.UnifiedErrorHandler(), middleware.Auth,
++		middleware.NeedPerm(permission.Perm_PostPost),
++		articlesControllers.GetArticleForEdit) //获取文章原文(含md)供编辑回填
++
++	//Markdown 渲染预览（需登录且有发帖权限）
++	ginEngine.POST("/api/markdown/render", middleware.UnifiedErrorHandler(), middleware.Auth,
++		middleware.NeedPerm(permission.Perm_PostPost),
++		markdownController.MarkdownToHTMLHandler) //Markdown转HTML预览
+ 
+ 	//站点信息
+ 	ginEngine.GET("/api/site/info", middleware.UnifiedErrorHandler(),
+@@ -154,7 +178,7 @@ func InitEngine() *gin.Engine {
+ 
+ 	ginEngine.GET("/api/rss", middleware.UnifiedErrorHandler(),
+ 		middleware.LooseAuth,
+-		rssController.GetRSS) //RSS订阅
++		rssController.GenerateRSSHandler) //RSS订阅
+ 
+ 	//管理员相关
+ 	//获取用户列表
+diff --git a/controllers/accountControllers/changeInfo.go b/controllers/accountControllers/changeInfo.go
+index 5dda173..e437df8 100644
+--- a/controllers/accountControllers/changeInfo.go
++++ b/controllers/accountControllers/changeInfo.go
+@@ -1,12 +1,18 @@
+ package accountControllers
+ 
+ import (
++	"coblog-backend/common/exception"
+ 	"coblog-backend/services/userService"
+ 	"coblog-backend/utils"
+ 
+ 	"github.com/gin-gonic/gin"
+ )
+ 
++type changePwdForm struct {
++	OldPassword string `json:"oldPassword" binding:"required"`
++	NewPassword string `json:"newPassword" binding:"required"`
++}
++
+ func ChangePwd(c *gin.Context) {
+ 	accountID, err := GetAccountIDFromContext(c)
+ 	if err != nil {
+@@ -14,9 +20,13 @@ func ChangePwd(c *gin.Context) {
+ 		return
+ 	}
+ 
+-	//var err error
+-	err = userService.ChangePwd(accountID, c.PostForm("oldPassword"), c.PostForm("newPassword"))
+-	if err != nil {
++	var form changePwdForm
++	if err := c.ShouldBindJSON(&form); err != nil {
++		c.Error(exception.ApiParamError)
++		return
++	}
++
++	if err := userService.ChangePwd(accountID, form.OldPassword, form.NewPassword); err != nil {
+ 		c.Error(err)
+ 		return
+ 	}
+diff --git a/controllers/fileController/upload.go b/controllers/fileController/upload.go
+index cdb0e3e..33a91c4 100644
+--- a/controllers/fileController/upload.go
++++ b/controllers/fileController/upload.go
+@@ -9,28 +9,25 @@ import (
+ 	"io"
+ 	"log"
+ 	"mime/multipart"
+-
+-	//"crypto/md5" hash算法库 <<< 请使用sha256!(MucheXD)
++	"path/filepath"
++	"strings"
+ 
+ 	"github.com/gin-gonic/gin"
+ )
+ 
+-// UploadFile 处理单文件上传  POST /upload
+-
+-// var initOnce sync.Once
+-
+ func UpdateAvatar(c *gin.Context) {
+ 	fileHeader, err := c.FormFile("file")
+ 	if err != nil {
+ 		c.Error(exception.ApiNoFormFile)
+ 		return
+ 	}
+-	if fileHeader.Size > int64(1024090) { // 对头像文件限制 1Mib
++	if fileHeader.Size > int64(1024090) { // 头像限制 1 MiB
+ 		c.Error(exception.ApiFileTooLarge)
++		return
+ 	}
+-	fileHandler, err := getFileHandler(fileHeader)
++	data, _, err := readFileData(fileHeader)
+ 	if err != nil {
+-		c.Error(err) // 由于 getFileHandler 也使用统一错误，因此可以直接返回
++		c.Error(err)
+ 		return
+ 	}
+ 	accountID, err := accountControllers.GetAccountIDFromContext(c)
+@@ -38,7 +35,7 @@ func UpdateAvatar(c *gin.Context) {
+ 		c.Error(err)
+ 		return
+ 	}
+-	userService.UploadAvatar(accountID, fileHandler)
++	userService.UploadAvatar(accountID, toReader(data))
+ }
+ 
+ func UploadImage(c *gin.Context) {
+@@ -47,37 +44,53 @@ func UploadImage(c *gin.Context) {
+ 		c.Error(exception.ApiNoFormFile)
+ 		return
+ 	}
+-	if fileHeader.Size > int64(10240000) { // 对文件限制 10Mib
++	if fileHeader.Size > int64(10240000) { // 图片限制 10 MiB
+ 		c.Error(exception.ApiFileTooLarge)
++		return
+ 	}
+-	fileHandler, err := getFileHandler(fileHeader)
++	data, ext, err := readFileData(fileHeader)
+ 	if err != nil {
+-		c.Error(err) // 由于 getFileHandler 也使用统一错误，因此可以直接返回
++		c.Error(err)
+ 		return
+ 	}
+-	//TODO
+-	fileName, err := fileService.SaveUploadedFile(&fileHandler)
++
++	result, err := fileService.SaveImageWithCompression(data, ext)
+ 	if err != nil {
+ 		log.Printf("[ERROR][FileSvc] 不能保存图片 %v", err)
+-		c.Error(exception.ApiFileNotSaved) // 转换成统一错误返回，原error信息丢失
++		c.Error(exception.ApiFileNotSaved)
+ 		return
+ 	}
++
++	// 优先返回压缩图 URL；无压缩图时返回原图
++	serveURL := "/static/uploads/" + result.OriginalName
++	if result.CompressedName != "" {
++		serveURL = "/static/uploads/" + result.CompressedName
++	}
++
+ 	utils.JsonSuccessResponse(c, "上传成功", gin.H{
+-		"imageId": fileName,
+-		"url":     "/static/uploads/" + fileName,
++		"imageId":       result.OriginalName,
++		"url":           serveURL,
++		"original_url":  "/static/uploads/" + result.OriginalName,
+ 	})
+-
+ }
+ 
+-func getFileHandler(fileHeader *multipart.FileHeader) (io.Reader, error) {
+-	// initOnce.Do(initFileController)
+-	// 打开文件
+-	fileHandler, err := fileHeader.Open()
++// readFileData 读取 multipart 文件的全部字节并返回小写扩展名
++func readFileData(fileHeader *multipart.FileHeader) ([]byte, string, error) {
++	f, err := fileHeader.Open()
+ 	if err != nil {
+-		return nil, exception.ApiFileCannotOpen
++		return nil, "", exception.ApiFileCannotOpen
+ 	}
++	defer f.Close()
+ 
+-	defer fileHandler.Close() // 返回时关闭文件
++	data, err := io.ReadAll(f)
++	if err != nil {
++		return nil, "", exception.ApiFileCannotOpen
++	}
++
++	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
++	return data, ext, nil
++}
+ 
+-	return fileHandler, nil
++func toReader(data []byte) io.Reader {
++	return strings.NewReader(string(data))
+ }
+diff --git a/controllers/loginControllers/comboLogin.go b/controllers/loginControllers/comboLogin.go
+index 5dab495..087e8ce 100644
+--- a/controllers/loginControllers/comboLogin.go
++++ b/controllers/loginControllers/comboLogin.go
+@@ -3,10 +3,11 @@ package loginControllers
+ import (
+ 	"coblog-backend/common/exception"
+ 	"coblog-backend/common/webtoken"
++	"coblog-backend/configs/configReader"
+ 	"coblog-backend/models"
++	"coblog-backend/services/mailService"
+ 	"coblog-backend/services/userService"
+ 	"coblog-backend/utils"
+-	"coblog-backend/configs/configReader"
+ 	"errors"
+ 	"fmt"
+ 	"strconv"
+@@ -72,6 +73,16 @@ func AuthByCombo(c *gin.Context) {
+ 		}
+ 		return
+ 	}
++
++	// 账户未激活：重新发送激活邮件，返回提示
++	if !userService.IsActivated(accountInfo) {
++		if err := mailService.SendActivationEmail(accountInfo.Email, accountInfo.Activation); err != nil {
++			fmt.Println("激活邮件发送失败:", err)
++		}
++		c.Error(exception.UsrNotActivated)
++		return
++	}
++
+ 	//TODO:解决秘钥签名错误的问题
+ 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
+ 		"token":    webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, configreader.GetConfig().Account.ValidSecs), //100000000 194年
+diff --git a/controllers/loginControllers/emailLogin.go b/controllers/loginControllers/emailLogin.go
+index c3efc8c..e6ef55d 100644
+--- a/controllers/loginControllers/emailLogin.go
++++ b/controllers/loginControllers/emailLogin.go
+@@ -1,8 +1,62 @@
+ package loginControllers
++
+ import (
++	"coblog-backend/common/exception"
++	"coblog-backend/common/webtoken"
++	"coblog-backend/configs/configReader"
++	"coblog-backend/services/mailService"
++	"coblog-backend/services/userService"
++	"coblog-backend/utils"
++	"errors"
++	"fmt"
++	"strconv"
++
+ 	"github.com/gin-gonic/gin"
++	"gorm.io/gorm"
+ )
+ 
++type emailLoginForm struct {
++	Email            string `json:"email" binding:"required"`
++	VerificationCode string `json:"verificationCode" binding:"required"`
++}
++
++// AuthByEmail POST /api/auth/login/email — 邮箱验证码登录
+ func AuthByEmail(c *gin.Context) {
+-	return
+-}
+\ No newline at end of file
++	var form emailLoginForm
++	if err := c.ShouldBindJSON(&form); err != nil {
++		c.Error(exception.ApiParamError)
++		return
++	}
++
++	// 验证码校验
++	if !mailService.VerifyCode(mailService.PurposeLogin, form.Email, form.VerificationCode) {
++		c.Error(exception.UsrCodeInvalid)
++		return
++	}
++
++	user, err := userService.GetUserByEmail(form.Email)
++	if errors.Is(err, gorm.ErrRecordNotFound) {
++		c.Error(exception.UsrNotExisted)
++		return
++	}
++	if err != nil {
++		c.Error(exception.SysUknExc)
++		return
++	}
++
++	// 未激活：重发激活邮件
++	if !userService.IsActivated(user) {
++		if sendErr := mailService.SendActivationEmail(user.Email, user.Activation); sendErr != nil {
++			fmt.Println("激活邮件发送失败:", sendErr)
++		}
++		c.Error(exception.UsrNotActivated)
++		return
++	}
++
++	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
++		"token":    webtoken.GenerateWt(user.ID, user.PermGroupID, configreader.GetConfig().Account.ValidSecs),
++		"userID":   user.ID,
++		"username": user.UserName,
++		"userType": strconv.FormatUint(uint64(user.PermGroupID), 10),
++	})
++}
+diff --git a/controllers/loginControllers/emailReset.go b/controllers/loginControllers/emailReset.go
+index d1dd148..ae332bd 100644
+--- a/controllers/loginControllers/emailReset.go
++++ b/controllers/loginControllers/emailReset.go
+@@ -1 +1,38 @@
+ package loginControllers
++
++import (
++	"coblog-backend/common/exception"
++	"coblog-backend/services/mailService"
++	"coblog-backend/services/userService"
++	"coblog-backend/utils"
++
++	"github.com/gin-gonic/gin"
++)
++
++type resetPwdForm struct {
++	Email            string `json:"email" binding:"required"`
++	VerificationCode string `json:"verificationCode" binding:"required"`
++	NewPassword      string `json:"newPassword" binding:"required"`
++}
++
++// ResetPwdByEmail 通过邮箱验证码找回（重置）密码，无需登录。
++func ResetPwdByEmail(c *gin.Context) {
++	var form resetPwdForm
++	if err := c.ShouldBindJSON(&form); err != nil {
++		c.Error(exception.ApiParamError)
++		return
++	}
++
++	// 校验验证码
++	if !mailService.VerifyCode(mailService.PurposeReset, form.Email, form.VerificationCode) {
++		c.Error(exception.UsrCodeInvalid)
++		return
++	}
++
++	if err := userService.ResetPwdByEmail(form.Email, form.NewPassword); err != nil {
++		c.Error(err)
++		return
++	}
++
++	utils.JsonSuccessResponse(c, "密码重置成功", nil)
++}
+diff --git a/controllers/loginControllers/sendResetCode.go b/controllers/loginControllers/sendResetCode.go
+index d1dd148..9a78d5c 100644
+--- a/controllers/loginControllers/sendResetCode.go
++++ b/controllers/loginControllers/sendResetCode.go
+@@ -1 +1,70 @@
+ package loginControllers
++
++import (
++	"coblog-backend/common/exception"
++	"coblog-backend/services/mailService"
++	"coblog-backend/services/userService"
++	"coblog-backend/utils"
++	"errors"
++	"fmt"
++
++	"github.com/gin-gonic/gin"
++	"gorm.io/gorm"
++)
++
++type sendCodeForm struct {
++	Email   string `json:"email" binding:"required"`
++	Purpose string `json:"purpose" binding:"required"` // register / reset
++}
++
++// SendCode 发送邮箱验证码。
++// purpose=register：要求邮箱未注册；purpose=reset：要求邮箱已注册。
++func SendCode(c *gin.Context) {
++	var form sendCodeForm
++	if err := c.ShouldBindJSON(&form); err != nil {
++		c.Error(exception.ApiParamError)
++		return
++	}
++
++	purpose := mailService.CodePurpose(form.Purpose)
++	switch purpose {
++	case mailService.PurposeRegister:
++		// 注册场景：邮箱不应已存在
++		_, err := userService.GetUserByEmail(form.Email)
++		if err == nil {
++			c.Error(exception.UsrAlreadyExisted)
++			return
++		}
++		if !errors.Is(err, gorm.ErrRecordNotFound) {
++			c.Error(exception.SysCannotReadDB)
++			return
++		}
++	case mailService.PurposeReset, mailService.PurposeLogin:
++		// 找回密码 / 邮箱登录：邮箱必须存在
++		_, err := userService.GetUserByEmail(form.Email)
++		if errors.Is(err, gorm.ErrRecordNotFound) {
++			c.Error(exception.UsrNotExisted)
++			return
++		}
++		if err != nil {
++			c.Error(exception.SysCannotReadDB)
++			return
++		}
++	default:
++		c.Error(exception.ApiParamError)
++		return
++	}
++
++	cooldown, err := mailService.SendVerificationCode(purpose, form.Email)
++	if err != nil {
++		fmt.Println("发送验证码失败:", err)
++		c.Error(exception.SysCannotSendMail)
++		return
++	}
++	if cooldown {
++		c.Error(exception.UsrCodeTooFreq)
++		return
++	}
++
++	utils.JsonSuccessResponse(c, "验证码已发送", nil)
++}
+diff --git a/controllers/registerControllers/register.go b/controllers/registerControllers/register.go
+index 0ba11ab..665e8b9 100644
+--- a/controllers/registerControllers/register.go
++++ b/controllers/registerControllers/register.go
+@@ -2,6 +2,7 @@ package registerControllers
+ 
+ import (
+ 	"coblog-backend/common/exception"
++	"coblog-backend/services/mailService"
+ 	"coblog-backend/services/userService"
+ 	"coblog-backend/utils"
+ 	"errors"
+@@ -12,7 +13,7 @@ import (
+ 
+ type UserInfo struct {
+ 	Email            string `json:"email"  binding:"required"`
+-	VerificationCode string `json:"verificationCode"` //验证码，还没想好是先验证还是后验证注册
++	VerificationCode string `json:"verificationCode" binding:"required"` //邮箱验证码
+ 	UserName         string `json:"username"`
+ 	Password         string `json:"password"   binding:"required"`
+ 	//PermGroupID
+@@ -27,7 +28,11 @@ func CreateNormalUser(c *gin.Context) { //用户注册,强制绑定权限组Perm
+ 		return
+ 	}
+ 
+-	//在此处加入验证码判断逻辑（如有
++	// 校验邮箱验证码
++	if !mailService.VerifyCode(mailService.PurposeRegister, postForm.Email, postForm.VerificationCode) {
++		c.Error(exception.UsrCodeInvalid)
++		return
++	}
+ 
+ 	fmt.Println("注册信息:", postForm)
+ 	user, err := userService.CreateUser(
+diff --git a/controllers/rssController/generateRss.go b/controllers/rssController/generateRss.go
+index f351096..a0c1fe6 100644
+--- a/controllers/rssController/generateRss.go
++++ b/controllers/rssController/generateRss.go
+@@ -1,40 +1,110 @@
+ package rssController
+ 
+ import (
++	"fmt"
+ 	"net/http"
+-	"coblog-backend/services/rssService"
+-
+ 	"time"
+ 
++	"coblog-backend/common/exception"
++	configreader "coblog-backend/configs/configReader"
++	"coblog-backend/models"
++	"coblog-backend/services/articleService"
++	"coblog-backend/services/rssService"
++	"coblog-backend/services/userService"
++
+ 	"github.com/gin-gonic/gin"
+ 	"github.com/gorilla/feeds"
+ )
+ 
+-// GenerateRSSHandler handles the generation of RSS feeds
++// 默认 RSS 输出条数，config 未配置时使用
++const defaultRSSMaxItems = 30
++
++// GenerateRSSHandler 动态生成 RSS Feed
++// 支持：token 鉴权决定是否包含深度内容；category / tag 筛选
+ func GenerateRSSHandler(c *gin.Context) {
+-	// Example articles (replace with database query results)
+-	articles := []feeds.Item{
+-		{
+-			Title:       "First Article",
+-			Link:        &feeds.Link{Href: "https://example.com/articles/1"},
+-			Description: "This is the first article.",
+-			Author:      &feeds.Author{Name: "Author 1"},
+-			Created:     time.Now(),
+-		},
+-		{
+-			Title:       "Second Article",
+-			Link:        &feeds.Link{Href: "https://example.com/articles/2"},
+-			Description: "This is the second article.",
+-			Author:      &feeds.Author{Name: "Author 2"},
+-			Created:     time.Now(),
+-		},
+-	}
+-
+-	rss, err := rssService.GenerateRSS("CoBlog RSS Feed", "https://example.com/rss", "Latest articles from CoBlog", articles)
++	cfg := configreader.GetConfig().Site
++
++	// 解析筛选参数（与文章列表保持一致）
++	maxItems := cfg.RSSMaxItems
++	if maxItems <= 0 {
++		maxItems = defaultRSSMaxItems
++	}
++	params := articleService.RequestParams{
++		Page:     1,
++		PageSize: uint64(maxItems),
++		Category: c.Query("category"),
++		Tag:      c.Query("tag"),
++	}
++
++	// 根据 RSSToken 鉴权，决定返回 def / deep 内容
++	status := resolveRSSStatus(c.Query("token"))
++
++	// 复用文章列表服务，自动按 def/deep 与分类筛选
++	list, err := articleService.GetArticleList(status, params)
++	if err != nil || list == nil {
++		c.Error(exception.SysCannotGetArticle)
++		return
++	}
++
++	// 文章 -> RSS Item
++	items := make([]*feeds.Item, 0, len(list.Articles))
++	for i := range list.Articles {
++		items = append(items, postToItem(&list.Articles[i], cfg.BaseURL))
++	}
++
++	meta := rssService.FeedMeta{
++		Title:       cfg.Title,
++		Link:        cfg.BaseURL,
++		Description: cfg.Description,
++		Author:      cfg.Author,
++		Email:       cfg.Email,
++		Created:     latestCreated(list.Articles),
++	}
++
++	rss, err := rssService.GenerateRSS(meta, items)
+ 	if err != nil {
+-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate RSS"})
++		fmt.Println("生成RSS失败:", err)
++		c.Error(exception.SysUknExc)
+ 		return
+ 	}
+ 
+-	c.Data(http.StatusOK, "application/rss+xml", []byte(rss))
++	c.Data(http.StatusOK, "application/rss+xml; charset=utf-8", []byte(rss))
++}
++
++// resolveRSSStatus 根据 RSSToken 判定内容级别：
++// 无 token / token 无效 / 无深度权限 -> "def"；具备深度权限 -> "deep"
++func resolveRSSStatus(token string) string {
++	if token == "" {
++		return "def"
++	}
++	account, err := userService.GetUserByToken(token)
++	if err != nil {
++		return "def"
++	}
++	if account.Deepable && account.IsDeep {
++		return "deep"
++	}
++	return "def"
++}
++
++// postToItem 把文章转换为 RSS 条目
++func postToItem(p *models.Post, baseURL string) *feeds.Item {
++	return &feeds.Item{
++		Title:       p.Title,
++		Link:        &feeds.Link{Href: fmt.Sprintf("%s/articles/%d", baseURL, p.ID)},
++		Description: p.Summary,
++		Created:     p.CreatedAt,
++		Updated:     p.UpdatedAt,
++		Id:          fmt.Sprintf("%s/articles/%d", baseURL, p.ID),
++	}
++}
++
++// latestCreated 取文章中最新的创建时间作为频道时间，列表为空则用零值
++func latestCreated(posts []models.Post) (t time.Time) {
++	for i := range posts {
++		if posts[i].CreatedAt.After(t) {
++			t = posts[i].CreatedAt
++		}
++	}
++	return t
+ }
+diff --git a/controllers/rssController/getRSS.go b/controllers/rssController/getRSS.go
+deleted file mode 100644
+index 9b1b3a4..0000000
+--- a/controllers/rssController/getRSS.go
++++ /dev/null
+@@ -1,56 +0,0 @@
+-package rssController
+-
+-import (
+-	"coblog-backend/common/exception"
+-	"coblog-backend/services/ssrService"
+-	"coblog-backend/services/userService"
+-	"fmt"
+-
+-	"github.com/gin-gonic/gin"
+-)
+-
+-func GetRSS(c *gin.Context) {
+-	if c.Query("token") == "" {
+-		returnRss(c, "def")
+-		return
+-	}
+-	//剩下的都是有token的
+-	//校验token是否合法
+-	accountInfo, err := userService.GetUserByToken(c.Query("token"))
+-	if err != nil {
+-		c.Error(exception.UsrTokenInvalid)
+-		return
+-	}
+-
+-	//校验深度权限
+-	if !(accountInfo.Deepable && accountInfo.IsDeep) {
+-		//用户无深度权限，返回默认RSS
+-		returnRss(c, "def")
+-		return
+-	}
+-	//通过深度RSS校验用户权限，返回深度RSS
+-	returnRss(c, "deep")
+-}
+-
+-func returnRss(c *gin.Context, status string) {
+-	var content string
+-	var err error
+-	if status == "def" {
+-		//默认RSS
+-		content, err = ssrService.GetDefRSS(c)
+-	} else if status == "deep" {
+-		//深度RSS
+-		content, err = ssrService.GetDeepRSS(c)
+-	} else {
+-		fmt.Println("status不准确！")
+-		c.Error(exception.SysUknExc)
+-		return
+-	}
+-	if err != nil {
+-		c.Error(exception.SysCannotLoadRssFile)
+-		return
+-	}
+-	// 设置响应头为 XML
+-	c.Header("Content-Type", "application/xml; charset=utf-8")
+-	c.String(200, content) //http状态码200，返回内容
+-}
+diff --git a/go.mod b/go.mod
+index 477926b..50116c5 100644
+--- a/go.mod
++++ b/go.mod
+@@ -20,6 +20,7 @@ require (
+ 	github.com/bytedance/sonic v1.14.1 // indirect
+ 	github.com/bytedance/sonic/loader v0.3.0 // indirect
+ 	github.com/cloudwego/base64x v0.1.6 // indirect
++	github.com/disintegration/imaging v1.6.2 // indirect
+ 	github.com/gabriel-vasile/mimetype v1.4.10 // indirect
+ 	github.com/gin-contrib/sse v1.1.0 // indirect
+ 	github.com/go-playground/locales v0.14.1 // indirect
+@@ -51,6 +52,7 @@ require (
+ 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+ 	golang.org/x/arch v0.21.0 // indirect
+ 	golang.org/x/crypto v0.42.0 // indirect
++	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
+ 	golang.org/x/net v0.44.0 // indirect
+ 	golang.org/x/sys v0.36.0 // indirect
+ 	golang.org/x/text v0.29.0 // indirect
+diff --git a/go.sum b/go.sum
+index b693003..b52c539 100644
+--- a/go.sum
++++ b/go.sum
+@@ -26,6 +26,8 @@ github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ3
+ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
++github.com/disintegration/imaging v1.6.2 h1:w1LecBlG2Lnp8B3jk5zSuNqd7b4DXhcjwek1ei82L+c=
++github.com/disintegration/imaging v1.6.2/go.mod h1:44/5580QXChDfwIclfc/PCwrr44amcmDAg8hxG0Ewe4=
+ github.com/dnaeon/go-vcr v1.1.0/go.mod h1:M7tiix8f0r6mKKJ3Yq/kqU1OYf3MnfmBWVbPx/yU9ko=
+ github.com/dnaeon/go-vcr v1.2.0/go.mod h1:R4UdLID7HZT3taECzJs4YgbbH6PIGXB6W/sc5OLb6RQ=
+ github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
+@@ -185,6 +187,8 @@ golang.org/x/crypto v0.23.0/go.mod h1:CKFgDieR+mRhux2Lsu27y0fO304Db0wZe70UKqHu0v
+ golang.org/x/crypto v0.24.0/go.mod h1:Z1PMYSOR5nyMcyAVAIQSKCDwalqy85Aqn1x3Ws4L5DM=
+ golang.org/x/crypto v0.42.0 h1:chiH31gIWm57EkTXpwnqf8qeuMUi0yekh6mT2AvFlqI=
+ golang.org/x/crypto v0.42.0/go.mod h1:4+rDnOTJhQCx2q7/j6rAN5XDw8kPjeaXEUR2eL94ix8=
++golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 h1:hVwzHzIUGRjiF7EcUjqNxk3NCfkPxbDKRdnNE1Rpg0U=
++golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=
+ golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
+ golang.org/x/mod v0.8.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
+ golang.org/x/mod v0.9.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
+diff --git a/main.go b/main.go
+index 2d4a628..7d0e438 100644
+--- a/main.go
++++ b/main.go
+@@ -2,11 +2,13 @@ package main
+ 
+ import (
+ 	"coblog-backend/configs/router"
++	"coblog-backend/services/mailService"
+ )
+ 
+ //import "coblog-backend/configs/database"
+ 
+ func main() {
++	mailService.InitCodeStore() // 启动验证码过期清理
+ 	ginEng := router.InitEngine()
+ 	// CORS配置已经在 router.InitEngine() 中完成
+ 	ginEng.Run(":8080")
+diff --git a/middlewares/auth.go b/middlewares/auth.go
+index cc415e7..7efe9e1 100644
+--- a/middlewares/auth.go
++++ b/middlewares/auth.go
+@@ -3,7 +3,7 @@ package middleware
+ import (
+ 	"coblog-backend/common/exception"
+ 	"coblog-backend/common/webtoken"
+-
++	"coblog-backend/services/userService"
+ 	"fmt"
+ 
+ 	"github.com/gin-gonic/gin"
+@@ -28,33 +28,49 @@ func Auth(c *gin.Context) {
+ 		c.Abort()
+ 		return
+ 	}
++
++	// 检查账户激活状态，未激活视为访客
++	account, err := userService.GetUserByID(uid)
++	if err != nil || !userService.IsActivated(account) {
++		c.Error(exception.UsrNotActivated)
++		c.Abort()
++		return
++	}
++
+ 	fmt.Println("鉴权成功")
+-	//fmt.Println("用户ID:", uid, "权限组ID:", pgid)
+ 	c.Set("AccountID", uid)
+ 	c.Set("PermissionGroupID", pgid)
+ 	c.Next()
+ }
+ 
+-func LooseAuth(c *gin.Context) { //松校验，针对无登录的文章访问情况，为了深度返回账户和权限
+-	authHeader := c.GetHeader("Authorization")
+-
+-	// 默认设置为未登录状态
+-	//c.Set("IsAuthenticated", false)
++func LooseAuth(c *gin.Context) {
++	// 默认未登录状态
+ 	c.Set("AccountID", uint64(0))
+ 	c.Set("PermissionGroupID", uint64(0))
+ 
+-	// 如果有token且验证通过，才设置真实信息
+-	if authHeader != "" && webtoken.VerifyWt(authHeader) {
+-		uid, pgid, err := webtoken.GetWtPayload(authHeader)
+-		if err == nil {
+-			fmt.Println("松鉴权成功")
+-			//c.Set("IsAuthenticated", true)
+-			c.Set("AccountID", uid)
+-			c.Set("PermissionGroupID", pgid)
+-		}
+-	}else {
++	authHeader := c.GetHeader("Authorization")
++	if authHeader == "" || !webtoken.VerifyWt(authHeader) {
+ 		fmt.Println("松鉴权失败: 用户登录无效，已放行")
++		c.Next()
++		return
+ 	}
+ 
++	uid, pgid, err := webtoken.GetWtPayload(authHeader)
++	if err != nil {
++		c.Next()
++		return
++	}
++
++	// 未激活账户降级为访客
++	account, err := userService.GetUserByID(uid)
++	if err != nil || !userService.IsActivated(account) {
++		fmt.Println("松鉴权: 账户未激活，降级为访客")
++		c.Next()
++		return
++	}
++
++	fmt.Println("松鉴权成功")
++	c.Set("AccountID", uid)
++	c.Set("PermissionGroupID", pgid)
+ 	c.Next()
+ }
+diff --git a/services/articleService/getArticle.go b/services/articleService/getArticle.go
+index ad4a124..07d0638 100644
+--- a/services/articleService/getArticle.go
++++ b/services/articleService/getArticle.go
+@@ -17,5 +17,17 @@ func GetArticle(status string, id string) (models.Post, error) {
+ 		// def 模式：不返回 isdeep 文章
+ 		return models.Post{}, exception.UsrNotPermitted
+ 	}
++
++	// 公开详情不返回 Markdown 原文，省带宽；编辑回填请走编辑专用接口
++	article.MdContent = ""
++	return article, nil
++}
++
++// GetArticleForEdit 返回文章完整内容（含 Markdown 原文），供编辑器回填使用
++func GetArticleForEdit(id string) (models.Post, error) {
++	var article models.Post
++	if err := database.DataBase.First(&article, id).Error; err != nil {
++		return models.Post{}, exception.SysCannotGetArticle
++	}
+ 	return article, nil
+ }
+diff --git a/services/fileService/fileStorageSvc.go b/services/fileService/fileStorageSvc.go
+index 6cf966c..267576a 100644
+--- a/services/fileService/fileStorageSvc.go
++++ b/services/fileService/fileStorageSvc.go
+@@ -3,43 +3,141 @@ package fileService
+ import (
+ 	configreader "coblog-backend/configs/configReader"
+ 	"crypto/rand"
++	"image"
++	"image/jpeg"
++	"image/png"
+ 	"io"
+ 	"log"
+ 	"math/big"
+ 	"os"
++	"path/filepath"
++
++	"github.com/disintegration/imaging"
+ )
+ 
+-// #####PUBLIC#####
++// ImageSaveResult 保存图片后返回的文件名信息
++type ImageSaveResult struct {
++	OriginalName   string // 原图文件名（始终保存）
++	CompressedName string // 压缩图文件名，为空表示未生成压缩图
++}
+ 
+-// 统一从io读文件存盘操作
++// SaveUploadedFile 统一从 io.Reader 读文件存盘（非图片通用，保持向后兼容）
+ func SaveUploadedFile(ior *io.Reader) (string, error) {
+ 	dir := configreader.GetConfig().FileObject.Dir
+-
+ 	fileName := randStrGenerater(32)
+-	filePath := dir + "/" + fileName
++	filePath := filepath.Join(dir, fileName)
+ 	dst, err := os.Create(filePath)
+-
+ 	if err != nil {
+ 		return "", err
+ 	}
+ 	defer dst.Close()
+-	_, err = io.Copy(dst, *ior)
+-	if err != nil {
++	if _, err = io.Copy(dst, *ior); err != nil {
+ 		return "", err
+ 	}
+ 	log.Printf("[INFO][FileCtrl] New file uploaded, file: %v", dst.Name())
+ 	return fileName, nil
+ }
+ 
++// SaveImageWithCompression 保存图片，并在满足条件时生成压缩版本。
++// 原图始终保存；满足阈值时额外保存一份压缩图（加 _c 后缀，JPEG 格式）。
++// data 为完整图片字节，ext 为小写扩展名（如 ".jpg" ".png"）。
++func SaveImageWithCompression(data []byte, ext string) (ImageSaveResult, error) {
++	cfg := configreader.GetConfig().FileObject
++	dir := cfg.Dir
++
++	baseName := randStrGenerater(32)
++	origName := baseName + ext
++	if err := os.WriteFile(filepath.Join(dir, origName), data, 0o644); err != nil {
++		return ImageSaveResult{}, err
++	}
++	log.Printf("[INFO][FileSvc] 原图已保存: %s (%d bytes)", origName, len(data))
++
++	threshold := cfg.CompressThreshold
++	if threshold == 0 || int64(len(data)) > threshold {
++		compressed, err := compressImage(data, ext, cfg.CompressMaxWidth, cfg.CompressQuality)
++		if err != nil {
++			// 压缩失败不影响原图，记录日志继续
++			log.Printf("[WARN][FileSvc] 压缩失败，仅保留原图: %v", err)
++			return ImageSaveResult{OriginalName: origName}, nil
++		}
++		compName := baseName + "_c.jpg"
++		if err := os.WriteFile(filepath.Join(dir, compName), compressed, 0o644); err != nil {
++			log.Printf("[WARN][FileSvc] 压缩图写盘失败，仅保留原图: %v", err)
++			return ImageSaveResult{OriginalName: origName}, nil
++		}
++		log.Printf("[INFO][FileSvc] 压缩图已保存: %s (%d bytes)", compName, len(compressed))
++		return ImageSaveResult{OriginalName: origName, CompressedName: compName}, nil
++	}
++
++	return ImageSaveResult{OriginalName: origName}, nil
++}
++
+ // #####PRIVATE#####
+ 
+-// 生成随机字符串 用于临时文件名
++func compressImage(data []byte, ext string, maxWidth int, quality int) ([]byte, error) {
++	if quality <= 0 || quality > 100 {
++		quality = 80
++	}
++
++	img, err := decodeImage(data, ext)
++	if err != nil {
++		return nil, err
++	}
++
++	if maxWidth > 0 && img.Bounds().Dx() > maxWidth {
++		img = imaging.Resize(img, maxWidth, 0, imaging.Lanczos)
++	}
++
++	pr, pw := io.Pipe()
++	errCh := make(chan error, 1)
++	go func() {
++		errCh <- jpeg.Encode(pw, img, &jpeg.Options{Quality: quality})
++		pw.Close()
++	}()
++
++	out, err := io.ReadAll(pr)
++	if encErr := <-errCh; encErr != nil {
++		return nil, encErr
++	}
++	return out, err
++}
++
++func decodeImage(data []byte, ext string) (image.Image, error) {
++	switch ext {
++	case ".png":
++		r := bytesReader(data)
++		return png.Decode(r)
++	default:
++		// jpg / jpeg / webp 等，统一用 imaging.Decode
++		r := bytesReader(data)
++		return imaging.Decode(r)
++	}
++}
++
++type bytesReaderType struct {
++	data []byte
++	pos  int
++}
++
++func bytesReader(data []byte) io.Reader {
++	return &bytesReaderType{data: data}
++}
++
++func (b *bytesReaderType) Read(p []byte) (int, error) {
++	if b.pos >= len(b.data) {
++		return 0, io.EOF
++	}
++	n := copy(p, b.data[b.pos:])
++	b.pos += n
++	return n, nil
++}
++
+ func randStrGenerater(length int) string {
+ 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+-	b := make([]byte, length)
+-	for i := range b {
++	buf := make([]byte, length)
++	for i := range buf {
+ 		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+-		b[i] = charset[num.Int64()]
++		buf[i] = charset[num.Int64()]
+ 	}
+-	return string(b)
++	return string(buf)
+ }
+diff --git a/services/markdownService/markdownParser.go b/services/markdownService/markdownParser.go
+index 9f53f35..a150bc8 100644
+--- a/services/markdownService/markdownParser.go
++++ b/services/markdownService/markdownParser.go
+@@ -4,12 +4,14 @@ import (
+ 	"bytes"
+ 
+ 	"github.com/yuin/goldmark"
++	"github.com/yuin/goldmark/extension"
+ )
+ 
+ // ParseMarkdownToHTML parses a Markdown string and returns the HTML string
+ func ParseMarkdownToHTML(markdown string) (string, error) {
+ 	var buf bytes.Buffer
+-	md := goldmark.New()
++	md := goldmark.New(goldmark.WithExtensions(extension.GFM))
++
+ 	if err := md.Convert([]byte(markdown), &buf); err != nil {
+ 		return "", err
+ 	}
+diff --git a/services/rssService/rssService.go b/services/rssService/rssService.go
+index 302a92b..ca47df6 100644
+--- a/services/rssService/rssService.go
++++ b/services/rssService/rssService.go
+@@ -6,24 +6,27 @@ import (
+ 	"github.com/gorilla/feeds"
+ )
+ 
+-// GenerateRSS generates an RSS feed based on the provided articles
+-func GenerateRSS(title, link, description string, articles []feeds.Item) (string, error) {
+-	feed := &feeds.Feed{
+-		Title:       title,
+-		Link:        &feeds.Link{Href: link},
+-		Description: description,
+-		Author:      &feeds.Author{Name: "CoBlog", Email: "support@coblog.com"},
+-		Created:     time.Now(),
+-	}
++// FeedMeta 描述 RSS 频道级别的元信息
++type FeedMeta struct {
++	Title       string
++	Link        string
++	Description string
++	Author      string
++	Email       string
++	Created     time.Time
++}
+ 
+-	for _, article := range articles {
+-		feed.Items = append(feed.Items, &article)
++// GenerateRSS 根据频道元信息和文章条目生成 RSS XML
++func GenerateRSS(meta FeedMeta, items []*feeds.Item) (string, error) {
++	feed := &feeds.Feed{
++		Title:       meta.Title,
++		Link:        &feeds.Link{Href: meta.Link},
++		Description: meta.Description,
++		Author:      &feeds.Author{Name: meta.Author, Email: meta.Email},
++		Created:     meta.Created,
+ 	}
+ 
+-	rss, err := feed.ToRss()
+-	if err != nil {
+-		return "", err
+-	}
++	feed.Items = items
+ 
+-	return rss, nil
++	return feed.ToRss()
+ }
+diff --git a/services/ssrService/ssrSvc.go b/services/ssrService/ssrSvc.go
+deleted file mode 100644
+index dc23ffa..0000000
+--- a/services/ssrService/ssrSvc.go
++++ /dev/null
+@@ -1,45 +0,0 @@
+-package ssrService
+-
+-import (
+-	"fmt"
+-	"io"
+-	"os"
+-
+-	"github.com/gin-gonic/gin"
+-)
+-
+-func GetDefRSS(c *gin.Context) (string, error) {
+-	// 读取 RSS
+-	filePath := "./rss_def_feed.xml"
+-	file, err := os.Open(filePath)
+-	if err != nil {
+-		fmt.Println("无法打开默认RSS", err)
+-		return "", err
+-	}
+-	defer file.Close()
+-
+-	return loadFile(file)
+-}
+-
+-func GetDeepRSS(c *gin.Context) (string, error) {
+-	// 读取 RSS
+-	filePath := "./rss_deep_feed.xml"
+-	file, err := os.Open(filePath)
+-	if err != nil {
+-		fmt.Println("无法打开深度RSS", err)
+-		return "", err
+-	}
+-	defer file.Close()
+-
+-	return loadFile(file)
+-}
+-
+-func loadFile(file *os.File) (string, error) {
+-	content, err := io.ReadAll(file)
+-	if err != nil {
+-		fmt.Println("无法读取RSS内容", err)
+-		return "", err
+-	}
+-	return string(content), nil
+-
+-}
+diff --git a/services/userService/changeInfo.go b/services/userService/changeInfo.go
+index bf0868f..08a3a4d 100644
+--- a/services/userService/changeInfo.go
++++ b/services/userService/changeInfo.go
+@@ -1,17 +1,62 @@
+ package userService
+ 
+-import ()
+-func ChangePwd(accountID uint64,oldPwd string, newPwd string) error {
+-	//先读库，取出后校验
++import (
++	"coblog-backend/common/exception"
++	"coblog-backend/configs/database"
++	"coblog-backend/models"
++	"crypto/sha256"
++	"fmt"
++)
++
++// HashPwd 计算密码哈希，与登录/注册保持一致（SHA256 十六进制）
++func HashPwd(password string) string {
++	hash := sha256.Sum256([]byte(password))
++	return fmt.Sprintf("%x", hash)
++}
++
++// ChangePwd 校验旧密码后修改为新密码（用于已登录用户主动改密）
++func ChangePwd(accountID uint64, oldPwd string, newPwd string) error {
++	user, err := GetUserByID(accountID)
++	if err != nil {
++		return exception.SysCannotReadDB
++	}
++	if err := VerifyPwd(user, oldPwd); err != nil {
++		return exception.UsrPasswordErr
++	}
++	return updatePasswordHash(user.ID, HashPwd(newPwd))
++}
++
++// ResetPwdByEmail 直接将指定邮箱用户的密码重置为新密码（用于验证码找回，调用方需先校验验证码）
++func ResetPwdByEmail(email string, newPwd string) error {
++	user, err := GetUserByEmail(email)
++	if err != nil {
++		return exception.UsrNotExisted
++	}
++	return updatePasswordHash(user.ID, HashPwd(newPwd))
++}
++
++// updatePasswordHash 仅更新密码哈希字段
++func updatePasswordHash(accountID uint64, hash string) error {
++	res := database.DataBase.Model(&models.AccountInfo{}).
++		Where("id = ?", accountID).
++		Update("password_hash", hash)
++	if res.Error != nil {
++		return exception.SysCannotUpdate
++	}
+ 	return nil
+ }
+ 
+ func RstRSSToken(accountID uint64) (string, error) {
+-	postForm,err := GetUserByID(accountID)
++	user, err := GetUserByID(accountID)
+ 	if err != nil {
+-		return "", err
++		return "", exception.SysCannotReadDB
++	}
++	newToken := GenToken(user.Email)
++	res := database.DataBase.Model(&models.AccountInfo{}).
++		Where("id = ?", accountID).
++		Update("rss_token", newToken)
++	if res.Error != nil {
++		return "", exception.SysCannotUpdate
+ 	}
+-	newToken := GenToken(postForm.Email)
+-	//写库
+ 	return newToken, nil
+-}
+\ No newline at end of file
++}
+diff --git a/services/userService/createUser.go b/services/userService/createUser.go
+index b88c2bf..8ee8ae5 100644
+--- a/services/userService/createUser.go
++++ b/services/userService/createUser.go
+@@ -53,12 +53,18 @@ func CreateUser(
+ 	// }
+ 	//fmt.Println(string(hashedPassword))
+ 
++	activationToken, err := GenActivationToken()
++	if err != nil {
++		return nil, exception.SysUknExc
++	}
++
+ 	user := &models.AccountInfo{
+ 		PasswordHash: string(hashedPassword),
+ 		Email:        email,
+ 		UserName:     userName,
+ 		PermGroupID:  permGroupID,
+ 		RSSToken:     GenToken(email),
++		Activation:   activationToken, // 未激活态，登录后邮件下发激活链接
+ 	}
+ 
+ 	res := database.DataBase.Create(user)
