@@ -57,6 +57,24 @@ func initDatabase() {
 		log.Panicf("[FATAL] 数据库表迁移失败: %v", err)
 	}
 	log.Printf("[INFO][DB] 数据库表迁移完成！")
+
+	// 回填存量用户的激活状态：历史账户 activation 为空，新增激活校验后会被全部锁死，
+	// 这里幂等地将其标记为已激活（仅影响 activation 为空字符串的旧数据）。
+	backfillActivation(dbtmp)
+}
+
+// backfillActivation 将 activation 为空的存量账户标记为已激活，幂等可重复执行。
+func backfillActivation(db *gorm.DB) {
+	res := db.Model(&models.AccountInfo{}).
+		Where("activation = ? OR activation IS NULL", "").
+		Update("activation", "activated")
+	if res.Error != nil {
+		log.Printf("[WARN][DB] 存量账户激活状态回填失败: %v", res.Error)
+		return
+	}
+	if res.RowsAffected > 0 {
+		log.Printf("[INFO][DB] 已回填 %d 个存量账户为已激活", res.RowsAffected)
+	}
 }
 
 // autoMigrate 自动迁移所有数据表

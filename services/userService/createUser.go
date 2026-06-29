@@ -53,12 +53,18 @@ func CreateUser(
 	// }
 	//fmt.Println(string(hashedPassword))
 
+	activationToken, err := GenActivationToken()
+	if err != nil {
+		return nil, exception.SysUknExc
+	}
+
 	user := &models.AccountInfo{
 		PasswordHash: string(hashedPassword),
 		Email:        email,
 		UserName:     userName,
 		PermGroupID:  permGroupID,
 		RSSToken:     GenToken(email),
+		Activation:   activationToken, // 未激活态，登录后邮件下发激活链接
 	}
 
 	res := database.DataBase.Create(user)

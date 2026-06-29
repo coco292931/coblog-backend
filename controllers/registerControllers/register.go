@@ -2,6 +2,7 @@ package registerControllers
 
 import (
 	"coblog-backend/common/exception"
+	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
 	"errors"
@@ -12,7 +13,7 @@ import (
 
 type UserInfo struct {
 	Email            string `json:"email"  binding:"required"`
-	VerificationCode string `json:"verificationCode"` //验证码，还没想好是先验证还是后验证注册
+	VerificationCode string `json:"verificationCode" binding:"required"` //邮箱验证码
 	UserName         string `json:"username"`
 	Password         string `json:"password"   binding:"required"`
 	//PermGroupID
@@ -27,7 +28,11 @@ func CreateNormalUser(c *gin.Context) { //用户注册,强制绑定权限组Perm
 		return
 	}
 
-	//在此处加入验证码判断逻辑（如有
+	// 校验邮箱验证码
+	if !mailService.VerifyCode(mailService.PurposeRegister, postForm.Email, postForm.VerificationCode) {
+		c.Error(exception.UsrCodeInvalid)
+		return
+	}
 
 	fmt.Println("注册信息:", postForm)
 	user, err := userService.CreateUser(

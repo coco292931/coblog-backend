@@ -3,10 +3,11 @@ package loginControllers
 import (
 	"coblog-backend/common/exception"
 	"coblog-backend/common/webtoken"
+	"coblog-backend/configs/configReader"
 	"coblog-backend/models"
+	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
-	"coblog-backend/configs/configReader"
 	"errors"
 	"fmt"
 	"strconv"
@@ -72,6 +73,16 @@ func AuthByCombo(c *gin.Context) {
 		}
 		return
 	}
+
+	// 账户未激活：重新发送激活邮件，返回提示
+	if !userService.IsActivated(accountInfo) {
+		if err := mailService.SendActivationEmail(accountInfo.Email, accountInfo.Activation); err != nil {
+			fmt.Println("激活邮件发送失败:", err)
+		}
+		c.Error(exception.UsrNotActivated)
+		return
+	}
+
 	//TODO:解决秘钥签名错误的问题
 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
 		"token":    webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, configreader.GetConfig().Account.ValidSecs), //100000000 194年
