@@ -6,24 +6,27 @@ import (
 	"github.com/gorilla/feeds"
 )
 
-// GenerateRSS generates an RSS feed based on the provided articles
-func GenerateRSS(title, link, description string, articles []feeds.Item) (string, error) {
+// FeedMeta 描述 RSS 频道级别的元信息
+type FeedMeta struct {
+	Title       string
+	Link        string
+	Description string
+	Author      string
+	Email       string
+	Created     time.Time
+}
+
+// GenerateRSS 根据频道元信息和文章条目生成 RSS XML
+func GenerateRSS(meta FeedMeta, items []*feeds.Item) (string, error) {
 	feed := &feeds.Feed{
-		Title:       title,
-		Link:        &feeds.Link{Href: link},
-		Description: description,
-		Author:      &feeds.Author{Name: "CoBlog", Email: "support@coblog.com"},
-		Created:     time.Now(),
+		Title:       meta.Title,
+		Link:        &feeds.Link{Href: meta.Link},
+		Description: meta.Description,
+		Author:      &feeds.Author{Name: meta.Author, Email: meta.Email},
+		Created:     meta.Created,
 	}
 
-	for _, article := range articles {
-		feed.Items = append(feed.Items, &article)
-	}
+	feed.Items = items
 
-	rss, err := feed.ToRss()
-	if err != nil {
-		return "", err
-	}
-
-	return rss, nil
+	return feed.ToRss()
 }
