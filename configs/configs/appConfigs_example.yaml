@@ -10,5 +10,26 @@ webtoken_sigkey: (64字符Base64 如YKFAq3akQp5pEEAU8UqnrMGUr9lg4DxZZj6uRkHdcugU
 account:
   valid_secs: 2592000  # 30天，单位秒
 
-fileobjects:
+fileobject:
   dir: D:/JHET_TESTONLY
+  compress_threshold: 524288   # 超过 512 KiB 时自动压缩，0 表示始终压缩
+  compress_max_width: 1920     # 压缩后最大宽度（像素），超宽等比缩小，0 表示不限宽
+  compress_quality: 80         # JPEG 输出质量 1-100
+
+# 站点信息，用于 RSS 生成等
+site:
+  base_url: https://coco-29.wang      # 前端站点地址，用于拼接文章链接
+  title: coco的避风港                  # 站点标题
+  description: coco的个人博客           # 站点描述
+  author: coco                        # 作者名
+  email: coco@coco-29.wang            # 作者邮箱
+  rss_max_items: 30                   # RSS 最多输出条数
+
+# SMTP 邮件发送配置（用于激活账户、找回密码等）
+smtp:
+  host: smtp.gmail.com            # SMTP 服务器地址，如 smtp.gmail.com / smtp.qq.com / smtp.163.com
+  port: 465                    # 465=隐式TLS，587=STARTTLS，25=明文
+  username: your@gmail.com        # 发件邮箱 / 登录名
+  password: your_auth_code     # 授权码（非登录密码）
+  from: your@gmail.com            # 发件人地址，留空则用 username
+  from_name: coco的避风港        # 发件人显示名称

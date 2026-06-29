@@ -11,6 +11,9 @@ var (
 	UsrPasswordErr    = NewException(1005, "用户密码错误")
 	UsrLoginInvalid   = NewException(1006, "用户登录无效")
 	UsrTokenInvalid   = NewException(1007, "用户令牌无效")
+	UsrCodeInvalid    = NewException(1008, "验证码错误或已过期")
+	UsrCodeTooFreq    = NewException(1009, "验证码发送过于频繁，请稍后再试")
+	UsrNotActivated   = NewException(1010, "账户未激活，激活邮件已重新发送")
 
 	ApiNoFormFile       = NewException(4001, "无文件字段")
 	ApiFileTooLarge     = NewException(4002, "上传文件过大")
@@ -28,6 +31,8 @@ var (
 	SysCannotGetSiteInfo   = NewException(5006, "内部异常: 无法获取站点信息")
 	SysCannotLoadRssFile   = NewException(5007, "内部异常: 无法加载RSS文件")
 	SysCannotGetArticle    = NewException(5008, "内部异常: 无法获取文章")
+	SysCannotSaveArticle   = NewException(5009, "内部异常: 无法保存文章")
+	SysCannotSendMail      = NewException(5010, "内部异常: 邮件发送失败")
 
 	FileCannotSaveUploaded = NewException(6001, "文件系统错误: 无法保存上传的文件")
 )

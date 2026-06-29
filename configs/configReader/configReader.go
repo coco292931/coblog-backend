@@ -35,12 +35,34 @@ type DatabaseCfg struct {
 }
 
 type FileObjectCfg struct {
-	Dir           string `mapstructure:"dir"`
-	LargeFileSize int    `mapstructure:"large_file_size"`
+	Dir              string `mapstructure:"dir"`
+	LargeFileSize    int    `mapstructure:"large_file_size"`
+	CompressThreshold int64 `mapstructure:"compress_threshold"` // 超过此字节数时压缩，0 表示始终压缩
+	CompressMaxWidth  int   `mapstructure:"compress_max_width"`  // 压缩后最大宽度（像素），0 表示不限制宽度
+	CompressQuality   int   `mapstructure:"compress_quality"`    // JPEG 压缩质量 1-100，0 使用默认值 80
 }
 
 type AccountCfg struct {
 	ValidSecs uint64 `mapstructure:"valid_secs"`
+}
+
+type SiteCfg struct {
+	BaseURL     string `mapstructure:"base_url"`    // 站点前端地址，用于拼接文章链接，如 https://coco-29.wang
+	Title       string `mapstructure:"title"`       // 站点标题
+	Description string `mapstructure:"description"` // 站点描述
+	Author      string `mapstructure:"author"`      // 作者名
+	Email       string `mapstructure:"email"`       // 作者邮箱
+	RSSMaxItems int    `mapstructure:"rss_max_items"` // RSS 最多输出条数，0 表示使用默认值
+}
+
+// SMTPCfg 邮件发送配置，用于注册/找回密码等验证码邮件
+type SMTPCfg struct {
+	Host     string `mapstructure:"host"`      // SMTP 服务器地址，如 smtp.qq.com
+	Port     int    `mapstructure:"port"`      // SMTP 端口，常见 465(SSL) / 587(STARTTLS) / 25
+	Username string `mapstructure:"username"`  // 登录用户名（通常是发件邮箱）
+	Password string `mapstructure:"password"`  // 授权码 / 密码
+	From     string `mapstructure:"from"`      // 发件人地址，留空时使用 username
+	FromName string `mapstructure:"from_name"` // 发件人显示名称
 }
 
 type InternalAppCfg struct {
@@ -48,6 +70,8 @@ type InternalAppCfg struct {
 	FileObject     FileObjectCfg `mapstructure:"fileobject"`
 	WebtokenSigkey string        `mapstructure:"webtoken_sigkey"`
 	Account        AccountCfg    `mapstructure:"account"`
+	Site           SiteCfg       `mapstructure:"site"`
+	SMTP           SMTPCfg       `mapstructure:"smtp"`
 }
 
 // Get 并发安全返回最新配置，这是configReader的唯一对外接口
