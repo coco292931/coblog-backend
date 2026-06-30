@@ -3,7 +3,6 @@ package middleware
 import (
 	"coblog-backend/common/exception"
 	"coblog-backend/common/webtoken"
-	"coblog-backend/services/userService"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -29,13 +28,6 @@ func Auth(c *gin.Context) {
 		return
 	}
 
-	// 检查账户激活状态，未激活视为访客
-	account, err := userService.GetUserByID(uid)
-	if err != nil || !userService.IsActivated(account) {
-		c.Error(exception.UsrNotActivated)
-		c.Abort()
-		return
-	}
 
 	fmt.Println("鉴权成功")
 	c.Set("AccountID", uid)
@@ -61,13 +53,6 @@ func LooseAuth(c *gin.Context) {
 		return
 	}
 
-	// 未激活账户降级为访客
-	account, err := userService.GetUserByID(uid)
-	if err != nil || !userService.IsActivated(account) {
-		fmt.Println("松鉴权: 账户未激活，降级为访客")
-		c.Next()
-		return
-	}
 
 	fmt.Println("松鉴权成功")
 	c.Set("AccountID", uid)

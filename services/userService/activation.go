@@ -9,6 +9,7 @@ import (
 )
 
 const activatedMark = "activated"
+const activatedPermGroupID uint32 = 2 //USER
 
 // GenActivationToken 生成一个 32 字节随机 hex token，用于邮件激活链接
 func GenActivationToken() (string, error) {
@@ -28,7 +29,10 @@ func IsActivated(account *models.AccountInfo) bool {
 func ActivateByToken(token string) error {
 	res := database.DataBase.Model(&models.AccountInfo{}).
 		Where("activation = ?", token).
-		Update("activation", activatedMark)
+		Updates(map[string]interface{}{
+			"activation":    activatedMark,
+			"perm_group_id": activatedPermGroupID,
+		})
 	if res.Error != nil {
 		return exception.SysCannotUpdate
 	}

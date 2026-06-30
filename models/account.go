@@ -16,6 +16,7 @@ type AccountInfo struct {
 	UserName     string `json:"username" gorm:"column:username;index"` // 用户名
 	PermGroupID  uint32 `json:"permGroupID" gorm:"index"`              // 用户所在权限组
 	Activation   string `json:"-"`                                     // 账户激活状态(保留,用于验证邮箱是否存在)
+	Activated    bool   `json:"activated" gorm:"-"`                    // 对外暴露的激活状态
 	Deepable     bool   `json:"deepable"`                              // 是否允许启用深度
 	IsDeep       bool   `json:"isDeep"`                                // 是否已经启用深度
 	RSSToken     string `json:"rssToken"`                              // RSS特征秘钥

@@ -12,14 +12,13 @@ import (
 )
 
 type UserInfo struct {
-	Email            string `json:"email"  binding:"required"`
-	VerificationCode string `json:"verificationCode" binding:"required"` //邮箱验证码
-	UserName         string `json:"username"`
-	Password         string `json:"password"   binding:"required"`
+	Email    string `json:"email"  binding:"required"`
+	UserName string `json:"username" binding:"required"`
+	Password string `json:"password"   binding:"required"`
 	//PermGroupID
 }
 
-func CreateNormalUser(c *gin.Context) { //用户注册,强制绑定权限组PermGroupID=2
+func CreateNormalUser(c *gin.Context) { //用户注册,默认权限组PermGroupID=1(GUEST)
 	var postForm UserInfo
 	err := c.ShouldBindJSON(&postForm)
 	if err != nil {
@@ -28,18 +27,18 @@ func CreateNormalUser(c *gin.Context) { //用户注册,强制绑定权限组Perm
 		return
 	}
 
-	// 校验邮箱验证码
-	if !mailService.VerifyCode(mailService.PurposeRegister, postForm.Email, postForm.VerificationCode) {
-		c.Error(exception.UsrCodeInvalid)
+	if !utils.IsValidEmail(postForm.Email) {
+		c.Error(exception.ApiParamError)
+		fmt.Println("邮箱格式错误:", postForm.Email)
 		return
 	}
 
 	fmt.Println("注册信息:", postForm)
 	user, err := userService.CreateUser(
 		postForm.Password,
-		postForm.Email, 
+		postForm.Email,
 		postForm.UserName,
-		2, //用户类型， PermGroupID 需要修改
+		1, // GUEST
 	)
 	if err != nil {
 		if errors.Is(err, exception.ApiParamError) {
@@ -55,7 +54,17 @@ func CreateNormalUser(c *gin.Context) { //用户注册,强制绑定权限组Perm
 		return
 	}
 
-	utils.JsonSuccessResponse(c, "注册成功", map[string]interface{}{
-		"userID": user.ID,
+	activationMailSent := true
+	msg := "注册成功，激活邮件已发送，请前往邮箱完成激活"
+	if err := mailService.SendActivationEmail(user.Email, user.Activation); err != nil {
+		activationMailSent = false
+		msg = "注册成功，但激活邮件发送失败，请在“我的”页面重新发送"
+		fmt.Println("激活邮件发送失败:", err)
+	}
+
+	utils.JsonSuccessResponse(c, msg, map[string]interface{}{
+		"userID":             user.ID,
+		"email":              user.Email,
+		"activationMailSent": activationMailSent,
 	})
 }

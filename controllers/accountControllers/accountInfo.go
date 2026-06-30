@@ -85,6 +85,7 @@ func GetAccountInfo(c *gin.Context, userIDStr string, confidentiality bool) (mod
 	}
 
 	result := *accountInfo
+	result.Activated = userService.IsActivated(accountInfo)
 
 	//勿cue 有空再整理成函数
 	//始终屏蔽的信息

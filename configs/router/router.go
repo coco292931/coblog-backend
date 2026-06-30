@@ -118,12 +118,14 @@ func InitEngine() *gin.Engine {
 
 		auth.POST("/register", registerControllers.CreateNormalUser)
 
-		// 发送邮箱验证码（注册 / 找回密码），purpose 区分用途
+		// 发送邮箱验证码（登录 / 找回密码），purpose 区分用途
 		auth.POST("/code/send", loginControllers.SendCode)
 		// 通过邮箱验证码重置密码（找回密码，无需登录）
 		auth.POST("/pwd/reset", loginControllers.ResetPwdByEmail)
 		// 邮件激活账户
 		auth.GET("/activate", loginControllers.ActivateAccount)
+		// 重发激活邮件
+		auth.POST("/activate/resend", loginControllers.ResendActivationEmail)
 	}
 
 	//上传图片这一块,暂时和文件共用权限
