@@ -1,519 +1,366 @@
 # coblog-backend
 
-**coco的避风港 - 后端系统**
+**coco 的避风港 - 后端服务**
 
-一个基于 Go + Gin + GORM 构建的高性能个人博客后端系统，采用分层架构设计，支持JWT认证、细粒度权限控制、文件上传、RSS订阅等完整博客功能。
+一个基于 **Go + Gin + GORM** 的博客后端。当前代码已覆盖账户注册与激活、邮箱验证码、文章 CRUD、Markdown 渲染预览、图片上传压缩、RSS 订阅和站点统计等核心能力。
 
 ---
 
-## 📋 目录
+## 目录
 
 - [技术栈](#技术栈)
-- [核心特性](#核心特性)
-- [系统架构](#系统架架构)
-- [数据库设计](#数据库设计)
-- [认证与权限机制](#认证与权限机制)
+- [已实现能力](#已实现能力)
 - [快速开始](#快速开始)
 - [配置说明](#配置说明)
-- [API文档](#api文档)
+- [API 概览](#api-概览)
 - [项目结构](#项目结构)
+- [Docker 部署](#docker-部署)
 
 ---
 
-## 🛠 技术栈
+## 技术栈
 
 ### 核心框架
-- **Go 1.25.1** - 高性能编译型语言
-- **Gin** - 轻量级高性能Web框架
-- **GORM** - Go语言ORM库，支持MySQL
-- **Viper** - 配置文件管理
+
+- **Go 1.25.1**
+- **Gin**：HTTP 路由与中间件
+- **GORM**：MySQL 数据访问
+- **Viper**：配置读取与热更新
 
 ### 关键依赖
-- **gin-contrib/cors** - CORS跨域处理
-- **bits-and-blooms/bitset** - 高效位图权限验证
-- **gorm.io/datatypes** - JSON字段支持
+
+- **gin-contrib/cors**：跨域配置
+- **bits-and-blooms/bitset**：权限位图
+- **yuin/goldmark**：Markdown → HTML 渲染
+- **gorilla/feeds**：RSS 生成
+- **disintegration/imaging**：图片压缩与缩放
 
 ---
 
-## ✨ 核心特性
+## 已实现能力
 
-### 1. 自定义JWT认证系统
+### 1. 自定义二进制 Token 认证
 
-#### 轻量级二进制Token设计
-传统JWT使用JSON载荷体积较大（200+字节），本系统采用**紧凑二进制格式**压缩至**48字节**（Base64编码后64字符）。
+- 使用紧凑二进制结构而不是标准 JWT 载荷
+- Token 中包含：`用户 ID`、`权限组 ID`、`过期时间`、签名
+- 服务端校验无需查库，适合高频接口鉴权
+- `Auth` 与 `LooseAuth` 两套中间件分别用于强登录接口和公开接口
 
-**Token结构：**
-```
-┌─────────┬────────────┬──────────┬────────┬─────────────┐
-│ 用户ID  │ 权限组ID   │ 过期时间 │ 保留位 │  SHA256签名 │
-│  8字节  │   4字节    │  8字节   │ 4字节  │   24字节    │
-└─────────┴────────────┴──────────┴────────┴─────────────┘
-```
+### 2. 细粒度权限系统
 
-**核心流程：**
-- **生成**：元数据(24B) + SHA256(元数据+密钥)[前24B] → Base64编码
-- **验证**：Base64解码 → 重算签名对比 → 检查过期时间
-- **提取**：Little-Endian解析用户ID和权限组ID
+- 基于 bitset 的权限判断
+- 路由层直接声明权限要求
+- 当前文章发布、文件上传、资料读取等接口均已接入权限校验
 
-**技术特点：**
-- **无状态验证**：无需数据库查询，纯计算验证
-- **密钥管理**：48字节密钥，`sync.Once`懒加载
-- **安全性**：SHA256防篡改 + 时间戳防重放
-- **扩展性**：4字节保留位用于未来功能（版本号/刷新机制）
+### 3. 邮箱验证码与账户激活流程
 
-### 2. 细粒度权限控制系统
-- **基于Bitset的权限验证**：使用位运算高效判断权限
-- **分层权限设计**：
-  - 权限ID枚举（0-255）
-  - 权限组（数据库存储）
-  - 用户-权限组关联
-- **权限类别**：
-  - 登录认证（001）
-  - 个人信息管理（010-013）
-  - 文件操作（021-027）
-  - 文章操作（031-037）
-  - 管理面板（100-106）
-- **懒加载机制**：使用`sync.Once`确保权限表只加载一次
+当前后端已支持以下邮件能力：
 
-### 3. 双模式认证中间件
-- **严格认证（Auth）**：
-  - 必须携带有效Token
-  - 验证失败返回401
-  - 注入用户ID和权限组ID到Context
-- **松散认证（LooseAuth）**：
-  - 允许未登录访问
-  - Token有效则注入用户信息
-  - Token无效则设置默认值
-  - 用于文章列表等公开内容
+- **注册验证码**：`POST /api/auth/code/send`，`purpose=register`
+- **找回密码验证码**：`POST /api/auth/code/send`，`purpose=reset`
+- **邮箱验证码登录**：`POST /api/auth/login/email`，`purpose=login`
+- **激活邮件**：注册后账户保存激活 token，未激活登录时会重新发送激活邮件
+- **密码找回**：`POST /api/auth/pwd/reset`
 
-### 4. 灵活的CORS配置
-- **开发环境**：
-  - 允许localhost所有端口
-  - 允许127.0.0.1所有端口
-  - 允许192.168.*.*局域网访问
-- **生产环境**：
-  - 白名单域名验证（coco-29.wang及子域名）
-  - 可配置额外允许的域名
-- **安全选项**：
-  - 支持Credentials传递
-  - 预检请求缓存12小时
-  - 严格的请求头和方法控制
+邮件发送基于 `smtp` 配置，验证码内存存储、一次性使用，并带重发冷却时间。
 
-### 5. 文章系统
-- **双内容格式**：支持富文本和Markdown
-- **元数据丰富**：
-  - 标题、副标题、摘要
-  - 封面图片
-  - 分类和标签（JSON数组）
-  - 字数统计
-  - 浏览量、点赞数
-- **深度模式**：支持专属内容
+### 4. Markdown 优先的文章工作流
 
-### 6. 统一错误处理
-- **中间件式错误处理**：`UnifiedErrorHandler()`
-- **业务异常抛出**：使用`c.Error()`传递异常
-- **标准化错误响应**：统一的错误码和消息格式
+- `POST /api/articles`：创建文章
+- `PUT /api/articles/:id`：更新文章
+- `DELETE /api/articles/:id`：删除文章
+- `GET /api/articles/:id/edit`：获取原始文章内容用于编辑回填
+- `POST /api/markdown/render`：Markdown 实时预览
 
-### 7. 文件上传服务
-- **图片上传**：支持用户头像、文章配图
-- **权限控制**：基于`Perm_UploadFile`权限
-- **可配置存储路径**：通过配置文件指定存储目录
+文章保存规则：
 
-### 8. RSS订阅生成
-- **动态RSS生成**：根据文章列表生成RSS Feed
-- **松散认证**：允许未登录用户订阅
-- **个性化订阅**：支持基于RSSToken的个性化订阅
+- 传入 `md_content` 时，以 Markdown 为单一信源
+- 后端使用 `goldmark` 渲染 HTML 并保存到 `content`
+- 字数统计优先基于 Markdown 原文计算
 
----
+### 5. 文章列表搜索与筛选
 
-## 🏗 系统架构
+`GET /api/articles` 当前支持：
 
-### 分层架构设计
+- `page` / `pageSize`：分页
+- `q`：标题、摘要、正文、分类、标签关键词搜索
+- `category`：分类筛选
+- `tag`：标签筛选
 
-```
-┌─────────────────────────────────────────┐
-│          HTTP Request Layer             │
-│  (Gin Router + CORS + Middlewares)      │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│         Controller Layer                │
-│(accountControllers, articlesControllers)|
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│          Service Layer                  │
-│   (articleService, userService)         │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│           DAO Layer                     │
-│     (Database Access Object)            │
-└───────────────┬─────────────────────────┘
-                │
-┌───────────────▼─────────────────────────┐
-│          Model Layer                    │
-│    (GORM Models + Database)             │
-└─────────────────────────────────────────┘
-```
+列表接口会根据登录态区分 `def` / `deep` 文章可见范围。
 
-### 请求处理流程
+### 6. 图片上传与自动压缩
 
-```
-Request
-  │
-  ├─> CORS验证
-  │
-  ├─> UnifiedErrorHandler中间件
-  │
-  ├─> Auth/LooseAuth中间件（JWT验证）
-  │
-  ├─> NeedPerm中间件（权限验证）
-  │
-  ├─> Controller（业务处理）
-  │     │
-  │     ├─> Service（业务逻辑）
-  │     │     │
-  │     │     └─> DAO（数据访问）
-  │     │           │
-  │     │           └─> Model（数据库）
-  │     │
-  │     └─> JSON Response / Error
-  │
-  └─> Response
-```
+图片上传接口为 `POST /api/upload/image`，已具备：
+
+- 文件大小限制：**10 MiB**
+- 后缀白名单：`.jpg`、`.jpeg`、`.png`、`.gif`、`.webp`
+- 超过阈值时自动生成压缩图
+- 返回优先使用压缩图 URL，同时保留原图 URL
+
+相关压缩参数通过 `fileobject` 配置控制。
+
+### 7. RSS 订阅
+
+`GET /api/rss` 已支持：
+
+- 通过 `token` 控制是否输出深度内容
+- 通过 `category` / `tag` 过滤文章
+- 使用站点配置自动填充 RSS 元信息
+
+### 8. 站点信息接口
+
+`GET /api/site/info` 用于前端页脚展示：
+
+- 总文章数
+- 总字数
+- 阅读时长估算
+- 站点开放时间 / 运行时长
+
+### 9. CORS 与开放域名策略
+
+当前代码默认允许：
+
+- `localhost`
+- `127.0.0.1`
+- `192.168.*.*`
+- `coco-29.wang` 及子域名
+
+适合本地联调、局域网调试与线上域名访问。
 
 ---
 
-## 🗄 数据库设计
+## 快速开始
 
-### 核心数据表
+### 环境要求
 
-#### AccountInfo（用户表）
-```go
-- ID (uint64, PK)              // 用户唯一标识
-- Email (string, Index)        // 登录邮箱
-- PasswordHash (string)        // bcrypt密码哈希
-- UserName (string, Index)     // 用户名
-- PermGroupID (uint32, Index)  // 权限组ID
-- RSSToken (string)            // RSS订阅令牌
-- AvatarFile (string)          // 头像文件名
-- Sex / SexInfo (string)       // 性别信息
-- Deepable (bool)              // 是否可启用深度模式
-- IsDeep (bool)                // 是否已启用深度模式
-- Behaviors (text)             // 用户偏好标签（JSON数组）
-- Likes (text)                 // 点赞文章列表（JSON数组）
-- CreatedAt / UpdatedAt        // 时间戳
-- DeletedAt (soft delete)      // 软删除
-```
+- Go 1.25.1+
+- MySQL 5.7 / 8.0+
+- 可写的上传目录
+- 可选：可用的 SMTP 服务
 
-#### Post（文章表）
-```go
-- ID (uint64, PK)              // 文章唯一标识
-- Title (string)               // 标题
-- Subtitle (string)            // 副标题
-- Summary (string)             // 摘要（列表显示）
-- CoverImage (string)          // 封面图片
-- Content (string)             // 富文本内容
-- MdContent (string)           // Markdown内容
-- Category (string, Index)     // 分类（JSON数组）
-- Tags (text)                  // 标签（JSON数组）
-- IsDeep (bool, Index)         // 是否深度内容
-- Words (uint64)               // 字数统计
-- Views (uint64)               // 浏览量
-- Likes (uint64)               // 点赞数
-- Comments (JSON)              // 评论数据（保留）
-- CreatedAt / UpdatedAt        // 时间戳
-```
+### 1. 克隆项目
 
-#### PermissionGroup（权限组表）
-- 使用Bitset存储权限位图
-- 支持高效的权限验证（位运算）
-
----
-
-## 🔐 认证与权限机制
-
-### JWT Token生成流程
-
-```go
-1. 用户登录验证（邮箱+密码 或 邮箱+验证码）
-2. 查询数据库获取用户ID和权限组ID
-3. 生成Token元数据：
-   - 用户ID (8字节)
-   - 权限组ID (4字节)
-   - 过期时间 (8字节, Unix时间戳)
-   - 保留位 (4字节)
-4. 使用SHA256计算签名：
-   SHA256(元数据 + 48字节密钥) → 取前24字节
-5. 拼接元数据+签名 = 48字节
-6. Base64编码 → 64字符Token
-7. 返回给客户端
-```
-
-### Token验证流程
-
-```go
-1. 从请求头获取Authorization
-2. Base64解码 → 48字节二进制
-3. 提取元数据（前24字节）
-4. 提取签名（后24字节）
-5. 使用相同算法重新计算签名
-6. 对比签名是否一致
-7. 检查过期时间
-8. 验证通过 → 提取用户ID和权限组ID
-```
-
-### 权限验证流程
-
-```go
-1. 从Context获取权限组ID
-2. 懒加载权限组配置（首次从数据库读取）
-3. 根据权限组ID获取权限Bitset
-4. 使用位运算检查所需权限：
-   HasPermission = (UserPermBits & RequiredPermBits) == RequiredPermBits
-5. 验证通过 → 继续处理请求
-6. 验证失败 → 返回403 Forbidden
-```
-
----
-
-## 🚀 快速开始
-
-### 前置要求
-- Go 1.25.1 或更高版本
-- MySQL 5.7+ 或 8.0+
-- Git
-
-### 安装步骤
-
-1. **克隆项目**
 ```bash
 git clone https://github.com/coco292931/coblog-backend
-cd ./coblog-backend
+cd coblog-backend
 ```
 
-2. **配置数据库**
-```bash
-# 创建数据库
-mysql -u root -p
+### 2. 准备数据库
+
+```sql
 CREATE DATABASE coblog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-#数据库表应该会在首次运行时自动迁移，但权限组表仍需手动配置
 ```
 
-3. **配置文件**
+> 当前 `configs/database/database.go` 中默认跳过自动迁移，实际使用前需要先准备好表结构和权限数据。
+
+### 3. 复制配置文件
+
 ```bash
-# 复制配置示例
-cd configs/configs
-cp appConfigs_example.yaml appConfigs.yaml
-
-# 编辑配置文件
-# 填写数据库连接信息、JWT密钥等
+copy .\configs\configs\appConfigs_example.yaml .\configs\configs\appConfigs.yaml
 ```
 
-4. **安装依赖**
+### 4. 修改配置
+
+至少补齐：
+
+- 数据库连接
+- `webtoken_sigkey`
+- `fileobject.dir`
+- `site.base_url`
+- `smtp.*`（若要启用注册/激活/找回密码）
+
+### 5. 安装依赖并启动
+
 ```bash
 go mod download
-```
-
-5. **运行项目**
-```bash
 go run main.go
 ```
 
-服务将在 `http://localhost:8080` 启动
+默认监听地址：`http://localhost:8080`
 
-## ⚙️ 配置说明
+---
 
-### appConfigs.yaml 配置文件
-可参考 configs\configs\appConfigs_example.yaml
-上线需要删除_example后缀
+## 配置说明
+
+配置文件路径：`configs/configs/appConfigs.yaml`
+
+示例：
 
 ```yaml
-# 数据库配置
 database:
-  host: localhost        # 数据库主机
-  port: 3306            # 数据库端口
-  username: root        # 数据库用户名
-  password: your_password  # 数据库密码
-  dbname: coblog        # 数据库名称
+  host: localhost
+  port: 3306
+  username: root
+  password: your_password
+  dbname: coblog
 
-# JWT签名密钥（64字符Base64编码）
-# 生成方式：openssl rand -base64 48
-webtoken_sigkey: YKFAq3akQp5pEEAU8UqnrMGUr9lg4DxZZj6uRkHdcugUAcnxF89HunEkUugD0kIP
+webtoken_sigkey: your_base64_48_bytes_key
 
-# 账户配置
 account:
-  valid_secs: 2592000  # Token有效期（秒），30天
+  valid_secs: 2592000
 
-# 文件存储配置
-fileobjects:
-  dir: /path/to/uploads  # 文件上传目录
-```
+fileobject:
+  dir: D:/uploads
+  compress_threshold: 524288
+  compress_max_width: 1920
+  compress_quality: 80
 
-### 环境变量（可选）
-```bash
-export GIN_MODE=release  # 生产模式
-export GIN_MODE=debug    # 开发模式（默认）
-```
+site:
+  base_url: https://coco-29.wang
+  title: coco的避风港
+  description: coco的个人博客
+  author: coco
+  email: coco@coco-29.wang
+  rss_max_items: 30
 
----
-
-## 📡 API文档
-
-### 基础信息
-- **Base URL**: `http://localhost:8080/`
-- **认证方式**: Bearer Token (JWT)
-- **请求头**: 
-  - `Content-Type: application/json`
-  - `Authorization: <token>`
-
-### 核心端点
-
-#### 认证相关
-```
-POST   /api/auth/login/combo     # 账号密码登录
-POST   /api/auth/login/email     # 邮箱验证码登录
-POST   /api/auth/register        # 用户注册
+smtp:
+  host: smtp.gmail.com
+  port: 465
+  username: your@gmail.com
+  password: your_auth_code
+  from: your@gmail.com
+  from_name: coco的避风港
 ```
 
-#### 用户相关
-```
-GET    /api/user/info/           # 获取个人信息 [需登录]
-PUT    /api/user/info/           # 更新个人信息 [需登录]
-PUT    /api/user/pwd/            # 修改密码 [需登录]
-PUT    /api/user/rst-rss/        # 重置RSS Token [需登录]
-```
+### 配置项说明
 
-#### 文章相关
-```
-GET    /api/articles             # 获取文章列表 [公开]
-GET    /api/articles/:id         # 获取文章详情 [公开/登录]
-```
-
-#### 文件相关
-```
-POST   /api/upload/image         # 上传图片 [需登录+权限]
-```
-
-#### 其他
-```
-GET    /api/site/info            # 获取站点信息 [公开]
-GET    /api/rss                  # RSS订阅 [公开]
-```
-
-#### 管理员
-```
-GET    /api/admin/users/         # 获取用户列表 [需管理员权限]
-```
+- `webtoken_sigkey`：48 字节随机密钥的 Base64 文本
+- `fileobject.dir`：上传文件落盘目录，需事先存在且进程可写
+- `fileobject.compress_*`：控制图片压缩阈值、宽度与质量
+- `site.base_url`：前端站点地址，用于 RSS 中文章链接生成
+- `smtp`：注册验证码、激活邮件、找回密码依赖该配置
 
 ---
 
-## 📁 项目结构
+## API 概览
 
-```
+### 认证相关
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/auth/login/combo` | 邮箱 + 密码登录 |
+| `POST` | `/api/auth/login/email` | 邮箱验证码登录 |
+| `POST` | `/api/auth/register` | 邮箱验证码注册 |
+| `POST` | `/api/auth/code/send` | 发送验证码，`purpose=register/reset/login` |
+| `POST` | `/api/auth/pwd/reset` | 通过邮箱验证码重置密码 |
+| `GET` | `/api/auth/activate` | 激活账户 |
+
+### 用户相关
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `GET` | `/api/user/info/` | 获取个人资料 |
+| `PUT` | `/api/user/info/` | 更新个人资料 |
+| `PUT` | `/api/user/pwd/` | 修改密码 |
+| `PUT` | `/api/user/rst-rss/` | 重置 RSS Token |
+
+### 文章相关
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `GET` | `/api/articles` | 列表 / 搜索 / 分类标签筛选 |
+| `GET` | `/api/articles/:id` | 获取文章详情 |
+| `POST` | `/api/articles` | 创建文章 |
+| `PUT` | `/api/articles/:id` | 更新文章 |
+| `DELETE` | `/api/articles/:id` | 删除文章 |
+| `GET` | `/api/articles/:id/edit` | 获取编辑回填数据 |
+| `POST` | `/api/markdown/render` | Markdown 预览渲染 |
+
+### 文件与站点
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `POST` | `/api/upload/image` | 上传图片 |
+| `GET` | `/api/site/info` | 获取站点统计信息 |
+| `GET` | `/api/rss` | 生成 RSS，支持 `token/category/tag` |
+
+### 管理接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `GET` | `/api/admin/users/` | 获取用户列表 |
+
+---
+
+## 项目结构
+
+```text
 coblog-backend/
-├── main.go                    # 程序入口
-├── go.mod                     # Go模块依赖
-├── go.sum                     # 依赖校验
-├── Dockerfile                 # Docker镜像构建
-│
-├── common/                    # 公共组件
-│   ├── basics/               # 基础工具（类型转换等）
-│   ├── exception/            # 异常定义和错误码
-│   ├── permission/           # 权限系统核心逻辑
-│   │   ├── permission.go    # 权限验证、权限枚举
-│   │   └── configs/         # 权限组配置
-│   └── webtoken/            # JWT Token生成与验证
-│
-├── configs/                  # 配置模块
-│   ├── configReader/        # Viper配置读取
-│   ├── configs/             # 配置文件目录
-│   │   ├── appConfigs.yaml        # 实际配置（不提交）
-│   │   └── appConfigs_example.yaml # 配置示例
-│   ├── database/            # GORM数据库连接
-│   └── router/              # Gin路由配置
-│       └── router.go        # 路由注册、CORS配置
-│
-├── controllers/             # 控制器层（处理HTTP请求）
-│   ├── accountControllers/  # 账户管理
-│   ├── articlesControllers/ # 文章管理
-│   ├── fileController/      # 文件上传
-│   ├── loginControllers/    # 登录逻辑
-│   ├── registerControllers/ # 注册逻辑
-│   ├── rssController/       # RSS生成
-│   └── siteInfoController/  # 站点信息
-│
-├── middlewares/             # 中间件
-│   ├── auth.go             # JWT认证中间件
-│   ├── checkPerm.go        # 权限验证中间件
-│   └── errorHandler.go     # 统一错误处理
-│
-├── models/                 # 数据模型（GORM）
-│   ├── account.go         # 用户模型
-│   ├── post.go            # 文章模型
-│   ├── permission.go      # 权限组模型
-│   ├── comments.go        # 评论模型（保留）
-│   └── siteInfo.go        # 站点信息模型
-│
-├── services/              # 业务逻辑层
-│   ├── articleService/    # 文章业务逻辑
-│   ├── userService/       # 用户业务逻辑
-│   ├── fileService/       # 文件处理逻辑
-│   └── ssrService/        # 服务端渲染（保留）
-│
-├── dao/                   # 数据访问层
-│   ├── account.go        # 用户数据访问
-│   ├── permission.go     # 权限数据访问
-│   └── Readme.md
-│
-├── utils/                # 工具函数
-│   └── jsonResponse.go  # JSON响应封装
-│
-└── docs/                 # 项目文档
-    ├── ProjectStructure.md  # 项目结构说明
-    ├── ErrorCodes.md        # 错误码列表
-    ├── DataFormat.md        # 数据格式规范
-    ├── GinContext.md        # Gin上下文使用
-    └── 权限列表.txt         # 权限清单
+├── main.go
+├── go.mod
+├── Dockerfile
+├── common/
+│   ├── basics/
+│   ├── exception/
+│   ├── permission/
+│   └── webtoken/
+├── configs/
+│   ├── configReader/
+│   ├── configs/
+│   ├── database/
+│   └── router/
+├── controllers/
+│   ├── accountControllers/
+│   ├── articlesControllers/
+│   ├── fileController/
+│   ├── loginControllers/
+│   ├── markdownController/
+│   ├── registerControllers/
+│   ├── rssController/
+│   └── siteInfoController/
+├── middlewares/
+├── models/
+├── services/
+│   ├── articleService/
+│   ├── fileService/
+│   ├── mailService/
+│   ├── markdownService/
+│   ├── rssService/
+│   ├── siteInfoService/
+│   └── userService/
+├── dao/
+├── utils/
+└── docs/
 ```
 
 ---
 
-## 🐳 Docker部署
+## Docker 部署
+
+当前 `Dockerfile` 为多阶段构建：
+
+- 构建阶段：`golang:1.25`
+- 运行阶段：`scratch`
+
+### 构建镜像
 
 ```bash
-# 构建镜像
 docker build -t coblog-backend .
+```
 
-# 运行容器
+### 运行示例
+
+```bash
 docker run -d \
   -p 8080:8080 \
-  -v /path/to/configs:/app/configs \
-  -v /path/to/uploads:/app/uploads \
+  -v /host/appConfigs.yaml:/configs/configs/appConfigs.yaml:ro \
+  -v /host/uploads:/uploads \
   --name coblog-backend \
   coblog-backend
 ```
 
----
+同时需要保证配置中的：
 
-## 📝 许可证
-
-详见 [LICENSE](LICENSE) 文件
-
----
-
-## 🤝 贡献指南
-
-欢迎提交Issue和Pull Request！
+- `fileobject.dir=/uploads`
+- 数据库地址对容器可达
 
 ---
 
-## 📮 联系方式
+## 许可证
 
-- E-mail: coco@coco-29.wang
-- 问题反馈: [GitHub Issues]
+详见 [LICENSE](LICENSE)
 
 ---
 
-**Built with ❤️ by coco&koko**
+**Built with ❤️ by coco & koko**
