@@ -23,6 +23,11 @@ func ResetPwdByEmail(c *gin.Context) {
 		return
 	}
 
+	if !utils.IsValidEmail(form.Email) {
+		c.Error(exception.ApiParamError)
+		return
+	}
+
 	// 校验验证码
 	if !mailService.VerifyCode(mailService.PurposeReset, form.Email, form.VerificationCode) {
 		c.Error(exception.UsrCodeInvalid)

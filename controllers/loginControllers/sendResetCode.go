@@ -26,6 +26,11 @@ func SendCode(c *gin.Context) {
 		return
 	}
 
+	if !utils.IsValidEmail(form.Email) {
+		c.Error(exception.ApiParamError)
+		return
+	}
+
 	purpose := mailService.CodePurpose(form.Purpose)
 	switch purpose {
 	case mailService.PurposeRegister:

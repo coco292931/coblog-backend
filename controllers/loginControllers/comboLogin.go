@@ -3,7 +3,7 @@ package loginControllers
 import (
 	"coblog-backend/common/exception"
 	"coblog-backend/common/webtoken"
-	"coblog-backend/configs/configReader"
+	configreader "coblog-backend/configs/configReader"
 	"coblog-backend/models"
 	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
@@ -74,20 +74,20 @@ func AuthByCombo(c *gin.Context) {
 		return
 	}
 
-	// 账户未激活：重新发送激活邮件，返回提示
+	activated := userService.IsActivated(accountInfo)
+	// 账户未激活：补发激活邮件，但不阻止登录
 	if !userService.IsActivated(accountInfo) {
 		if err := mailService.SendActivationEmail(accountInfo.Email, accountInfo.Activation); err != nil {
 			fmt.Println("激活邮件发送失败:", err)
 		}
-		c.Error(exception.UsrNotActivated)
-		return
 	}
 
 	//TODO:解决秘钥签名错误的问题
 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
-		"token":    webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, configreader.GetConfig().Account.ValidSecs), //100000000 194年
-		"userID":   accountInfo.ID,
-		"username": accountInfo.UserName,
-		"userType": strconv.FormatUint(uint64(accountInfo.PermGroupID), 10),
+		"token":     webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, configreader.GetConfig().Account.ValidSecs), //100000000 194年
+		"userID":    accountInfo.ID,
+		"username":  accountInfo.UserName,
+		"userType":  strconv.FormatUint(uint64(accountInfo.PermGroupID), 10),
+		"activated": activated,
 	})
 }
