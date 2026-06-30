@@ -34,6 +34,7 @@ func ChangePwd(c *gin.Context) {
 }
 
 func EditAccountInfoUser(c *gin.Context) { 
+	// todo 普通用户修改自己的账户信息
 	return
 }
 

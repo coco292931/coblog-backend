@@ -11,7 +11,7 @@ account:
   valid_secs: 2592000  # 30天，单位秒
 
 fileobject:
-  dir: D:/JHET_TESTONLY
+  dir: /data
   compress_threshold: 524288   # 超过 512 KiB 时自动压缩，0 表示始终压缩
   compress_max_width: 1920     # 压缩后最大宽度（像素），超宽等比缩小，0 表示不限宽
   compress_quality: 80         # JPEG 输出质量 1-100
