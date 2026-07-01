@@ -58,7 +58,11 @@ func SaveImageWithCompression(data []byte, ext string) (ImageSaveResult, error) 
 	}
 
 	cfg := configreader.GetConfig().FileObject
-	dir := cfg.Dir
+	dir := filepath.Join(cfg.Dir, "img")
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return ImageSaveResult{}, err
+	}
 
 	baseName := randStrGenerater(32)
 	origName := baseName + ext

@@ -5,6 +5,7 @@ import (
 	configreader "coblog-backend/configs/configReader"
 	middleware "coblog-backend/middlewares"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"coblog-backend/controllers/accountControllers"
@@ -98,7 +99,7 @@ func InitEngine() *gin.Engine {
 
 	// 静态文件服务：把上传目录挂到 /static/uploads，供图片等资源直接访问
 	// 与 fileController 返回的 URL 前缀保持一致
-	ginEngine.Static("/static/uploads", configreader.GetConfig().FileObject.Dir)
+	ginEngine.Static("/static/uploads", filepath.Join(configreader.GetConfig().FileObject.Dir, "img"))
 
 	fmt.Println(gin.Context{})
 	// // 添加中间件处理字符编码
