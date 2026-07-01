@@ -33,9 +33,9 @@ func SendMail(to, subject, htmlBody string) error {
 	auth := smtp.PlainAuth("", cfg.Username, cfg.Password, cfg.Host)
 
 	if cfg.Port == 465 {
-		return sendImplicitTLS(addr, cfg.Host, auth, from, to, msg)
+		return sendImplicitTLS(addr, cfg.Host, auth, from, to, msg, cfg.TLSSkipVerify)
 	}
-	return sendSTARTTLS(addr, cfg.Host, auth, from, to, msg)
+	return sendSTARTTLS(addr, cfg.Host, auth, from, to, msg, cfg.TLSSkipVerify)
 }
 
 // buildMessage 组装符合 RFC 5322 的邮件报文，正文为 HTML
@@ -56,8 +56,8 @@ func buildMessage(from, fromName, to, subject, htmlBody string) []byte {
 }
 
 // sendImplicitTLS 端口 465：连接即 TLS
-func sendImplicitTLS(addr, host string, auth smtp.Auth, from, to string, msg []byte) error {
-	tlsConfig := &tls.Config{ServerName: host}
+func sendImplicitTLS(addr, host string, auth smtp.Auth, from, to string, msg []byte, skipVerify bool) error {
+	tlsConfig := &tls.Config{ServerName: host, InsecureSkipVerify: skipVerify}
 	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 10 * time.Second}, "tcp", addr, tlsConfig)
 	if err != nil {
 		return fmt.Errorf("TLS连接失败: %w", err)
@@ -74,7 +74,7 @@ func sendImplicitTLS(addr, host string, auth smtp.Auth, from, to string, msg []b
 }
 
 // sendSTARTTLS 端口 587/25：明文连接后升级为 TLS
-func sendSTARTTLS(addr, host string, auth smtp.Auth, from, to string, msg []byte) error {
+func sendSTARTTLS(addr, host string, auth smtp.Auth, from, to string, msg []byte, skipVerify bool) error {
 	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	if err != nil {
 		return fmt.Errorf("连接失败: %w", err)
@@ -88,7 +88,7 @@ func sendSTARTTLS(addr, host string, auth smtp.Auth, from, to string, msg []byte
 	defer client.Close()
 
 	if ok, _ := client.Extension("STARTTLS"); ok {
-		if err := client.StartTLS(&tls.Config{ServerName: host}); err != nil {
+		if err := client.StartTLS(&tls.Config{ServerName: host, InsecureSkipVerify: skipVerify}); err != nil {
 			return fmt.Errorf("STARTTLS失败: %w", err)
 		}
 	}

@@ -58,12 +58,13 @@ type SiteCfg struct {
 
 // SMTPCfg 邮件发送配置，用于注册/找回密码等验证码邮件
 type SMTPCfg struct {
-	Host     string `mapstructure:"host"`      // SMTP 服务器地址，如 smtp.qq.com
-	Port     int    `mapstructure:"port"`      // SMTP 端口，常见 465(SSL) / 587(STARTTLS) / 25
-	Username string `mapstructure:"username"`  // 登录用户名（通常是发件邮箱）
-	Password string `mapstructure:"password"`  // 授权码 / 密码
-	From     string `mapstructure:"from"`      // 发件人地址，留空时使用 username
-	FromName string `mapstructure:"from_name"` // 发件人显示名称
+	Host          string `mapstructure:"host"`            // SMTP 服务器地址，如 smtp.qq.com
+	Port          int    `mapstructure:"port"`            // SMTP 端口，常见 465(SSL) / 587(STARTTLS) / 25
+	Username      string `mapstructure:"username"`        // 登录用户名（通常是发件邮箱）
+	Password      string `mapstructure:"password"`        // 授权码 / 密码
+	From          string `mapstructure:"from"`            // 发件人地址，留空时使用 username
+	FromName      string `mapstructure:"from_name"`       // 发件人显示名称
+	TLSSkipVerify bool   `mapstructure:"tls_skip_verify"` // 跳过证书验证（服务器缺少CA证书时使用）
 }
 
 type InternalAppCfg struct {
