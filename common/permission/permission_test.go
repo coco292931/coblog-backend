@@ -22,8 +22,10 @@ func Test_AddPermission(t *testing.T) {
 func Test_AddUserPG(t *testing.T) {
 	permission.AddPermissionGroup("USER", permission.Perm_GetProfile,
 		permission.Perm_Login,
-		permission.Perm_UploadFile,
-		permission.Perm_UpdateAvatar,)
+		permission.Perm_UpdateProfile,
+		permission.Perm_UpdateAvatar,
+		permission.Perm_ChangePassword,
+		permission.Perm_DownloadFile,)
 	log.Printf("%v", permission.GetAllPermissionGroups())
 }
 
@@ -34,7 +36,9 @@ func Test_AddAdminPG(t *testing.T) {
 }
 
 func Test_AddGuestPG(t *testing.T) {
-	// 空权限组，只有最基本的登录权限（或者完全没有权限）
-	permission.AddPermissionGroup("GUEST")
-	log.Printf("访客权限组创建完成: %v", permission.GetAllPermissionGroups())
+	permission.AddPermissionGroup("GUEST",permission.Perm_GetProfile,
+		permission.Perm_Login,
+		permission.Perm_ChangePassword,
+		permission.Perm_UpdateProfile,)
+	log.Printf("%v", permission.GetAllPermissionGroups())
 }

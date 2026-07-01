@@ -58,14 +58,6 @@ const (
 
 var permissionGroups = map[uint32]models.PermissionGroup{} // permGroupID -> 权限组 对应表
 
-var builtInPerms = map[uint32]map[PermissionID]struct{}{ //回退定义
-	1: {
-		Perm_Login:          {},
-		Perm_GetProfile:     {},
-		Perm_ChangePassword: {},
-	},
-}
-
 // 加载数据库中的权限组权限表
 func loadFromDB() {
 	var err error
@@ -94,32 +86,21 @@ func GetAllPermissionGroups() *map[uint32]models.PermissionGroup {
 
 // IsPermSatisfied 判断指定权限组是否满足一组所需权限。
 //
-// 判定顺序：
-// 1. 先检查代码中为该权限组内置的兜底权限（例如 GUEST 的基础权限）。
-// 2. 若某个权限不在内置权限中，则继续检查数据库中的权限位图。
+// 仅以数据库中的权限组与权限位图作为判定依据：
+// 1. 先根据权限组 ID 读取数据库中的权限组定义；
+// 2. 再逐项检查 needed 中的权限位是否被置位。
 //
 // 只要 needed 中任意一个权限不满足，立即返回 false；
 // 只有全部权限都满足时，才返回 true。
-// 若权限组在数据库中不存在，且对应权限也不在内置权限中，则视为无权。
+// 若权限组在数据库中不存在，则直接视为无权。
 func IsPermSatisfied(permGroupId uint32, needed ...PermissionID) bool {
 	log.Printf("[INFO][PERM] 开始校验权限组 %d，需求权限=%v", permGroupId, needed)
 	tocheck, err := GetPermissionByGroupID(permGroupId)
-	hasDBGroup := err == nil
 	if err != nil {
-		log.Print("[ERROR][PERM] 该权限组不存在 视为无权，回退校验内置权限")
+		log.Print("[ERROR][PERM] 该权限组不存在 视为无权")
+		return false
 	}
 	for _, perm := range needed {
-		if groupPerms, ok := builtInPerms[permGroupId]; ok {
-			if _, ok := groupPerms[perm]; ok {
-				log.Printf("[INFO][PERM] 权限组 %d 通过内置权限 %d", permGroupId, perm)
-				continue
-			}
-			log.Printf("[INFO][PERM] 权限组 %d 没有内置权限 %d\n", permGroupId, perm)
-		}
-		if !hasDBGroup {
-			log.Printf("[WARN][PERM] 权限组 %d 缺少数据库权限组，且内置权限未命中 %d", permGroupId, perm)
-			return false
-		}
 		if !tocheck.Permissions.Test(uint(perm)) {
 			log.Printf("[WARN][PERM] 权限组 %d 缺少数据库权限 %d", permGroupId, perm)
 			return false
