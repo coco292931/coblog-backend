@@ -40,6 +40,7 @@ type FileObjectCfg struct {
 	CompressThreshold int64 `mapstructure:"compress_threshold"` // 超过此字节数时压缩，0 表示始终压缩
 	CompressMaxWidth  int   `mapstructure:"compress_max_width"`  // 压缩后最大宽度（像素），0 表示不限制宽度
 	CompressQuality   int   `mapstructure:"compress_quality"`    // JPEG 压缩质量 1-100，0 使用默认值 80
+	PublicBaseURL     string `mapstructure:"public_base_url"`    // 图片对外访问的基础地址，如 https://api.coco-29.wang，用于拼接绝对 URL（RSS 等跨域场景必需）
 }
 
 type AccountCfg struct {

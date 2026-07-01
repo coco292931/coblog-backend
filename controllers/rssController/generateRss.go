@@ -3,6 +3,7 @@ package rssController
 import (
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"coblog-backend/common/exception"
@@ -39,12 +40,17 @@ func GenerateRSSHandler(c *gin.Context) {
 	// 根据 RSSToken 鉴权，决定返回 def / deep 内容
 	status := resolveRSSStatus(c.Query("token"))
 
-	// 复用文章列表服务，自动按 def/deep 与分类筛选
-	list, err := articleService.GetArticleList(status, params)
+	// 复用文章列表服务，自动按 def/deep 与分类筛选；keepContent=true 以携带全文
+	list, err := articleService.GetArticleList(status, params, true)
 	if err != nil || list == nil {
 		c.Error(exception.SysCannotGetArticle)
 		return
 	}
+
+	// 文章按 ID 降序排列（新文章在前，避免依赖 pubDate 排序及 DB 返回顺序）
+	sort.Slice(list.Articles, func(i, j int) bool {
+		return list.Articles[i].ID > list.Articles[j].ID
+	})
 
 	// 文章 -> RSS Item
 	items := make([]*feeds.Item, 0, len(list.Articles))
@@ -88,14 +94,17 @@ func resolveRSSStatus(token string) string {
 }
 
 // postToItem 把文章转换为 RSS 条目
+// Description 放摘要（阅读器列表预览），Content 放全文 HTML（映射为 <content:encoded>）
 func postToItem(p *models.Post, baseURL string) *feeds.Item {
+	link := fmt.Sprintf("%s/articles/%d", baseURL, p.ID)
 	return &feeds.Item{
 		Title:       p.Title,
-		Link:        &feeds.Link{Href: fmt.Sprintf("%s/articles/%d", baseURL, p.ID)},
+		Link:        &feeds.Link{Href: link},
 		Description: p.Summary,
+		Content:     p.Content,
 		Created:     p.CreatedAt,
 		Updated:     p.UpdatedAt,
-		Id:          fmt.Sprintf("%s/articles/%d", baseURL, p.ID),
+		Id:          link,
 	}
 }
 

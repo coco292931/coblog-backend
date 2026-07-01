@@ -3,6 +3,7 @@ package fileController
 import (
 	"bytes"
 	"coblog-backend/common/exception"
+	configreader "coblog-backend/configs/configReader"
 	"coblog-backend/controllers/accountControllers"
 	"coblog-backend/services/fileService"
 	"coblog-backend/services/userService"
@@ -66,16 +67,23 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
+	// 拼接对外可访问的绝对 URL（RSS、跨域等场景需要绝对地址；站内浏览器也兼容）
+	// public_base_url 未配置时退化为相对路径，保证站内仍可用
+	baseURL := strings.TrimRight(configreader.GetConfig().FileObject.PublicBaseURL, "/")
+	buildURL := func(name string) string {
+		return baseURL + "/static/uploads/" + name
+	}
+
 	// 优先返回压缩图 URL；无压缩图时返回原图
-	serveURL := "/static/uploads/" + result.OriginalName
+	serveName := result.OriginalName
 	if result.CompressedName != "" {
-		serveURL = "/static/uploads/" + result.CompressedName
+		serveName = result.CompressedName
 	}
 
 	utils.JsonSuccessResponse(c, "上传成功", gin.H{
-		"imageId":       result.OriginalName,
-		"url":           serveURL,
-		"original_url":  "/static/uploads/" + result.OriginalName,
+		"imageId":      result.OriginalName,
+		"url":          buildURL(serveName),
+		"original_url": buildURL(result.OriginalName),
 	})
 }
 

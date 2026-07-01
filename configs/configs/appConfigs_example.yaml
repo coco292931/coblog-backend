@@ -15,6 +15,7 @@ fileobject:
   compress_threshold: 524288   # 超过 512 KiB 时自动压缩，0 表示始终压缩
   compress_max_width: 1920     # 压缩后最大宽度（像素），超宽等比缩小，0 表示不限宽
   compress_quality: 80         # JPEG 输出质量 1-100
+  public_base_url: https://api.coco-29.wang   # 图片对外访问基础地址，用于拼接绝对 URL；留空则返回相对路径
 
 # 站点信息，用于 RSS 生成等
 site:

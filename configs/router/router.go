@@ -2,6 +2,7 @@ package router
 
 import (
 	"coblog-backend/common/permission"
+	configreader "coblog-backend/configs/configReader"
 	middleware "coblog-backend/middlewares"
 	"fmt"
 	"strings"
@@ -94,6 +95,10 @@ func InitEngine() *gin.Engine {
 		MaxAge:           12 * 3600, // 预检请求缓存12小时
 	}
 	ginEngine.Use(cors.New(corsConfig))
+
+	// 静态文件服务：把上传目录挂到 /static/uploads，供图片等资源直接访问
+	// 与 fileController 返回的 URL 前缀保持一致
+	ginEngine.Static("/static/uploads", configreader.GetConfig().FileObject.Dir)
 
 	fmt.Println(gin.Context{})
 	// // 添加中间件处理字符编码

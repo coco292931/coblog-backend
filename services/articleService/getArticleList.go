@@ -31,7 +31,10 @@ type ArticleListResponse struct {
 	PageSize uint64        `json:"page_size"`
 }
 
-func GetArticleList(status string, requestParams RequestParams) (*ArticleListResponse, error) {
+// GetArticleList 获取文章列表。
+// keepContent 为 true 时保留富文本 content 字段（如 RSS 全文输出需要）；
+// 为 false 时清空 content 以节省带宽（文章列表场景）。
+func GetArticleList(status string, requestParams RequestParams, keepContent bool) (*ArticleListResponse, error) {
 	var articles []models.Post
 	var total int64
 
@@ -97,9 +100,11 @@ func GetArticleList(status string, requestParams RequestParams) (*ArticleListRes
 		return nil, err
 	}
 
-	//删去 content 字段，节省带宽
-	for i := range articles {
-		articles[i].Content = ""
+	//删去 content 字段，节省带宽（RSS 等需要全文的场景通过 keepContent 保留）
+	if !keepContent {
+		for i := range articles {
+			articles[i].Content = ""
+		}
 	}
 	// 构建响应
 	response := &ArticleListResponse{

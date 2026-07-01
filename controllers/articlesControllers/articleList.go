@@ -34,7 +34,7 @@ func GetArticleList(c *gin.Context) {
 	var data any
 	// 未登录用户，返回默认列表
 	if accountId == 0 {
-		data, err = articleService.GetArticleList("def", requestForm)
+		data, err = articleService.GetArticleList("def", requestForm, false)
 		if err != nil {
 			c.Error(exception.SysUknExc)
 			return
@@ -51,7 +51,7 @@ func GetArticleList(c *gin.Context) {
 			c.Error(exception.SysCannotReadDB)
 			return
 		}
-		data, err = articleService.GetArticleList("def", requestForm)
+		data, err = articleService.GetArticleList("def", requestForm, false)
 		if errors.Is(err, exception.UsrNotPermitted) {
 			c.Error(exception.UsrNotPermitted)
 			return
@@ -65,10 +65,10 @@ func GetArticleList(c *gin.Context) {
 
 	// 校验深度权限
 	if !(accountInfo.Deepable && accountInfo.IsDeep) {
-		data, err = articleService.GetArticleList("def", requestForm)
+		data, err = articleService.GetArticleList("def", requestForm, false)
 	} else {
 		// 通过深度权限校验，返回深度文章列表
-		data, err = articleService.GetArticleList("deep", requestForm)
+		data, err = articleService.GetArticleList("deep", requestForm, false)
 	}
 
 	if err != nil {
