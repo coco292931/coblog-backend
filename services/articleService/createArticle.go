@@ -19,6 +19,8 @@ type CreatePostInput struct {
 	Category   string // JSON 数组字符串，如 ["tech","music"]
 	Tags       string // JSON 数组字符串
 	IsDeep     bool
+	Hidden     bool // true=对所有人隐藏
+	NoStats    bool // true=不计入站点统计
 }
 
 // CreatePost 创建一篇文章
@@ -54,12 +56,17 @@ func CreatePost(input CreatePostInput) (*models.Post, error) {
 		Category:   input.Category,
 		Tags:       input.Tags,
 		IsDeep:     input.IsDeep,
+		Hidden:     input.Hidden,
+		NoStats:    input.NoStats,
 		Words:      uint64(utf8.RuneCountInString(wordSource)),
 	}
 
 	if err := database.DataBase.Create(&post).Error; err != nil {
 		return nil, err
 	}
+
+	// 文章数变化，刷新站点统计（失败不影响发文）
+	refreshSiteInfo()
 
 	return &post, nil
 }

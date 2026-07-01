@@ -41,6 +41,9 @@ func GetArticleList(status string, requestParams RequestParams, keepContent bool
 	// 构建基础查询
 	query := database.DataBase.Model(&models.Post{})
 
+	// 隐藏文章对所有人不可见（优先级最高，先于 def/deep 与分类过滤）
+	query = query.Where("hidden = ?", false)
+
 	// 根据 status 筛选 ISDEEP
 	if status == "def" {
 		query = query.Where("is_deep = ?", false)

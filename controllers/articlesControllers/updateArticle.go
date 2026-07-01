@@ -23,6 +23,8 @@ type UpdateArticleRequest struct {
 	Category   string `json:"category"`   // JSON 数组字符串
 	Tags       string `json:"tags"`       // JSON 数组字符串
 	IsDeep     bool   `json:"is_deep"`
+	Hidden     bool   `json:"hidden"`   // true=对所有人隐藏
+	NoStats    bool   `json:"no_stats"` // true=不计入站点统计
 }
 
 // UpdateArticle 更新文章 PUT /api/articles/:id
@@ -54,6 +56,8 @@ func UpdateArticle(c *gin.Context) {
 		Category:   req.Category,
 		Tags:       req.Tags,
 		IsDeep:     req.IsDeep,
+		Hidden:     req.Hidden,
+		NoStats:    req.NoStats,
 	})
 	if err != nil {
 		if errors.Is(err, exception.SysCannotGetArticle) {

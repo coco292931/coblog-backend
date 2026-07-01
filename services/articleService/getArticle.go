@@ -13,6 +13,11 @@ func GetArticle(status string, id string) (models.Post, error) {
 		return models.Post{}, result.Error
 	}
 
+	// 隐藏文章对所有人不可见（优先级最高，对外等同不存在）
+	if article.Hidden {
+		return models.Post{}, exception.UsrNotPermitted
+	}
+
 	if status == "def" && article.IsDeep {
 		// def 模式：不返回 isdeep 文章
 		return models.Post{}, exception.UsrNotPermitted

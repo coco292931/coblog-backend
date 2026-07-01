@@ -17,6 +17,8 @@ type Post struct {
 	Category   string `json:"category" gorm:"column:category;index"` //`["tech","music","sports"]`
 	Tags       string `json:"tags" gorm:"type:text"`           //`["tech","music","sports"]`
 	IsDeep     bool   `json:"is_deep" gorm:"index"`
+	Hidden     bool   `json:"hidden" gorm:"column:hidden;index"` // true=对所有人隐藏(编辑接口除外)
+	NoStats    bool   `json:"no_stats" gorm:"column:no_stats"`   // true=不计入站点统计
 	Words      uint64 `json:"words" gorm:"column:words"`
 
 	Views uint64 `json:"views" gorm:"column:views"`

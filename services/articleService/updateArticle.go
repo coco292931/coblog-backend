@@ -20,6 +20,8 @@ type UpdatePostInput struct {
 	Category   string // JSON 数组字符串
 	Tags       string // JSON 数组字符串
 	IsDeep     bool
+	Hidden     bool // true=对所有人隐藏
+	NoStats    bool // true=不计入站点统计
 }
 
 // UpdatePost 更新一篇文章
@@ -56,11 +58,16 @@ func UpdatePost(id string, input UpdatePostInput) (*models.Post, error) {
 	post.Category = input.Category
 	post.Tags = input.Tags
 	post.IsDeep = input.IsDeep
+	post.Hidden = input.Hidden
+	post.NoStats = input.NoStats
 	post.Words = uint64(utf8.RuneCountInString(wordSource))
 
 	if err := database.DataBase.Save(&post).Error; err != nil {
 		return nil, err
 	}
+
+	// 字数可能变化，刷新站点统计
+	refreshSiteInfo()
 
 	return &post, nil
 }
@@ -74,5 +81,9 @@ func DeletePost(id string) error {
 	if result.RowsAffected == 0 {
 		return exception.SysCannotGetArticle
 	}
+
+	// 文章数变化，刷新站点统计
+	refreshSiteInfo()
+
 	return nil
 }
