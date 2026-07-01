@@ -6,6 +6,7 @@ import (
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
 	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -46,6 +47,7 @@ func ResendActivationEmail(c *gin.Context) {
 	}
 
 	if err := mailService.SendActivationEmail(user.Email, user.Activation); err != nil {
+		fmt.Println("发送激活邮件失败:", err)
 		c.Error(exception.SysCannotSendMail)
 		return
 	}
