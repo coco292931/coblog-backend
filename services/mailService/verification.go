@@ -51,7 +51,19 @@ func SendVerificationCode(p CodePurpose, email string) (cooldown bool, err error
 }
 
 // SendActivationEmail 发送账户激活邮件，邮件中包含激活链接。
-func SendActivationEmail(email, activationToken string) error {
+// 返回 cooldown=true 表示同一邮箱短时间内已发送过，本次未重复发送。
+func SendActivationEmail(email, activationToken string) (cooldown bool, err error) {
+	cooldown, release := reserveActivationMail(email)
+	if cooldown {
+		return true, nil
+	}
+	sent := false
+	defer func() {
+		if release != nil {
+			release(sent)
+		}
+	}()
+
 	cfg := configreader.GetConfig()
 	siteTitle := cfg.Site.Title
 	if siteTitle == "" {
@@ -66,7 +78,11 @@ func SendActivationEmail(email, activationToken string) error {
 	subject := fmt.Sprintf("【%s】激活你的账户", siteTitle)
 	body := buildActivationEmailHTML(siteTitle, activationURL)
 
-	return SendMail(email, subject, body)
+	if err := SendMail(email, subject, body); err != nil {
+		return false, err
+	}
+	sent = true
+	return false, nil
 }
 
 // buildCodeEmailHTML 渲染验证码邮件正文

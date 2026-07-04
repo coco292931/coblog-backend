@@ -46,9 +46,14 @@ func ResendActivationEmail(c *gin.Context) {
 		return
 	}
 
-	if err := mailService.SendActivationEmail(user.Email, user.Activation); err != nil {
+	cooldown, err := mailService.SendActivationEmail(user.Email, user.Activation)
+	if err != nil {
 		fmt.Println("发送激活邮件失败:", err)
 		c.Error(exception.SysCannotSendMail)
+		return
+	}
+	if cooldown {
+		c.Error(exception.UsrCodeTooFreq)
 		return
 	}
 

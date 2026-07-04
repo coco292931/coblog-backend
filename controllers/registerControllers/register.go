@@ -56,10 +56,13 @@ func CreateNormalUser(c *gin.Context) { //用户注册,默认权限组PermGroupI
 
 	activationMailSent := true
 	msg := "注册成功，激活邮件已发送，请前往邮箱完成激活"
-	if err := mailService.SendActivationEmail(user.Email, user.Activation); err != nil {
+	if cooldown, err := mailService.SendActivationEmail(user.Email, user.Activation); err != nil {
 		activationMailSent = false
 		msg = "注册成功，但激活邮件发送失败，请在“我的”页面重新发送"
 		fmt.Println("激活邮件发送失败:", err)
+	} else if cooldown {
+		activationMailSent = false
+		msg = "注册成功，激活邮件已在近期发送，请前往邮箱查收"
 	}
 
 	utils.JsonSuccessResponse(c, msg, map[string]interface{}{

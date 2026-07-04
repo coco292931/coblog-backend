@@ -2,6 +2,7 @@ package mailService
 
 import (
 	"crypto/rand"
+	"strings"
 	"sync"
 	"time"
 )
@@ -17,9 +18,9 @@ const (
 )
 
 const (
-	codeTTL       = 10 * time.Minute // 验证码有效期
+	codeTTL        = 10 * time.Minute // 验证码有效期
 	resendCooldown = 60 * time.Second // 同一邮箱+用途的最短重发间隔
-	codeLength    = 6                 // 验证码位数
+	codeLength     = 6                // 验证码位数
 )
 
 // 存储条目
@@ -37,8 +38,19 @@ type codeStore struct {
 
 var store = &codeStore{m: make(map[string]codeEntry)}
 
+type mailSendStore struct {
+	mu sync.Mutex
+	m  map[string]time.Time
+}
+
+var sendStore = &mailSendStore{m: make(map[string]time.Time)}
+
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
+}
+
 func storeKey(p CodePurpose, email string) string {
-	return string(p) + ":" + email
+	return string(p) + ":" + normalizeEmail(email)
 }
 
 // GenerateCode 生成一个 codeLength 位的纯数字验证码（加密安全随机）
@@ -107,6 +119,28 @@ func CooldownSeconds() int {
 	return int(resendCooldown / time.Second)
 }
 
+func reserveActivationMail(email string) (cooldown bool, release func(success bool)) {
+	key := "activation:" + normalizeEmail(email)
+	now := time.Now()
+
+	sendStore.mu.Lock()
+	if sentAt, ok := sendStore.m[key]; ok && now.Sub(sentAt) < resendCooldown {
+		sendStore.mu.Unlock()
+		return true, nil
+	}
+	sendStore.m[key] = now
+	sendStore.mu.Unlock()
+
+	return false, func(success bool) {
+		if success {
+			return
+		}
+		sendStore.mu.Lock()
+		delete(sendStore.m, key)
+		sendStore.mu.Unlock()
+	}
+}
+
 // startCleanup 定期清理过期条目，避免内存堆积
 func startCleanup() {
 	go func() {
@@ -121,6 +155,14 @@ func startCleanup() {
 				}
 			}
 			store.mu.Unlock()
+
+			sendStore.mu.Lock()
+			for k, sentAt := range sendStore.m {
+				if now.Sub(sentAt) > codeTTL {
+					delete(sendStore.m, k)
+				}
+			}
+			sendStore.mu.Unlock()
 		}
 	}()
 }

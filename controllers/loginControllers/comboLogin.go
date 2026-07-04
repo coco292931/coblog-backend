@@ -77,8 +77,10 @@ func AuthByCombo(c *gin.Context) {
 	activated := userService.IsActivated(accountInfo)
 	// 账户未激活：补发激活邮件，但不阻止登录
 	if !userService.IsActivated(accountInfo) {
-		if err := mailService.SendActivationEmail(accountInfo.Email, accountInfo.Activation); err != nil {
+		if cooldown, err := mailService.SendActivationEmail(accountInfo.Email, accountInfo.Activation); err != nil {
 			fmt.Println("激活邮件发送失败:", err)
+		} else if cooldown {
+			fmt.Println("激活邮件发送过于频繁，已跳过")
 		}
 	}
 
