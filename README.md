@@ -60,10 +60,18 @@
 - **注册验证码**：`POST /api/auth/code/send`，`purpose=register`
 - **找回密码验证码**：`POST /api/auth/code/send`，`purpose=reset`
 - **邮箱验证码登录**：`POST /api/auth/login/email`，`purpose=login`
-- **激活邮件**：注册后账户保存激活 token，未激活登录时会重新发送激活邮件
+- **激活邮件**：注册后签发一次性激活令牌并写入 Redis，未激活登录时会重新发送
 - **密码找回**：`POST /api/auth/pwd/reset`
 
-邮件发送基于 `smtp` 配置，验证码内存存储、一次性使用，并带重发冷却时间。
+邮件发送基于 `smtp` 配置。**验证码与激活令牌均存放于 Redis**，由 TTL 自动过期，
+并借助 Lua 脚本保证「比对 + 删除」原子完成：
+
+- 验证码：10 分钟有效，一次性使用；校验失败不消耗记录（防止暴力枚举打掉合法用户的验证码）
+- 重发冷却：60 秒，通过 `SET NX EX` 实现，天然防止并发重复下发；发送失败会释放标记以便立即重试
+- 激活令牌：24 小时有效，取出即删除；链接中只有不可猜的随机串，不含任何可篡改信息
+
+> Redis 不可用时这些功能会**明确报错**而非静默降级：激活/验证码属安全敏感流程，
+> 宁可失败也不应绕开校验。
 
 ### 4. Markdown 优先的文章工作流
 
@@ -230,6 +238,12 @@ smtp:
   password: your_auth_code
   from: your@gmail.com
   from_name: coco的避风港
+
+redis:
+  host: 127.0.0.1   # 留空则激活链接与验证码功能不可用
+  port: 6379
+  password:
+  db: 0
 ```
 
 ### 配置项说明
@@ -240,6 +254,7 @@ smtp:
 - `fileobject.public_base_url`：**对外访问的后端基础地址**，用于拼接图片/封面的绝对 URL 以及 RSS 的 `atom:link`；留空则图片返回相对路径、RSS 不输出 `atom:link`
 - `site.base_url`：**前端**站点地址，用于拼接文章链接
 - `smtp`：注册验证码、激活邮件、找回密码依赖该配置
+- `redis`：**账户激活令牌与邮件验证码存于此**。留空则这两个功能直接报错（不静默降级）
 
 ---
 

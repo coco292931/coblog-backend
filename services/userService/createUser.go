@@ -53,18 +53,17 @@ func CreateUser(
 	// }
 	//fmt.Println(string(hashedPassword))
 
-	activationToken, err := GenActivationToken()
-	if err != nil {
-		return nil, exception.SysUknExc
-	}
-
 	user := &models.AccountInfo{
 		PasswordHash: string(hashedPassword),
 		Email:        email,
 		UserName:     userName,
 		PermGroupID:  permGroupID,
 		RSSToken:     GenToken(email),
-		Activation:   activationToken, // 未激活态，登录后邮件下发激活链接
+		// 未激活哨兵值（非空、不等于 activated）：
+		// 新激活令牌存于 Redis，数据库不再保存任何可用凭证。
+		// 这里必须非空，否则 database 启动时的 backfillActivation 会把
+		// activation='' 的账户当成存量用户直接标记为已激活。
+		Activation: pendingMark,
 	}
 
 	res := database.DataBase.Create(user)

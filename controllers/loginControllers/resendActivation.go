@@ -46,7 +46,15 @@ func ResendActivationEmail(c *gin.Context) {
 		return
 	}
 
-	cooldown, err := mailService.SendActivationEmail(user.Email, user.Activation)
+	// 每次都签发新令牌：旧令牌仍受 Redis TTL 约束，用户拿最新邮件即可
+	activationToken, issueErr := userService.IssueActivationToken(user.ID)
+	if issueErr != nil {
+		fmt.Println("签发激活令牌失败:", issueErr)
+		c.Error(exception.SysCannotSendMail)
+		return
+	}
+
+	cooldown, err := mailService.SendActivationEmail(user.Email, activationToken)
 	if err != nil {
 		fmt.Println("发送激活邮件失败:", err)
 		c.Error(exception.SysCannotSendMail)

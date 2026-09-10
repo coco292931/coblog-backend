@@ -51,8 +51,10 @@ func AuthByEmail(c *gin.Context) {
 
 	activated := userService.IsActivated(user)
 	// 未激活：重发激活邮件，但不阻止登录
-	if !userService.IsActivated(user) {
-		if cooldown, sendErr := mailService.SendActivationEmail(user.Email, user.Activation); sendErr != nil {
+	if !activated {
+		if token, issueErr := userService.IssueActivationToken(user.ID); issueErr != nil {
+			fmt.Println("签发激活令牌失败:", issueErr)
+		} else if cooldown, sendErr := mailService.SendActivationEmail(user.Email, token); sendErr != nil {
 			fmt.Println("激活邮件发送失败:", sendErr)
 		} else if cooldown {
 			fmt.Println("激活邮件发送过于频繁，已跳过")

@@ -1,8 +1,10 @@
 package mailService
 
 import (
+	"context"
 	"fmt"
 
+	"coblog-backend/common/exception"
 	configreader "coblog-backend/configs/configReader"
 )
 
@@ -54,17 +56,34 @@ func SendVerificationCode(p CodePurpose, email string) (cooldown bool, err error
 }
 
 // SendActivationEmail 发送账户激活邮件，邮件中包含激活链接。
+// activationToken 由调用方（userService）签发并存入 Redis，本函数只负责投递。
 // 返回 cooldown=true 表示同一邮箱短时间内已发送过，本次未重复发送。
 func SendActivationEmail(email, activationToken string) (cooldown bool, err error) {
-	cooldown, release := reserveActivationMail(email)
-	if cooldown {
+	if !store.Available() {
+		return false, exception.SysUknExc
+	}
+	if activationToken == "" {
+		return false, exception.UsrTokenInvalid
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), opTimeout)
+	defer cancel()
+
+	cooldownKey := keyCooldown("activation", email)
+	// SET NX：抢到冷却标记才发送，天然防止并发重复投递
+	if !store.AcquireCooldown(ctx, cooldownKey, resendCooldown) {
 		return true, nil
 	}
+
 	sent := false
 	defer func() {
-		if release != nil {
-			release(sent)
+		if sent {
+			return
 		}
+		// 发送失败：释放冷却，允许用户立即重试
+		releaseCtx, releaseCancel := context.WithTimeout(context.Background(), opTimeout)
+		defer releaseCancel()
+		_ = store.ReleaseCooldown(releaseCtx, cooldownKey)
 	}()
 
 	cfg := configreader.GetConfig()

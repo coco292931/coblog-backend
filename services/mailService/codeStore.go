@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"strings"
-	"sync"
 	"time"
 
 	"coblog-backend/common/exception"
@@ -131,36 +130,4 @@ func DiscardCode(p CodePurpose, email string) {
 
 	_ = store.Delete(ctx, keyCode(p, email))
 	_ = store.ReleaseCooldown(ctx, keyCooldown(string(p), email))
-}
-
-// ---- 激活邮件重发冷却 ----
-// TODO: 待激活令牌迁移到 Redis 后，与验证码统一使用 Redis 的 SET NX 实现
-
-type mailSendStore struct {
-	mu sync.Mutex
-	m  map[string]time.Time
-}
-
-var sendStore = &mailSendStore{m: make(map[string]time.Time)}
-
-func reserveActivationMail(email string) (cooldown bool, release func(success bool)) {
-	key := "activation:" + normalizeEmail(email)
-	now := time.Now()
-
-	sendStore.mu.Lock()
-	if sentAt, ok := sendStore.m[key]; ok && now.Sub(sentAt) < resendCooldown {
-		sendStore.mu.Unlock()
-		return true, nil
-	}
-	sendStore.m[key] = now
-	sendStore.mu.Unlock()
-
-	return false, func(success bool) {
-		if success {
-			return
-		}
-		sendStore.mu.Lock()
-		delete(sendStore.m, key)
-		sendStore.mu.Unlock()
-	}
 }

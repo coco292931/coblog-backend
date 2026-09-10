@@ -35,3 +35,12 @@ smtp:
   from: your@gmail.com            # 发件人地址，留空则用 username
   from_name: coco的避风港        # 发件人显示名称
   tls_skip_verify: false       # 服务器缺少系统CA证书时设为 true（如部署在无 ca-certificates 的容器）
+
+# Redis 配置：存放账户激活令牌与邮件验证码
+# 激活链接与验证码均依赖 Redis（TTL 自动过期 + 原子一次性消费）。
+# host 留空则依赖它的功能会明确报错，不会静默降级到不安全行为。
+redis:
+  host: 127.0.0.1   # Redis 地址，留空则禁用相关功能
+  port: 6379        # 端口，留空默认 6379
+  password: (pwd)   # 未设置密码则留空
+  db: 0             # 库号，默认 0

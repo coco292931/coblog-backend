@@ -6,16 +6,19 @@ import (
 	"coblog-backend/configs/cache"
 	"coblog-backend/configs/router"
 	"coblog-backend/services/mailService"
+	"coblog-backend/services/userService"
 )
 
 //import "coblog-backend/configs/database"
 
 func main() {
 	// 初始化 Redis（幂等）。连接失败只告警不退出：
-	// 依赖它的功能会明确报错，而非静默降级到不安全行为。
+	// 依赖它的功能（激活链接、邮件验证码）会明确报错，而非静默降级。
 	cache.Init()
 	if cache.Available() {
-		mailService.SetStore(cache.NewStore(cache.Client))
+		store := cache.NewStore(cache.Client)
+		mailService.SetStore(store)
+		userService.SetActivationStore(store)
 	}
 	defer func() {
 		if err := cache.Close(); err != nil {
