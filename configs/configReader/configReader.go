@@ -3,6 +3,7 @@ package configreader
 import (
 	"bytes"
 	_ "embed"
+	"fmt"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -67,6 +68,24 @@ type SMTPCfg struct {
 	TLSSkipVerify bool   `mapstructure:"tls_skip_verify"` // 跳过证书验证（服务器缺少CA证书时使用）
 }
 
+// RedisCfg 缓存与一次性令牌所用 Redis 配置。
+// host 留空则依赖它的功能（激活链接、邮件验证码）会明确报错，不会静默降级。
+type RedisCfg struct {
+	Host     string `mapstructure:"host"`     // 如 127.0.0.1
+	Port     int    `mapstructure:"port"`     // 默认 6379
+	Password string `mapstructure:"password"` // 未设置密码则留空
+	DB       int    `mapstructure:"db"`       // 默认 0
+}
+
+// Addr 返回 host:port 形式地址，端口未配置时使用 6379
+func (r RedisCfg) Addr() string {
+	port := r.Port
+	if port <= 0 {
+		port = 6379
+	}
+	return fmt.Sprintf("%s:%d", r.Host, port)
+}
+
 type InternalAppCfg struct {
 	Database       DatabaseCfg   `mapstructure:"database"`
 	FileObject     FileObjectCfg `mapstructure:"fileobject"`
@@ -74,6 +93,7 @@ type InternalAppCfg struct {
 	Account        AccountCfg    `mapstructure:"account"`
 	Site           SiteCfg       `mapstructure:"site"`
 	SMTP           SMTPCfg       `mapstructure:"smtp"`
+	Redis          RedisCfg      `mapstructure:"redis"`
 }
 
 // Get 并发安全返回最新配置，这是configReader的唯一对外接口
