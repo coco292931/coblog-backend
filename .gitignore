@@ -36,3 +36,5 @@ go.work.sum
 *.bat
 *.log
 *.xml
+.git-commit-msg.tmp
+

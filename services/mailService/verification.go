@@ -45,6 +45,9 @@ func SendVerificationCode(p CodePurpose, email string) (cooldown bool, err error
 	body := buildCodeEmailHTML(siteTitle, text.action, code)
 
 	if err := SendMail(email, subject, body); err != nil {
+		// 发送失败：丢弃已写入的验证码并释放冷却，
+		// 否则用户会白等 60 秒，且验证码虽在 Redis 却永远不会到达邮箱
+		DiscardCode(p, email)
 		return false, err
 	}
 	return false, nil
