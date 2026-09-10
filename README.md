@@ -32,8 +32,9 @@
 - **gin-contrib/cors**：跨域配置
 - **bits-and-blooms/bitset**：权限位图
 - **yuin/goldmark**：Markdown → HTML 渲染
-- **gorilla/feeds**：RSS 生成
 - **disintegration/imaging**：图片压缩与缩放
+
+> RSS 生成使用标准库 `encoding/xml` 手写 RSS 2.0，不再依赖第三方 feed 库。
 
 ---
 
@@ -102,11 +103,18 @@
 
 ### 7. RSS 订阅
 
-`GET /api/rss` 已支持：
+`GET /api/rss` 输出标准 **RSS 2.0**，已支持：
 
 - 通过 `token` 控制是否输出深度内容
 - 通过 `category` / `tag` 过滤文章
 - 使用站点配置自动填充 RSS 元信息
+- 条目包含 `guid` / `dc:creator` / `category`（自动解析分类与标签）/ `content:encoded` 全文
+- 有封面图时输出 `enclosure` 与 `media:thumbnail`
+- 被编辑过的文章额外输出 `atom:updated`（`pubDate` 始终为创建时间，避免旧文章冒泡）
+
+`atom:link rel="self"` 由 `fileobject.public_base_url` 拼接，并保留当前请求的查询串
+（`token` / `category` / `tag`），确保自引用地址返回与当前内容一致的 feed；
+该配置留空时不输出 `atom:link`。
 
 ### 8. 站点信息接口
 
@@ -205,6 +213,7 @@ fileobject:
   compress_threshold: 524288
   compress_max_width: 1920
   compress_quality: 80
+  public_base_url: https://api.coco-29.wang
 
 site:
   base_url: https://coco-29.wang
@@ -228,7 +237,8 @@ smtp:
 - `webtoken_sigkey`：48 字节随机密钥的 Base64 文本
 - `fileobject.dir`：上传文件落盘目录，需事先存在且进程可写
 - `fileobject.compress_*`：控制图片压缩阈值、宽度与质量
-- `site.base_url`：前端站点地址，用于 RSS 中文章链接生成
+- `fileobject.public_base_url`：**对外访问的后端基础地址**，用于拼接图片/封面的绝对 URL 以及 RSS 的 `atom:link`；留空则图片返回相对路径、RSS 不输出 `atom:link`
+- `site.base_url`：**前端**站点地址，用于拼接文章链接
 - `smtp`：注册验证码、激活邮件、找回密码依赖该配置
 
 ---
