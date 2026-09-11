@@ -19,7 +19,6 @@ const appConfigPath = "./configs/configs"
 const appConfigName = "appConfigs"
 
 // TEST: 内嵌的配置文件
-//
 var embedAppCfg []byte
 var testenv = true
 
@@ -36,11 +35,11 @@ type DatabaseCfg struct {
 }
 
 type FileObjectCfg struct {
-	Dir              string `mapstructure:"dir"`
-	LargeFileSize    int    `mapstructure:"large_file_size"`
-	CompressThreshold int64 `mapstructure:"compress_threshold"` // 超过此字节数时压缩，0 表示始终压缩
-	CompressMaxWidth  int   `mapstructure:"compress_max_width"`  // 压缩后最大宽度（像素），0 表示不限制宽度
-	CompressQuality   int   `mapstructure:"compress_quality"`    // JPEG 压缩质量 1-100，0 使用默认值 80
+	Dir               string `mapstructure:"dir"`
+	LargeFileSize     int    `mapstructure:"large_file_size"`
+	CompressThreshold int64  `mapstructure:"compress_threshold"` // 超过此字节数时压缩，0 表示始终压缩
+	CompressMaxWidth  int    `mapstructure:"compress_max_width"` // 压缩后最大宽度（像素），0 表示不限制宽度
+	CompressQuality   int    `mapstructure:"compress_quality"`   // JPEG 压缩质量 1-100，0 使用默认值 80
 	PublicBaseURL     string `mapstructure:"public_base_url"`    // 对外访问的后端基础地址（如 https://api.coco-29.wang）：拼接图片绝对 URL 与 RSS 的 atom:link；留空则不输出 atom:link
 }
 
@@ -49,11 +48,11 @@ type AccountCfg struct {
 }
 
 type SiteCfg struct {
-	BaseURL     string `mapstructure:"base_url"`    // 站点前端地址，用于拼接文章链接，如 https://coco-29.wang
-	Title       string `mapstructure:"title"`       // 站点标题
-	Description string `mapstructure:"description"` // 站点描述
-	Author      string `mapstructure:"author"`      // 作者名
-	Email       string `mapstructure:"email"`       // 作者邮箱
+	BaseURL     string `mapstructure:"base_url"`      // 站点前端地址，用于拼接文章链接，如 https://coco-29.wang
+	Title       string `mapstructure:"title"`         // 站点标题
+	Description string `mapstructure:"description"`   // 站点描述
+	Author      string `mapstructure:"author"`        // 作者名
+	Email       string `mapstructure:"email"`         // 作者邮箱
 	RSSMaxItems int    `mapstructure:"rss_max_items"` // RSS 最多输出条数，0 表示使用默认值
 }
 
