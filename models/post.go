@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 type Post struct {
@@ -33,6 +34,7 @@ type Post struct {
 	// DEFAULT CURRENT_TIMESTAMP、updated_at 另有 ON UPDATE CURRENT_TIMESTAMP。
 	// 显式声明 type 与 default 使其与库定义一致：AutoMigrate 不会改写该列，
 	// 从而保留 ON UPDATE 语义（GORM 标签无法表达 ON UPDATE）。
-	CreatedAt time.Time `json:"createdAt" gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
-	UpdatedAt time.Time `json:"updatedAt" gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	CreatedAt time.Time      `json:"createdAt" gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	UpdatedAt time.Time      `json:"updatedAt" gorm:"type:datetime;default:CURRENT_TIMESTAMP"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"` // 软删除标记：删除文章时仅写入时间，不再物理删除
 }

@@ -1,8 +1,9 @@
 package models
 
 import (
-	"database/sql"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // 数据库中用户信息模型
@@ -40,7 +41,10 @@ type AccountInfo struct {
 	GithubOpenID  string `json:"githubOpenID"`  // GitHubopenid，留给第三方做的
 
 	// 用户关联信息
-	CreatedAt time.Time    `json:"createdAt"`
-	UpdatedAt time.Time    `json:"updatedAt"`
-	DeletedAt sql.NullTime `json:"deletedAt,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	// 软删除标记：必须用 gorm.DeletedAt 而非 sql.NullTime。
+	// 写入 gorm.DeletedAt 后 GORM 查询会自动附加 deleted_at IS NULL，删除也会变为软删除；
+	// 若用 sql.NullTime，则仅为普通字段，无任何软删除行为。
+	DeletedAt gorm.DeletedAt `json:"deletedAt,omitempty" gorm:"index"`
 }
