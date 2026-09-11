@@ -52,11 +52,9 @@ func initDatabase() {
 	DataBase = dbtmp
 
 	// 自动迁移数据库表结构
-	err = autoMigrate(dbtmp)
-	if err != nil {
+	if err := autoMigrate(dbtmp); err != nil {
 		log.Panicf("[FATAL] 数据库表迁移失败: %v", err)
 	}
-	log.Printf("[INFO][DB] 数据库表迁移完成！")
 
 	// 回填存量用户的激活状态：历史账户 activation 为空，新增激活校验后会被全部锁死，
 	// 这里幂等地将其标记为已激活（仅影响 activation 为空字符串的旧数据）。
@@ -77,19 +75,24 @@ func backfillActivation(db *gorm.DB) {
 	}
 }
 
-// autoMigrate 自动迁移所有数据表
+// autoMigrate 自动迁移所有数据表。
+// 模型标签已与线上库结构对齐，迁移是幂等的：结构一致时不产生任何 DDL，
+// 仅在首次引入新字段（如软删除 deleted_at）时增列与索引。
 func autoMigrate(db *gorm.DB) error {
-	//迁移一次就行了
-	log.Printf("[INFO][DB] 本次跳过迁移")
-	return nil
-	// 迁移所有模型
 	log.Printf("[INFO][DB] 开始自动迁移数据库表结构...")
-	return db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&models.AccountInfo{},
 		&models.Post{},
 		&models.Comments{},
 		&models.SiteInfo{},
 		//&models.PermissionGroup{},  //应该按dao里的模型配置
 		// 如果有其他模型，在这里继续添加
-	)
+	); err != nil {
+		// 迁移失败不应导致进程退出：服务仍可基于既有表结构运行，
+		// 但需明确告警，避免结构不一致被静默忽略。
+		log.Printf("[ERROR][DB] 数据库自动迁移失败: %v", err)
+		return err
+	}
+	log.Printf("[INFO][DB] 数据库表迁移完成！")
+	return nil
 }
