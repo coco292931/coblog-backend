@@ -3,7 +3,6 @@ package rssController
 import (
 	"fmt"
 	"net/http"
-	"sort"
 
 	"coblog-backend/common/exception"
 	configreader "coblog-backend/configs/configReader"
@@ -46,10 +45,7 @@ func GenerateRSSHandler(c *gin.Context) {
 		return
 	}
 
-	// 文章按 ID 降序排列（新文章在前，避免依赖 pubDate 排序及 DB 返回顺序）
-	sort.Slice(list.Articles, func(i, j int) bool {
-		return list.Articles[i].ID > list.Articles[j].ID
-	})
+	// 服务层已按发布时间倒序（created_at DESC）取最新的 maxItems 篇，此处不再重排
 
 	// 文章 -> RSS Item
 	items := make([]*rssService.Item, 0, len(list.Articles))

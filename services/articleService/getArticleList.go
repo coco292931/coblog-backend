@@ -19,10 +19,20 @@ func EscapeLike(s string) string {
 type RequestParams struct {
 	Page     uint64 `form:"page"`
 	PageSize uint64 `form:"pageSize"`
-	Category string `form:"category"` //列表
-	Tag      string `form:"tag"`      //标签列表
-	Q        string `form:"q"`        //搜索关键词
+	Category string `form:"category"`            //列表
+	Tag      string `form:"tag"`                 //标签列表
+	Q        string `form:"q" binding:"max=100"` //搜索关键词，超长由绑定层直接判参数错误
+	Sort     string `form:"sort"`                //排序：updated=按最后修改时间，缺省=按发布时间
 }
+
+// 分页/排序的边界约束
+const (
+	defaultPageSize = 10
+	maxPageSize     = 100
+	// page 上限：防止 (page-1)*pageSize 溢出及超大 offset 拖慢查询
+	maxPage       = 1000000
+	sortByUpdated = "updated"
+)
 
 type ArticleListResponse struct {
 	Articles []models.Post `json:"articles"`
@@ -66,10 +76,6 @@ func GetArticleList(status string, requestParams RequestParams, keepContent bool
 
 	// 根据 q 搜索关键词（在标题或内容中搜索）
 	if requestParams.Q != "" {
-		// 限制搜索关键词长度，防止超长查询攻击
-		if len(requestParams.Q) > 100 {
-			return nil, nil // 或返回特定错误
-		}
 		// 转义特殊字符防止LIKE注入和性能DoS攻击
 		escapedQ := EscapeLike(requestParams.Q)
 		searchPattern := "%" + escapedQ + "%"
@@ -84,29 +90,41 @@ func GetArticleList(status string, requestParams RequestParams, keepContent bool
 		return nil, err
 	}
 
-	// 设置默认分页参数
+	// 排序：白名单映射，附带 uid 作为 tie-breaker，保证 OFFSET 分页顺序稳定
+	// （原先没有任何 ORDER BY，顺序只是 MySQL 的偶然行为）
+	if requestParams.Sort == sortByUpdated {
+		query = query.Order("updated_at DESC, uid DESC")
+	} else {
+		query = query.Order("created_at DESC, uid DESC")
+	}
+
+	// 设置默认分页参数并限幅
 	page := requestParams.Page
-	pageSize := requestParams.PageSize
 	if page <= 0 {
 		page = 1
+	} else if page > maxPage {
+		page = maxPage
 	}
+	pageSize := requestParams.PageSize
 	if pageSize <= 0 {
-		pageSize = 10 // 默认每页 10 条
+		pageSize = defaultPageSize
+	} else if pageSize > maxPageSize {
+		pageSize = maxPageSize
 	}
 
 	// 分页处理
-	offset := (page - 1) * pageSize
-	query = query.Offset(int(offset)).Limit(int(pageSize))
+	query = query.Offset(int((page - 1) * pageSize)).Limit(int(pageSize))
 
 	// 执行查询
 	if err := query.Find(&articles).Error; err != nil {
 		return nil, err
 	}
 
-	//删去 content 字段，节省带宽（RSS 等需要全文的场景通过 keepContent 保留）
+	//删去正文，节省带宽（RSS 等需要全文的场景通过 keepContent 保留）
 	if !keepContent {
 		for i := range articles {
 			articles[i].Content = ""
+			articles[i].MdContent = ""
 		}
 	}
 	// 构建响应
