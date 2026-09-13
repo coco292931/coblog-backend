@@ -119,6 +119,33 @@ func TestServeUploadHead(t *testing.T) {
 	}
 }
 
+// 文件名随机且内容永不改变，可以长缓存；带 ETag 的重复请求要能走 304
+func TestServeUploadCacheHeaders(t *testing.T) {
+	engine := newUploadEngine(newUploadFixture(t))
+
+	w := request(t, engine, http.MethodGet, "/static/uploads/bg.jpg?thumb=1")
+	if got, want := w.Header().Get("Cache-Control"), "public, max-age=31536000, immutable"; got != want {
+		t.Errorf("Cache-Control = %q，期望 %q", got, want)
+	}
+	etag := w.Header().Get("ETag")
+	if etag != `"bg_c.jpg"` {
+		t.Errorf("ETag = %q，期望指向实际返回的压缩图", etag)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/static/uploads/bg.jpg?thumb=1", nil)
+	req.Header.Set("If-None-Match", etag)
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, req)
+	if w.Code != http.StatusNotModified {
+		t.Errorf("状态码 = %d，期望 304", w.Code)
+	}
+
+	// 404 不能带长缓存，否则边缘会把「文件不存在」钉住
+	if w := request(t, engine, http.MethodGet, "/static/uploads/nope.jpg"); w.Header().Get("Cache-Control") != "" {
+		t.Errorf("404 不该带 Cache-Control，实际 = %q", w.Header().Get("Cache-Control"))
+	}
+}
+
 func TestServeUploadMissingAndTraversal(t *testing.T) {
 	engine := newUploadEngine(newUploadFixture(t))
 

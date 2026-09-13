@@ -44,6 +44,9 @@ func ServeUpload(dir string) gin.HandlerFunc {
 			}
 		}
 		c.Header("X-Image-Variant", variant)
+		// 文件名随机且内容永不改变，可以长缓存；ETag 用文件名，省掉到期后的回源协商
+		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		c.Header("ETag", `"`+name+`"`)
 
 		// 路径换成实际要返回的那个文件，再交给文件服务
 		c.Request.URL.Path = uploadURLPrefix + "/" + name

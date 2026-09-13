@@ -8,10 +8,10 @@ import (
 	"coblog-backend/services/fileService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
+	"errors"
 	"io"
 	"log"
 	"mime/multipart"
-	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +27,7 @@ func UpdateAvatar(c *gin.Context) {
 		c.Error(exception.ApiFileTooLarge)
 		return
 	}
-	data, _, err := readFileData(fileHeader)
+	data, err := readFileData(fileHeader)
 	if err != nil {
 		c.Error(err)
 		return
@@ -54,14 +54,20 @@ func UploadImage(c *gin.Context) {
 		c.Error(exception.ApiFileTooLarge)
 		return
 	}
-	data, ext, err := readFileData(fileHeader)
+	data, err := readFileData(fileHeader)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	result, err := fileService.SaveImageWithCompression(data, ext)
+	result, err := fileService.SaveImageWithCompression(data)
 	if err != nil {
+		// 类型不支持 / 像素超限是可预期错误，原样带给前端
+		var bizErr *exception.Exception
+		if errors.As(err, &bizErr) {
+			c.Error(bizErr)
+			return
+		}
 		log.Printf("[ERROR][FileSvc] 不能保存图片 %v", err)
 		c.Error(exception.ApiFileNotSaved)
 		return
@@ -85,21 +91,19 @@ func UploadImage(c *gin.Context) {
 	})
 }
 
-// readFileData 读取 multipart 文件的全部字节并返回小写扩展名
-func readFileData(fileHeader *multipart.FileHeader) ([]byte, string, error) {
+// readFileData 读取 multipart 文件的全部字节
+func readFileData(fileHeader *multipart.FileHeader) ([]byte, error) {
 	f, err := fileHeader.Open()
 	if err != nil {
-		return nil, "", exception.ApiFileCannotOpen
+		return nil, exception.ApiFileCannotOpen
 	}
 	defer f.Close()
 
 	data, err := io.ReadAll(f)
 	if err != nil {
-		return nil, "", exception.ApiFileCannotOpen
+		return nil, exception.ApiFileCannotOpen
 	}
-
-	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
-	return data, ext, nil
+	return data, nil
 }
 
 func toReader(data []byte) io.Reader {
