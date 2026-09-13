@@ -82,13 +82,14 @@ func SaveImageWithCompression(data []byte) (ImageSaveResult, error) {
 
 	baseName := randStrGenerater(32)
 	origName := baseName + ext
-	if err := os.WriteFile(filepath.Join(dir, origName), data, 0o644); err != nil {
+	stored := stripMetadataSafely(data, ext)
+	if err := os.WriteFile(filepath.Join(dir, origName), stored, 0o644); err != nil {
 		return ImageSaveResult{}, err
 	}
-	log.Printf("[INFO][FileSvc] 原图已保存: %s (%d bytes)", origName, len(data))
+	log.Printf("[INFO][FileSvc] 原图已保存: %s (%d bytes)", origName, len(stored))
 
 	threshold := cfg.CompressThreshold
-	if threshold != 0 && int64(len(data)) <= threshold {
+	if threshold != 0 && int64(len(stored)) <= threshold {
 		return ImageSaveResult{OriginalName: origName}, nil
 	}
 
@@ -116,6 +117,34 @@ func SaveImageWithCompression(data []byte) (ImageSaveResult, error) {
 
 // keepPercent 压缩图体积低于原图的这个百分比才值得单独存一份
 const keepPercent = 95
+
+// stripMetadataSafely 去掉原图里的位置信息。若清理结果尺寸对不上（改坏了），
+// 退回原始字节，宁可不清理也不写出半损坏的文件。
+func stripMetadataSafely(data []byte, ext string) []byte {
+	stripped := stripMetadata(data, ext)
+	if len(stripped) == len(data) {
+		return data
+	}
+	if !sameImageSize(data, stripped) {
+		log.Printf("[WARN][FileSvc] 元数据清理后尺寸校验不通过，保留原始字节")
+		return data
+	}
+	return stripped
+}
+
+// sameImageSize 只比头部信息，确认清理没动像素尺寸（动图 webp 读不出头部，改用首帧尺寸）
+func sameImageSize(before, after []byte) bool {
+	if w1, h1, ok1 := webpFirstFrameSize(before); ok1 {
+		w2, h2, ok2 := webpFirstFrameSize(after)
+		return ok2 && w1 == w2 && h1 == h2
+	}
+	c1, _, err1 := image.DecodeConfig(bytes.NewReader(before))
+	c2, _, err2 := image.DecodeConfig(bytes.NewReader(after))
+	if err1 != nil || err2 != nil {
+		return err1 != nil && err2 != nil // 两边都读不出：没得比，放行
+	}
+	return c1.Width == c2.Width && c1.Height == c2.Height
+}
 
 // worthKeeping 压缩收益是否值得单独存一份
 func worthKeeping(orig, comp int) bool {

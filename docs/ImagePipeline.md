@@ -9,7 +9,7 @@
 
 ## 一、现状
 
-> ⚠️ 本节记录的是 P0-a 实施**之前**的行为；已变更的部分见「六、实施记录」。
+> ⚠️ 本节记录的是 P0-a / P0-b 实施**之前**的行为；已变更的部分见「六、实施记录」。
 
 ### 1. 上传与压缩（`SaveImageWithCompression`）
 
@@ -205,7 +205,7 @@ return imaging.Decode(bytes.NewReader(data), imaging.AutoOrientation(true))
 - [x] 超大像素的图片被明确拒绝，不会 OOM
 - [x] 压缩图 JPEG 质量按 `compress_quality: 75` 生效
 
-### P0-b — 原图剥离位置信息（决策已定） 🔲
+### P0-b — 原图剥离位置信息 ✅ 已实现（2026-09-13，落地情况见「六、实施记录」）
 
 **契约（已定）**：原图**允许改写字节，但像素一字不动** → 只能做容器级过滤，**不能重编码、不能烘焙旋转**。
 
@@ -214,12 +214,12 @@ return imaging.Decode(bytes.NewReader(data), imaging.AutoOrientation(true))
 | 类别 | 标签 |
 |---|---|
 | 作者 / 版权 | `Artist(0x013B)`、`Copyright(0x8298)` |
-| 设备 | `Make(0x010F)`、`Model(0x0110)`、`LensMake(0xA433)`、`LensModel(0xA434)`、`LensSpecification`、`BodySerialNumber`、`LensSerialNumber` |
+| 设备 | `Make(0x010F)`、`Model(0x0110)`、`LensMake(0xA433)`、`LensModel(0xA434)`、`LensSpecification`（机身 / 镜头**序列号不保留**） |
 | 拍摄参数 | `ExposureTime(0x829A)`、`FNumber(0x829D)`、`ISOSpeedRatings(0x8827)`、`FocalLength(0x920A)`、`FocalLengthIn35mmFilm(0xA405)`、`ExposureProgram`、`ExposureBiasValue`、`MeteringMode`、`Flash`、`WhiteBalance`、`SceneCaptureType` |
-| 时间 | `DateTime(0x0132)`、`DateTimeOriginal(0x9003)`、`DateTimeDigitized(0x9004)`、`OffsetTime*` |
+| 时间 | `DateTime(0x0132)`、`DateTimeOriginal(0x9003)`、`DateTimeDigitized(0x9004)`（`OffsetTime*` **不保留**，时区同样能透地点） |
 | 结构必需 | `Orientation(0x0112)`、`ExifOffset(0x8769)`、`XResolution` / `YResolution` / `ResolutionUnit`、`ColorSpace`、`PixelXDimension` / `PixelYDimension`、`ComponentsConfiguration` |
 
-**剥离**：`GPSInfo(0x8825)` 及其整个 GPS IFD、`MakerNote`（体积大且无保留价值）、`UserComment`、`ImageDescription`（可能写地点）、`Software`。
+**剥离**：`GPSInfo(0x8825)` 及其整个 GPS IFD、`MakerNote`（体积大且无保留价值）、`UserComment`、`ImageDescription`（可能写地点）、`Software`、机身 / 镜头序列号、`OffsetTime*`（时区）。
 
 **同时处理**：`APP2 (ICC)` **必须保留**（否则广色域照片褪色）；`APP1` 里的 XMP、`APP13 (IPTC)`、`COM` **一律丢弃**（都可能写位置）。
 
@@ -232,13 +232,13 @@ return imaging.Decode(bytes.NewReader(data), imaging.AutoOrientation(true))
 - ⚠️ **只对新增上传生效**（已决策不做历史重处理）→ 老图仍带 GPS；日后若要清理，得先补 P1-7 的批量能力。
 - PNG：无方向语义（浏览器不会按 EXIF 旋转 PNG，丢了不会躺倒），`eXIf` / `tEXt` / `iTXt` / `zTXt` **直接丢弃**，不做白名单重建。
 
-**验收（P0-b）**
-- [ ] 原图不含任何 `GPS*` 标签（`exiftool` 确认）
-- [ ] 作者 / 版权 / 机型 / 镜头 / 曝光 / 光圈 / 快门 / ISO / 焦距 / 拍摄时间仍在（`exiftool` 逐项确认）
-- [ ] ICC 配置保留（广色域照片颜色不变）
-- [ ] 竖拍照片原图朝向正确，且**解码后像素哈希与上传前一致**（证明没动像素）
-- [ ] 元数据异常的图：APP1 被整段丢弃，**不产生半损坏文件**（图片仍能正常解码）
-- [ ] XMP / IPTC / COM 已不存在于输出（`exiftool` / `strings` 抽查）
+**验收（P0-b）** ✅（下列均以单测覆盖：自带独立的 EXIF 构造器与解析器，不依赖外部工具）
+- [x] 原图不含任何 `GPS*` 标签（GPSInfo 指针与整个 GPS IFD 均不保留）
+- [x] 作者 / 版权 / 机型 / 镜头 / 曝光 / 光圈 / 快门 / ISO / 焦距 / 拍摄时间仍在且值不变
+- [x] ICC 配置保留（广色域照片颜色不变）
+- [x] 竖拍照片朝向正确，且**像素与上传前逐字节一致**（SOS 后压缩数据完全相同 + 解码后像素逐个相同）
+- [x] 元数据异常的图：APP1 被整段丢弃，**不产生半损坏文件**（图片仍能正常解码）
+- [x] XMP / IPTC / COM 已不存在于输出
 
 **已决策的边界情况**
 1. ✅ EXIF 解析失败 / 结构异常 → **整段丢弃 APP1**（宁可丢参数、绝不泄漏位置）
@@ -318,9 +318,9 @@ images(id, base, orig_ext, orig_bytes, orig_w, orig_h, sha256,
 
 **建议顺序**
 
-1. **P0-a（半天）**：`1 + 2 + 3 + 4 + 5 + 6`。全部集中在两个文件里，无外部依赖，先拿收益（含 #13 的现存 bug）。
-2. **P0-b（1 天）**：原图剥离位置信息，保留相机 / 作者 / 版权元数据（决策已全部拍板）。
-3. **P1-12 RSS 同步**：不依赖任何改造，可与 P0-a 一起上。
+1. ✅ **P0-a**（缓存头 / 压缩规则 / webp / 方向 / 像素上限 / 嗅探）：已上线，含 #13 的现存 bug 修复。
+2. ✅ **P0-b**（原图剥离位置信息）：已上线，相机 / 作者 / 版权元数据保留。
+3. **P1-12 RSS 同步**（下一步）：不依赖任何改造，可单独上线。
 4. ⏸ **P1-7 / 8 / 9 / 10 / 11 全部暂缓**：都涉及历史图重处理或需要 `images` 表，本次不做。
 
 **注意事项**
@@ -363,9 +363,41 @@ images(id, base, orig_ext, orig_bytes, orig_w, orig_h, sha256,
 - `controllers/fileController/serveUpload_test.go`：补缓存头与 304 断言
 - 跑法：`go test ./services/fileService/`；`fileController` 仍需 `go test -c` + 仓库根目录执行
 
+### P0-b（2026-09-13 完成）
+
+新增 `services/fileService/imageMetadata.go`，原图落盘前先过一遍 `stripMetadataSafely`：
+
+| 格式 | 处理 |
+|---|---|
+| JPEG | 重建 APP1(EXIF)：解析 TIFF → 按白名单筛条目 → 重算偏移重拼；保留 APP0(JFIF) / APP2(ICC、MPF) / APP14(Adobe)；丢弃 XMP、APP13(IPTC)、`COM`、APP3~APP12/APP15 与 IFD1(缩略图) |
+| PNG | 丢弃 `eXIf` / `tEXt` / `iTXt` / `zTXt`；显色相关的 `iCCP` / `sRGB` / `gAMA` 等与 IDAT 全部保留 |
+| webp | 重建 `EXIF` 块、丢弃 `XMP ` 块，并同步清掉 VP8X 里对应的 XMP 标志位 |
+| GIF | 不处理（没有 EXIF 容器，位置信息无从谈起） |
+
+**安全网**
+
+- 清理后先比一次头部尺寸（动图 webp 用首帧尺寸），对不上就**退回原始字节**，不写出半损坏的文件。
+- EXIF 结构异常 → 整段丢弃 APP1；JPEG/PNG 容器结构异常 → **原样返回**（不冒险改动）。
+- 大小端 TIFF 都支持（重建后保持原字节序）。
+
+**与原方案的差异**
+
+- 原方案只覆盖 JPEG / PNG，实现时顺带补了 **webp**（它同样能带 EXIF 与 XMP）。
+- 除白名单外的厂商私有 APPn 也一并丢弃（可能藏位置），代价是丢掉不认识的元数据。
+- 序列号（`BodySerialNumber` / `LensSerialNumber`）与 `OffsetTime*` **不保留**：前者能定位到具体设备，后者能透出时区。
+
+**测试**
+
+- `services/fileService/imageMetadata_test.go`（自造素材）：往返式的 EXIF 构造器 + **独立解析器**校验重建结果；覆盖 GPS/文本类剔除、白名单逐项保真、ICC 保留、像素逐一相同、结构异常降级、大端 TIFF、PNG 与 webp 的块处理。
+
 ---
 
 ## 七、修订记录
+
+**2026-09-13（P0-a / P0-b 实施完成）**
+
+- P0-a 六项与 P0-b 均已落地，两份验收清单已勾选；实现差异见「六、实施记录」。
+- P0-b 额外覆盖 webp；新增 `imageMetadata.go`。
 
 **2026-09-13（待确认项全部拍板）**
 
