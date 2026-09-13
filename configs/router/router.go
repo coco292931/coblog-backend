@@ -91,6 +91,7 @@ func InitEngine() *gin.Engine {
 			"Content-Length",
 			"Content-Type",
 			"Authorization",
+			"X-Image-Variant",
 		},
 		AllowCredentials: true,      // 允许携带cookie和Authorization
 		MaxAge:           12 * 3600, // 预检请求缓存12小时
@@ -98,8 +99,10 @@ func InitEngine() *gin.Engine {
 	ginEngine.Use(cors.New(corsConfig))
 
 	// 静态文件服务：把上传目录挂到 /static/uploads，供图片等资源直接访问
-	// 与 fileController 返回的 URL 前缀保持一致
-	ginEngine.Static("/static/uploads", filepath.Join(configreader.GetConfig().FileObject.Dir, "img"))
+	// 与 fileController 返回的 URL 前缀保持一致；带 ?thumb=1 时取压缩图
+	serveUpload := fileController.ServeUpload(filepath.Join(configreader.GetConfig().FileObject.Dir, "img"))
+	ginEngine.GET("/static/uploads/*filepath", serveUpload)
+	ginEngine.HEAD("/static/uploads/*filepath", serveUpload)
 
 	fmt.Println(gin.Context{})
 	// // 添加中间件处理字符编码

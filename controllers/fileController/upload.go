@@ -74,16 +74,14 @@ func UploadImage(c *gin.Context) {
 		return baseURL + "/static/uploads/" + name
 	}
 
-	// 优先返回压缩图 URL；无压缩图时返回原图
-	serveName := result.OriginalName
-	if result.CompressedName != "" {
-		serveName = result.CompressedName
-	}
-
+	// url 指原图：正文里存它，展示时加 ?thumb=1 由服务端换成压缩图；
+	// thumb_url 就是压缩图地址，没有压缩图时服务端自动回退到原图。
+	originalURL := buildURL(result.OriginalName)
 	utils.JsonSuccessResponse(c, "上传成功", gin.H{
-		"imageId":      result.OriginalName,
-		"url":          buildURL(serveName),
-		"original_url": buildURL(result.OriginalName),
+		"id":         result.OriginalName,
+		"url":        originalURL,
+		"thumb_url":  originalURL + "?thumb=1",
+		"compressed": result.CompressedName != "",
 	})
 }
 
