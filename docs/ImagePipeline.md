@@ -292,11 +292,11 @@ images(id, base, orig_ext, orig_bytes, orig_w, orig_h, sha256,
 ⚠️ 命名要升级（如 `<base>_c_<w>.<ext>`），`thumbName` 的"前缀匹配 + 优先级"逻辑需要**重写**，
 并与 P1-7 的表驱动查找合流。建议等有真实移动端流量数据再做。
 
-**12. RSS 端点同步（新增）** 🔲
+**12. RSS 端点同步** ✅ 已实现（2026-09-13）
 
-- `media:thumbnail` 改为 `?thumb=1`（现在给的是原图 URL，阅读器会拉整张原图）
-- `enclosure type` 不再由 URL 后缀推断：P0-a-2 之后无 alpha 的 PNG 会变成 JPG，
-  `type="image/png"` 会与实际内容不符（`rssService/mapper.go` 的 `ImageMIME(coverURL)`）
+- `media:thumbnail` 改用 `?thumb=1`（新增 `ThumbURL`，与前端 `thumbUrl` 同规则：只对 `/static/uploads/` 加参数），阅读器不再为了缩略图下载整张原图。
+- `enclosure` 继续指向**原图**：原图的后缀在 P0-a 之后由内容嗅探决定，与内容一致，所以按后缀推 `type` 是可靠的。
+  （当初担心的是「缩略图返回的格式与后缀不一致」，而 `media:thumbnail` 规范里没有 `type` 属性，不涉及这个问题。）
 
 ### P2 — 规模上来再说
 
@@ -320,7 +320,7 @@ images(id, base, orig_ext, orig_bytes, orig_w, orig_h, sha256,
 
 1. ✅ **P0-a**（缓存头 / 压缩规则 / webp / 方向 / 像素上限 / 嗅探）：已上线，含 #13 的现存 bug 修复。
 2. ✅ **P0-b**（原图剥离位置信息）：已上线，相机 / 作者 / 版权元数据保留。
-3. **P1-12 RSS 同步**（下一步）：不依赖任何改造，可单独上线。
+3. ✅ **P1-12 RSS 同步**：`media:thumbnail` 已改用 `?thumb=1`，`enclosure` 仍指向原图。
 4. ⏸ **P1-7 / 8 / 9 / 10 / 11 全部暂缓**：都涉及历史图重处理或需要 `images` 表，本次不做。
 
 **注意事项**
@@ -390,14 +390,21 @@ images(id, base, orig_ext, orig_bytes, orig_w, orig_h, sha256,
 
 - `services/fileService/imageMetadata_test.go`（自造素材）：往返式的 EXIF 构造器 + **独立解析器**校验重建结果；覆盖 GPS/文本类剔除、白名单逐项保真、ICC 保留、像素逐一相同、结构异常降级、大端 TIFF、PNG 与 webp 的块处理。
 
+### P1-12（2026-09-13 完成）
+
+- `services/rssService/mapper.go` 新增 `ThumbURL`；`toItemXML` 的 `media:thumbnail` 改用它，`enclosure` 仍指向原图。
+- 没有压缩图时服务端会回退原图，所以老文章不会出现死链。
+- 测试：`TestThumbURL`（本站 / 带查询串 / 外链 / 空串）+ `TestGenerateRSSThumbnailUsesCompressedVariant`。
+
 ---
 
 ## 七、修订记录
 
-**2026-09-13（P0-a / P0-b 实施完成）**
+**2026-09-13（P0-a / P0-b / P1-12 实施完成）**
 
 - P0-a 六项与 P0-b 均已落地，两份验收清单已勾选；实现差异见「六、实施记录」。
 - P0-b 额外覆盖 webp；新增 `imageMetadata.go`。
+- P1-12 完成：`media:thumbnail` 走 `?thumb=1`；修正了原文中关于 `enclosure type` 的描述（enclosure 指向原图，按后缀推 type 是可靠的）。
 
 **2026-09-13（待确认项全部拍板）**
 

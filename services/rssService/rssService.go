@@ -214,7 +214,9 @@ func toItemXML(meta FeedMeta, item *Item) itemXML {
 			Type:   item.Enclosure.Type,
 			Length: length,
 		}
-		result.Thumbnail = &thumbnailXML{URL: item.Enclosure.URL}
+		// enclosure 用原图（阅读器下载用），缩略图走 ?thumb=1 由服务端换压缩图；
+		// 没有压缩图时服务端会回退原图，所以旧文章也不会出现死链。
+		result.Thumbnail = &thumbnailXML{URL: ThumbURL(item.Enclosure.URL)}
 	}
 
 	return result

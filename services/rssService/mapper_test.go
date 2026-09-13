@@ -50,6 +50,26 @@ func TestPostToItemWithoutCover(t *testing.T) {
 	}
 }
 
+func TestThumbURL(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{"本站上传图", "https://api.coco-29.wang/static/uploads/AB.png", "https://api.coco-29.wang/static/uploads/AB.png?thumb=1"},
+		{"已带查询串", "https://api.coco-29.wang/static/uploads/AB.png?v=2", "https://api.coco-29.wang/static/uploads/AB.png?v=2&thumb=1"},
+		{"外链原样返回", "https://cdn.example.com/a.png", "https://cdn.example.com/a.png"},
+		{"空串", "", ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := ThumbURL(c.raw); got != c.want {
+				t.Errorf("ThumbURL(%q) = %q，期望 %q", c.raw, got, c.want)
+			}
+		})
+	}
+}
+
 func TestParseStringList(t *testing.T) {
 	cases := []struct {
 		name string

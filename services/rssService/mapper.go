@@ -104,6 +104,18 @@ func ImageMIME(url string) string {
 	}
 }
 
+// ThumbURL 给本站上传的图片加上 ?thumb=1，让阅读器取压缩图；外链原样返回。
+// 与前端 src/utils/image.js 的 thumbUrl 保持一致：只认 /static/uploads/ 前缀。
+func ThumbURL(url string) string {
+	if !strings.Contains(url, "/static/uploads/") {
+		return url
+	}
+	if strings.Contains(url, "?") {
+		return url + "&thumb=1"
+	}
+	return url + "?thumb=1"
+}
+
 // SelfURL 依据请求路径与查询串构造 atom:link 自引用地址。
 // 必须保留查询串：带 token 的请求返回 deep 内容，self 若指向无 token 的地址
 // 会变成 def 内容，支持自引用校验的阅读器会认为 feed 不一致。

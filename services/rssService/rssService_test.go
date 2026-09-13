@@ -190,6 +190,27 @@ func TestGenerateRSSEnclosureAndCategories(t *testing.T) {
 	}
 }
 
+// 本站上传的封面：enclosure 保持原图，media:thumbnail 改走压缩图
+func TestGenerateRSSThumbnailUsesCompressedVariant(t *testing.T) {
+	cover := "https://api.coco-29.wang/static/uploads/ABCDEFGH.png"
+	feed, err := GenerateRSS(newTestMeta(), []*Item{{
+		Title:     "本站封面",
+		Link:      "https://blog.coco-29.wang/articles/8",
+		Created:   testTime,
+		Enclosure: &Enclosure{URL: cover, Type: ImageMIME(cover), Length: "0"},
+	}})
+	if err != nil {
+		t.Fatalf("生成 RSS 失败: %v", err)
+	}
+
+	if !strings.Contains(feed, `<enclosure url="`+cover+`" type="image/png" length="0">`) {
+		t.Errorf("enclosure 应指向原图\n%s", feed)
+	}
+	if !strings.Contains(feed, `<media:thumbnail url="`+cover+`?thumb=1">`) {
+		t.Errorf("media:thumbnail 应带 ?thumb=1\n%s", feed)
+	}
+}
+
 func TestGenerateRSSSelfURLOmittedWhenEmpty(t *testing.T) {
 	meta := newTestMeta()
 	meta.SelfURL = ""
