@@ -116,7 +116,7 @@ func SaveImageWithCompression(data []byte) (ImageSaveResult, error) {
 // #####PRIVATE#####
 
 // keepPercent 压缩图体积低于原图的这个百分比才值得单独存一份
-const keepPercent = 95
+const keepPercent = 80
 
 // stripMetadataSafely 去掉原图里的位置信息。若清理结果尺寸对不上（改坏了），
 // 退回原始字节，宁可不清理也不写出半损坏的文件。
