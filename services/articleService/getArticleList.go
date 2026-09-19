@@ -63,7 +63,6 @@ func GetArticleList(status string, requestParams RequestParams, keepContent bool
 	if requestParams.Category != "" {
 		// 转义特殊字符防止LIKE注入
 		escapedCategory := EscapeLike(requestParams.Category)
-		// MySQL 使用 LIKE 查询 JSON 数组（默认用反斜杠转义）
 		query = query.Where("category LIKE ?", "%\""+escapedCategory+"\"%")
 	}
 
@@ -91,7 +90,6 @@ func GetArticleList(status string, requestParams RequestParams, keepContent bool
 	}
 
 	// 排序：白名单映射，附带 uid 作为 tie-breaker，保证 OFFSET 分页顺序稳定
-	// （原先没有任何 ORDER BY，顺序只是 MySQL 的偶然行为）
 	if requestParams.Sort == sortByUpdated {
 		query = query.Order("updated_at DESC, uid DESC")
 	} else {
