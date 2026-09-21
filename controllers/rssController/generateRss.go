@@ -72,7 +72,7 @@ func GenerateRSSHandler(c *gin.Context) {
 		return
 	}
 
-	c.Data(http.StatusOK, "application/rss+xml; charset=utf-8", []byte(rss))
+	c.Data(http.StatusOK, "application/xml; charset=utf-8", []byte(rss))
 }
 
 // resolveRSSStatus 根据 RSSToken 判定内容级别：
