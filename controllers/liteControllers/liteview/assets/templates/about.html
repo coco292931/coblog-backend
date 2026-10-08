@@ -1,0 +1,32 @@
+{{/* 关于：对应主站 /about、/about/us、/about/friends，文案与主站保持一致。 */}}
+
+{{define "about"}}{{template "head" .}}
+
+<section class="lite-section lite-about">
+
+  <div class="lite-about-side">
+    <div class="lite-about-name">coco_29</div>
+    <nav class="lite-about-nav">
+      <a class="lite-about-link{{if eq .Tab "us"}} is-active{{end}}" href="/lite/about/us">我们的避风港</a>
+      <a class="lite-about-link{{if eq .Tab "friends"}} is-active{{end}}" href="/lite/about/friends">我们的好朋友</a>
+    </nav>
+  </div>
+
+  <div class="lite-about-body lite-prose">
+    {{if eq .Tab "friends"}}
+    <h2>好朋友们</h2>
+    <p>这里是我们的一些好朋友的链接</p>
+    <p>诶？怎么是空的</p>
+    <p>其实是前端没写，会补上的</p>
+    {{else}}
+    <h2>关于我们</h2>
+    <p>coco &amp; koko<br>暂时没想好……<br>但想我了可以戳 <a href="mailto:coco@coco-29.wang">coco@coco-29.wang</a> 与我联系 :P</p>
+    <h2>关于本港湾</h2>
+    <p>温暖舒适的港湾，适合睡觉</p>
+    <p>可以去访问第一篇帖子获取更详细介绍哦 → <a href="/lite/articles/4">点这里</a></p>
+    {{end}}
+  </div>
+
+</section>
+
+{{template "foot" .}}{{end}}

@@ -1,0 +1,17 @@
+{{/* 首页：对应主站 /。
+   主站首屏只有一句欢迎语（站点名在导航栏里），下面直接接文章时间线。
+   时间轴这里是纯 CSS 静态的 —— 主站的圆点定位依赖滚动位置，老设备读不到。 */}}
+
+{{define "home"}}{{template "head" .}}
+
+<div class="lite-hero">海内存知己，天涯若比邻_</div>
+
+{{if .Articles}}
+<div class="lite-timeline">
+  {{range .Articles}}
+  <div class="lite-tl-item">{{template "card" .}}</div>
+  {{end}}
+</div>
+{{end}}
+
+{{template "foot" .}}{{end}}

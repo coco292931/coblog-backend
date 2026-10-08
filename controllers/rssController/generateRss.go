@@ -76,17 +76,16 @@ func GenerateRSSHandler(c *gin.Context) {
 }
 
 // resolveRSSStatus 根据 RSSToken 判定内容级别：
-// 无 token / token 无效 / 无深度权限 -> "def"；具备深度权限 -> "deep"
+// 无 token / token 无效 / 无深度权限 -> def；具备深度权限 -> deep。
+//
+// 真正的判定规则在 userService.ResolveContentStatus，这里只负责把 token 换成账号。
 func resolveRSSStatus(token string) string {
 	if token == "" {
-		return "def"
+		return userService.ContentStatusDefault
 	}
 	account, err := userService.GetUserByToken(token)
 	if err != nil {
-		return "def"
+		return userService.ContentStatusDefault
 	}
-	if account.Deepable && account.IsDeep {
-		return "deep"
-	}
-	return "def"
+	return userService.ContentStatusFor(account)
 }

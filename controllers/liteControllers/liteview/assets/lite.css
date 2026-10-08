@@ -1,0 +1,752 @@
+/* ==========================================================================
+   /lite 样式表
+   --------------------------------------------------------------------------
+   这份样式要同时服务两套环境：
+     · 老 Kindle（Paperwhite 3 / 固件 5.16.2 / WebKit 534）：只认 2010 年前后的
+       CSS，flex / grid / rem / calc() / vw / vh / CSS 变量一律不解析，写了不报错、
+       只是整条声明被丢弃、页面静默变形。
+     · 现代浏览器：打开同一个地址时看到彩色版。
+
+   因此这里的取舍是：
+     · 布局只用 display: -webkit-box（老代唯一可用的 flexbox，现代浏览器至今仍支持）
+       以及 inline-block / float / table-cell 作为备选；
+     · 尺寸只用 px / em / %，间隔用 padding / margin（gap 无效）；
+     · 圆角、阴影、渐变都可用，但必须带 -webkit- 前缀，且标准写法也要写一遍；
+     · 颜色照写 —— 墨水屏把颜色映射成灰度，只要保证明度层次分得开即可。
+       链接一律带下划线，避免「只靠颜色区分」在灰度屏上失效；
+     · 不写 transition / animation（老代不解析，墨水屏上也只会留残影）；
+     · 整页背景保持纯白：大面积浅色/淡色图会触发局部重绘而留残影，
+       小面积的浅底（卡片、代码块、引用）没有问题。
+
+   类名与主站的对应关系见各段注释。样式本身是自由的（用户已说明后续再优化），
+   但**展示项不能增减**。
+   ========================================================================== */
+
+/* ── 基础 ─────────────────────────────────────────────────────────────── */
+
+body {
+  margin: 0;
+  padding: 0 40px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: Bookerly, Georgia, serif;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.lite-shell {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+a {
+  color: #0e7a7a;
+  text-decoration: underline;
+}
+
+img {
+  border: 0;
+}
+
+.lite-sep {
+  color: #c0c0c0;
+  margin: 0 8px;
+}
+
+/* ── 页头（主站 NavBar） ──────────────────────────────────────────────── */
+
+.lite-header {
+  border-bottom: 2px solid #1a1a1a;
+  padding: 22px 0 14px;
+  margin-bottom: 36px;
+}
+
+.lite-header-inner {
+  display: -webkit-box;
+  -webkit-box-pack: justify;
+  -webkit-box-align: center;
+}
+
+.lite-brand {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 26px;
+  font-weight: bold;
+  color: #1a1a1a;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+}
+
+.lite-nav a {
+  display: inline-block;
+  margin-left: 22px;
+  min-height: 48px;
+  line-height: 48px;
+  color: #0e7a7a;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 17px;
+}
+
+/* ── 按钮 ─────────────────────────────────────────────────────────────── */
+/* 触摸目标 ≥48px：老 Kindle 只有 click，没有 hover，按下的反馈得靠足够大的面积。 */
+
+.lite-btn {
+  display: inline-block;
+  min-height: 48px;
+  line-height: 44px;
+  padding: 0 24px;
+  border: 2px solid #1a1a1a;
+  -webkit-border-radius: 999px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 16px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.lite-btn-primary {
+  background: #0e9a9a;
+  border-color: #0e9a9a;
+  color: #ffffff;
+}
+
+.lite-btn-disabled {
+  border-color: #d0d0d0;
+  color: #b0b0b0;
+}
+
+.lite-empty {
+  padding: 60px 0;
+  text-align: center;
+  color: #767676;
+}
+
+/* ── 表单控件 ─────────────────────────────────────────────────────────── */
+
+.lite-label {
+  display: block;
+  margin-bottom: 6px;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 15px;
+  color: #4a4a4a;
+}
+
+.lite-input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 2px solid #d0d0d0;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: Bookerly, Georgia, serif;
+  font-size: 17px;
+}
+
+/* ── 首页首屏（主站 .welcome-text） ───────────────────────────────────── */
+
+.lite-hero {
+  padding: 0 0 36px;
+  border-bottom: 2px solid #1a1a1a;
+  margin-bottom: 40px;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 30px;
+  line-height: 1.4;
+}
+
+/* ── 静态时间轴（首页） ───────────────────────────────────────────────── */
+/* 主站的时间轴圆点位置靠脚本随滚动计算；老 Kindle 读不到滚动位置，
+   这里改用纯 CSS：左侧一条竖线 + 每个条目一个固定圆点。 */
+
+.lite-timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.lite-timeline:before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: #dcdcdc;
+}
+
+.lite-tl-item {
+  position: relative;
+}
+
+.lite-tl-item:before {
+  content: "";
+  position: absolute;
+  left: -27px;
+  top: 30px;
+  width: 10px;
+  height: 10px;
+  -webkit-border-radius: 6px;
+  border-radius: 6px;
+  background: #0e9a9a;
+  border: 2px solid #ffffff;
+}
+
+/* ── 列表卡片（主站 ArticleTimeline 的 .article） ─────────────────────── */
+
+.lite-card {
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  -webkit-box-shadow: 3px 3px 0 #ececec;
+  box-shadow: 3px 3px 0 #ececec;
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+
+.lite-card-cover {
+  display: block;
+}
+
+.lite-card-cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lite-card-body {
+  padding: 18px 22px 20px;
+}
+
+.lite-card-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 22px;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+.lite-card-title a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.lite-card-summary {
+  margin-bottom: 14px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: #4a4a4a;
+}
+
+.lite-card-info {
+  display: -webkit-box;
+  -webkit-box-pack: justify;
+  -webkit-box-align: center;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 14px;
+}
+
+.lite-date {
+  color: #767676;
+}
+
+.lite-tags {
+  text-align: right;
+}
+
+.lite-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 12px;
+  border: 1px solid #d0d0d0;
+  -webkit-border-radius: 999px;
+  border-radius: 999px;
+  background: #f7fafa;
+  color: #4a4a4a;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  text-decoration: none;
+}
+
+/* ── 列表页：搜索区（主站 .search-bar-container） ─────────────────────── */
+
+.lite-search-bar {
+  border: 1px solid #d0d0d0;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  background: #fbfdfd;
+  padding: 20px 22px;
+  margin-bottom: 24px;
+}
+
+.lite-search-row {
+  display: -webkit-box;
+  -webkit-box-align: center;
+}
+
+.lite-search-input {
+  -webkit-box-flex: 1;
+  margin-right: 12px;
+}
+
+.lite-filter-panel {
+  margin-top: 18px;
+}
+
+.lite-field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.lite-filter-actions .lite-btn {
+  margin-right: 12px;
+}
+
+/* ── 列表页：统计栏与排序（主站 .stats-bar / .sort-bar） ──────────────── */
+
+.lite-stats-bar {
+  display: -webkit-box;
+  -webkit-box-pack: justify;
+  -webkit-box-align: center;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e0e0e0;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 15px;
+  color: #4a4a4a;
+}
+
+.lite-filter-text {
+  color: #767676;
+  margin-left: 6px;
+}
+
+.lite-sort-label {
+  color: #767676;
+  margin-right: 10px;
+}
+
+.lite-sort-option {
+  display: inline-block;
+  min-height: 48px;
+  line-height: 48px;
+  padding: 0 16px;
+  -webkit-border-radius: 999px;
+  border-radius: 999px;
+  font-size: 15px;
+  color: #0e7a7a;
+}
+
+.lite-sort-option.is-active {
+  background: #0e9a9a;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+/* ── 分页（主站没有对应物：主站是无限滚动） ───────────────────────────── */
+
+.lite-pager {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+.lite-pager .lite-btn {
+  margin: 0 8px;
+}
+
+.lite-pager-info {
+  display: block;
+  margin: 16px 0;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 15px;
+  color: #767676;
+}
+
+/* ── 文章详情：头部（主站 .main-photo-article .summary） ──────────────── */
+
+.lite-article-head {
+  margin-bottom: 32px;
+}
+
+.lite-article-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 38px;
+  line-height: 1.25;
+  margin-bottom: 14px;
+}
+
+.lite-article-subtitle {
+  margin-bottom: 16px;
+  font-size: 20px;
+  color: #4a4a4a;
+}
+
+.lite-article-time {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 15px;
+  color: #767676;
+  margin-bottom: 12px;
+}
+
+.lite-time-item {
+  display: inline-block;
+  margin-right: 20px;
+}
+
+.lite-article-info {
+  display: -webkit-box;
+  -webkit-box-pack: justify;
+  -webkit-box-align: center;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 15px;
+}
+
+.lite-reading-time {
+  color: #4a4a4a;
+}
+
+.lite-cover {
+  margin: 0 0 32px;
+  padding: 0;
+}
+
+.lite-cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+}
+
+/* ── 正文排版（主站 article-prose 的老设备等价物） ───────────────────── */
+/* 代码块用换行而不是横向滚动：内层 overflow:auto 的容器在老 Kindle 上手指拖不动。 */
+
+.lite-prose {
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.lite-prose h2 {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 27px;
+  line-height: 1.3;
+  margin: 40px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.lite-prose h3 {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 22px;
+  line-height: 1.35;
+  margin: 32px 0 14px;
+}
+
+.lite-prose h4 {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 19px;
+  margin: 26px 0 12px;
+}
+
+.lite-prose p {
+  margin: 0 0 18px;
+}
+
+.lite-prose ul,
+.lite-prose ol {
+  margin: 0 0 18px;
+  padding-left: 28px;
+}
+
+.lite-prose li {
+  margin-bottom: 8px;
+}
+
+.lite-prose blockquote {
+  margin: 22px 0;
+  padding: 14px 20px;
+  border-left: 4px solid #0e9a9a;
+  background: #f7fafa;
+  -webkit-border-radius: 0 8px 8px 0;
+  border-radius: 0 8px 8px 0;
+  color: #4a4a4a;
+}
+
+.lite-prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.lite-prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 24px auto;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.lite-prose code {
+  font-family: monospace;
+  font-size: 15px;
+  padding: 2px 6px;
+  background: #f2f2f2;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.lite-prose pre {
+  margin: 22px 0;
+  padding: 18px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.lite-prose pre code {
+  display: block;
+  padding: 0;
+  background: none;
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.lite-prose table {
+  width: 100%;
+  margin: 22px 0;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+
+.lite-prose th,
+.lite-prose td {
+  border: 1px solid #d0d0d0;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.lite-prose th {
+  background: #f7f7f7;
+  font-family: "Amazon Ember", sans-serif;
+}
+
+.lite-prose hr {
+  border: 0;
+  border-top: 1px solid #e0e0e0;
+  margin: 36px 0;
+}
+
+/* 公式：后端把 TeX 原样放在这些元素里，未启用 JS 时读到的是可读的原文。
+   KaTeX 需要的现代 CSS 在这台机器上跑不动，所以这里只做等宽呈现。 */
+
+.lite-prose .math-inline {
+  font-family: monospace;
+  font-size: 16px;
+  padding: 1px 5px;
+  background: #f7f7f7;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+
+.lite-prose .math-block {
+  font-family: monospace;
+  font-size: 16px;
+  margin: 22px 0;
+  padding: 16px;
+  background: #f7f7f7;
+  border: 1px solid #e6e6e6;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+  text-align: center;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ── 文章详情：版权声明（主站 .license-info） ─────────────────────────── */
+
+.lite-license {
+  margin-top: 48px;
+  padding: 20px 22px;
+  background: #f8fbfb;
+  border: 1px solid #dceeee;
+  border-left: 3px solid #0e9a9a;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+}
+
+.lite-license-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+
+.lite-license-text {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #4a4a4a;
+  word-wrap: break-word;
+}
+
+.lite-license-link {
+  color: #0e7a7a;
+}
+
+/* ── 文章详情：文章统计（主站 .article-info） ─────────────────────────── */
+
+.lite-article-stats {
+  margin-top: 28px;
+  padding: 20px 22px;
+  border: 1px solid #d0d0d0;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+}
+
+.lite-stats-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 17px;
+  margin-bottom: 14px;
+}
+
+.lite-stat-item {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.lite-stat-label {
+  color: #4a4a4a;
+}
+
+.lite-stat-value {
+  font-family: "Amazon Ember", sans-serif;
+}
+
+/* ── 关于（主站 /about） ──────────────────────────────────────────────── */
+
+.lite-about {
+  display: -webkit-box;
+  -webkit-box-align: start;
+}
+
+.lite-about-side {
+  width: 200px;
+  margin-right: 36px;
+}
+
+.lite-about-body {
+  -webkit-box-flex: 1;
+}
+
+.lite-about-name {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 22px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #1a1a1a;
+  margin-bottom: 18px;
+}
+
+.lite-about-link {
+  display: block;
+  min-height: 48px;
+  line-height: 48px;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 17px;
+  color: #0e7a7a;
+}
+
+.lite-about-link.is-active {
+  color: #1a1a1a;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* ── 错误页（主站 pages/notFound） ────────────────────────────────────── */
+
+.lite-notfound {
+  padding: 40px 0 60px;
+  text-align: center;
+}
+
+.lite-notfound-code {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 88px;
+  font-weight: bold;
+  line-height: 1;
+  color: #0e9a9a;
+}
+
+.lite-notfound-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 28px;
+  margin: 20px 0 12px;
+}
+
+.lite-notfound-msg {
+  font-size: 17px;
+  color: #4a4a4a;
+  margin-bottom: 8px;
+}
+
+.lite-notfound-tips {
+  font-size: 16px;
+  color: #767676;
+  margin-bottom: 20px;
+}
+
+.lite-notfound-path {
+  font-family: monospace;
+  font-size: 15px;
+  color: #767676;
+  margin-bottom: 32px;
+  word-wrap: break-word;
+}
+
+.lite-notfound-actions .lite-btn {
+  margin: 0 8px;
+}
+
+/* ── 页脚（主站 Footer.vue 的四项 + 一个回完整站的出口） ──────────────── */
+
+.lite-footer {
+  margin-top: 64px;
+  border-top: 2px solid #1a1a1a;
+  padding: 24px 0 48px;
+  text-align: center;
+  color: #4a4a4a;
+  font-size: 16px;
+}
+
+.lite-copyright {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.lite-stats {
+  margin-bottom: 10px;
+}
+
+.lite-uptime {
+  color: #767676;
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+
+.lite-powered {
+  color: #767676;
+  font-size: 15px;
+}
+
+.lite-switch {
+  margin-top: 18px;
+  font-size: 15px;
+}

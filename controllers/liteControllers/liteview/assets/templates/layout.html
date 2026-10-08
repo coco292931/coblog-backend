@@ -1,0 +1,87 @@
+{{/*
+  公共骨架：#lite 下所有页面都用它。
+  head / foot / card 三个 define 会被各页面模板引用。
+
+  注意：这里的 HTML 会在老 Kindle（WebKit 534）上渲染，
+  卡片一律是直出的 HTML，不依赖任何脚本。
+*/}}
+
+{{define "head"}}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.SiteTitle}}</title>
+<link rel="stylesheet" href="/lite/lite.css">
+</head>
+<body>
+<div class="lite-shell">
+
+<header class="lite-header">
+  <div class="lite-header-inner">
+    <a class="lite-brand" href="/lite/">{{.SiteTitle}}</a>
+    <nav class="lite-nav">
+      <a href="/lite/">首页</a>
+      <a href="/lite/articles">文章</a>
+      <a href="/lite/about">关于</a>
+      <a href="/lite/rss">RSS</a>
+    </nav>
+  </div>
+</header>
+
+<main class="lite-main">
+{{end}}
+
+
+{{define "foot"}}</main>
+
+{{/* 页脚：展示项、措辞、顺序、分隔符均照搬主站 Footer.vue
+     （版权行 / 站点总字数 / 阅读时长 / 已避风时长 / Powered by Vue & GO）。
+     ⚠️ 不要在这里添主站没有的东西。 */}}
+<footer class="lite-footer">
+  <div class="lite-copyright">© 2025-2026 coco_29. All Rights Reserved.</div>
+  {{with .Stats}}
+  <div class="lite-stats">
+    <span class="lite-stat">🖊️ 站点总字数 ≈ {{.TotalWords}}</span>
+    <span class="lite-sep">|</span>
+    <span class="lite-stat">🍵 阅读时长 ≈ {{.ReadingTime}}</span>
+  </div>
+  <div class="lite-uptime">{{.Uptime}}</div>
+  {{end}}
+  <div class="lite-powered">Powered by Vue & GO</div>
+
+  {{/* 只有这一项主站没有：老设备需要一个回到完整站的出口，
+     点一次会写 cookie，之后不再自动跳转回 /lite。 */}}
+  <div class="lite-switch"><a href="/?full=1">切换到完整版</a></div>
+</footer>
+
+</div>
+</body>
+</html>
+{{end}}
+
+
+{{/* 列表卡片。参数是一条 ListItemView。
+   字段与主站 ArticleTimeline.vue 的 .article 一致：封面 / 标题 / 描述 / 日期 / 分类。
+   主站无封面时会补一张占位图，这里直接不渲染（宁可少，不多）。 */}}
+{{define "card"}}
+<article class="lite-card">
+  {{if .Cover}}
+  <a class="lite-card-cover" href="/lite/articles/{{.ID}}">
+    <img src="{{.Cover}}" alt="{{.Title}}" width="100%">
+  </a>
+  {{end}}
+  <div class="lite-card-body">
+    <div class="lite-card-title"><a href="/lite/articles/{{.ID}}">{{.Title}}</a></div>
+    {{if .Summary}}<div class="lite-card-summary">{{.Summary}}</div>{{end}}
+    <div class="lite-card-info">
+      {{if .Date}}<div class="lite-date">{{.Date}}</div>{{end}}
+      {{if .Categories}}
+      <div class="lite-tags">
+        {{range .Categories}}<a class="lite-tag" href="/lite/articles?category={{.}}">{{.}}</a>{{end}}
+      </div>
+      {{end}}
+    </div>
+  </div>
+</article>
+{{end}}

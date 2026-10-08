@@ -1,0 +1,70 @@
+{{/* 文章列表：对应主站 /articles（pages/search）的展示项：
+   搜索框、分类/标签筛选、[应用]/[重置]、结果统计栏、[最新发布]/[最近修改] 排序、
+   列表、空状态文案。
+
+   差异：主站是无限滚动 + 默认折叠的筛选面板（都需要脚本），
+   这里换成 GET 表单 + 分页链接，并把面板直接展开。 */}}
+
+{{define "list"}}{{template "head" .}}
+
+<form class="lite-search-bar" method="get" action="/lite/articles">
+  <div class="lite-search-row">
+    <input class="lite-input lite-search-input" type="text" name="q" value="{{.Keyword}}"
+      maxlength="100" placeholder="搜索文章标题、内容或标签...">
+    <button class="lite-btn lite-btn-primary" type="submit">搜索</button>
+  </div>
+
+  <div class="lite-filter-panel">
+    <label class="lite-field">
+      <span class="lite-label">分类</span>
+      <input class="lite-input" type="text" name="category" value="{{.Category}}" placeholder="按分类筛选，如：随笔">
+    </label>
+    <label class="lite-field">
+      <span class="lite-label">标签</span>
+      <input class="lite-input" type="text" name="tag" value="{{.Tag}}" placeholder="按标签筛选，如：vue">
+    </label>
+    <div class="lite-filter-actions">
+      <button class="lite-btn lite-btn-primary" type="submit">应用</button>
+      <a class="lite-btn" href="/lite/articles">重置</a>
+    </div>
+  </div>
+  {{if .SortUpdated}}<input type="hidden" name="sort" value="updated">{{end}}
+</form>
+
+<div class="lite-stats-bar">
+  <div class="lite-search-stats">
+    {{if .HasFilter}}符合条件的文章：{{else}}全部文章：{{end}}<strong>{{.Total}}</strong> 篇{{if .FilterText}}<span class="lite-filter-text">（{{.FilterText}}）</span>{{end}}
+  </div>
+  <div class="lite-sort-bar">
+    <span class="lite-sort-label">排序</span>
+    <a class="lite-sort-option{{if not .SortUpdated}} is-active{{end}}" href="{{.SortPublishedURL}}">最新发布</a>
+    <a class="lite-sort-option{{if .SortUpdated}} is-active{{end}}" href="{{.SortUpdatedURL}}">最近修改</a>
+  </div>
+</div>
+
+{{if .Articles}}
+<div class="lite-cards">
+  {{range .Articles}}{{template "card" .}}{{end}}
+</div>
+
+{{/* 主站是无限滚动，没有分页控件；这里是 MPA 必需的分页导航 */}}
+<nav class="lite-pager">
+  {{if .HasPrev}}
+  <a class="lite-btn" href="{{.PrevURL}}">← 上一页</a>
+  {{else}}
+  <span class="lite-btn lite-btn-disabled">← 上一页</span>
+  {{end}}
+
+  <span class="lite-pager-info">第 {{.Page}} / {{.TotalPages}} 页</span>
+
+  {{if .HasNext}}
+  <a class="lite-btn" href="{{.NextURL}}">下一页 →</a>
+  {{else}}
+  <span class="lite-btn lite-btn-disabled">下一页 →</span>
+  {{end}}
+</nav>
+{{else}}
+<p class="lite-empty">没有找到匹配的文章</p>
+{{end}}
+
+{{template "foot" .}}{{end}}

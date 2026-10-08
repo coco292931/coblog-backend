@@ -31,47 +31,17 @@ func GetArticleList(c *gin.Context) {
 		return
 	}
 
-	var data any
-	// 未登录用户，返回默认列表
-	if accountId == 0 {
-		data, err = articleService.GetArticleList("def", requestForm, false)
-		if err != nil {
-			c.Error(exception.SysUknExc)
-			return
-		}
-		utils.JsonSuccessResponse(c, "获取成功", data)
-		return
-	}
+	// 内容级别（是否包含深度文章）由 userService 统一判定：
+	// 未登录 → def；已登录但不具备深度权限 → def；具备 → deep。
+	// 这段判定原先在列表 / 详情 / RSS 三处各写一遍，改权限规则时很容易漏改。
+	status := userService.ResolveContentStatus(accountId)
 
-	// 已登录用户，检查深度权限
-	accountInfo, err := userService.GetUserByID(accountId)
+	data, err := articleService.GetArticleList(status, requestForm, false)
 	if err != nil {
-		fmt.Println("获取用户信息出错")
-		if errors.Is(err, exception.SysCannotReadDB) {
-			c.Error(exception.SysCannotReadDB)
-			return
-		}
-		data, err = articleService.GetArticleList("def", requestForm, false)
 		if errors.Is(err, exception.UsrNotPermitted) {
 			c.Error(exception.UsrNotPermitted)
 			return
-		} else if err != nil {
-			c.Error(exception.SysCannotGetArticle)
-			return
 		}
-		utils.JsonSuccessResponse(c, "获取成功", data)
-		return
-	}
-
-	// 校验深度权限
-	if !(accountInfo.Deepable && accountInfo.IsDeep) {
-		data, err = articleService.GetArticleList("def", requestForm, false)
-	} else {
-		// 通过深度权限校验，返回深度文章列表
-		data, err = articleService.GetArticleList("deep", requestForm, false)
-	}
-
-	if err != nil {
 		c.Error(exception.SysUknExc)
 		return
 	}

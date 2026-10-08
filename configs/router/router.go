@@ -5,12 +5,14 @@ import (
 	configreader "coblog-backend/configs/configReader"
 	middleware "coblog-backend/middlewares"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
 
 	"coblog-backend/controllers/accountControllers"
 	"coblog-backend/controllers/articlesControllers"
 	"coblog-backend/controllers/fileController"
+	"coblog-backend/controllers/liteControllers"
 	"coblog-backend/controllers/loginControllers"
 	"coblog-backend/controllers/markdownController"
 	"coblog-backend/controllers/registerControllers"
@@ -197,6 +199,34 @@ func InitEngine() *gin.Engine {
 		middleware.Auth,
 		middleware.NeedPerm(permission.Perm_GetAnyProfile),
 		accountControllers.GetAccountInfoAdmin)
+
+	//老设备（Kindle 等）只读页面
+	//
+	//与主站 SPA 同构的路径层级，只多一个 /lite 前缀。全部由后端直出 HTML：
+	//老 Kindle 的浏览器跑不动 Vue 运行时（缺 Proxy / Promise / Map / Set），
+	//客户端渲染的页面在它上面只会白屏，而且它没有 devtools，白屏无从排查。
+	//
+	//样式表不进 LooseAuth 组：它是静态资源，没必要每次请求都做一次鉴权与日志。
+	ginEngine.GET("/lite/lite.css", liteControllers.ServeLiteCSS)
+
+	lite := ginEngine.Group("/lite", middleware.LooseAuth)
+	{
+		lite.GET("/", liteControllers.HomePage)
+		lite.GET("/articles", liteControllers.ArticleListPage)
+		lite.GET("/articles/:id", liteControllers.ArticlePage)
+		lite.GET("/about", liteControllers.AboutPage)
+		lite.GET("/about/us", liteControllers.AboutPage)
+		lite.GET("/about/friends", liteControllers.AboutPage)
+	}
+
+	// /lite 下的未匹配路径给出同风格的 404 页面；其余依旧交给前端处理。
+	ginEngine.NoRoute(func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/lite") {
+			liteControllers.NotFoundPage(c)
+			return
+		}
+		c.JSON(http.StatusNotFound, gin.H{"code": 404, "msg": "接口不存在"})
+	})
 
 	return ginEngine
 

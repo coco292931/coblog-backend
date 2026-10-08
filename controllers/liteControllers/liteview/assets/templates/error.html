@@ -1,0 +1,19 @@
+{{/* 错误页。
+   文案与主站 pages/notFound/index.vue 完全一致（主站只有这一个错误页），
+   只是把状态码换成实际值。“返回上一页”需要脚本，故不提供。 */}}
+
+{{define "error"}}{{template "head" .}}
+
+<div class="lite-notfound">
+  <div class="lite-notfound-code">{{.Code}}</div>
+  <div class="lite-notfound-title">这里什么都没有</div>
+  <div class="lite-notfound-msg">你要找的页面可能已被移动、删除，或者从未存在过。</div>
+  <div class="lite-notfound-tips">也可能只是coco太饿，已经吃到肚子里了</div>
+  <div class="lite-notfound-path">当前地址：{{.CurrentPath}}</div>
+  <div class="lite-notfound-actions">
+    <a class="lite-btn lite-btn-primary" href="/lite/">返回首页</a>
+    <a class="lite-btn" href="/lite/articles">浏览全部文章</a>
+  </div>
+</div>
+
+{{template "foot" .}}{{end}}

@@ -1,0 +1,115 @@
+package liteview
+
+import "html/template"
+
+// 本文件定义 /lite 各页面模板的视图模型。
+//
+// ⚠️ 原则：**只搬运主站已有的展示项，不自己发明**。
+// 每个字段都应该能在主站前端找到对应的渲染位置（括号内是对应组件），
+// 主站没有展示的数据（字数、读者数、深度标记…）这里就不该出现。
+// 想加东西之前，先确认主站加了。
+
+// BaseView 所有页面共用的部分（站点名、当前地址、页脚）。
+//
+// 没有页面标题字段：主站是 SPA，各路由的 <title> 都是 index.html 里的固定站点名。
+type BaseView struct {
+	SiteTitle   string
+	CurrentPath string
+	Stats       *StatsView
+}
+
+// StatsView 页脚统计，字段与主站 Footer.vue 一一对应。
+//
+// 主站 Footer 展示四项：版权行（硬编码在模板里）、站点总字数、阅读时长、
+// 已避风时长，外加一行 "Powered by Vue & GO"。这里只放需要计算的三项。
+type StatsView struct {
+	TotalWords  string // 站点总字数，已按主站的 formatNumber 缩写（如 34.6k）
+	ReadingTime string // 阅读时长，已按主站的 readingTime 格式化（如 0:38）
+	Uptime      string // 已避风 X天X时X分X秒（服务端渲染那一刻的快照）
+}
+
+// ListItemView 对应主站 ArticleTimeline.vue 里的一个 .article：
+// 封面（无封面时主站显示占位图，这里直接不渲染）、标题、
+// 描述（主站映射的是 summary）、日期、分类。
+type ListItemView struct {
+	ID         uint64
+	Title      string
+	Summary    string // 主站的 article.description
+	Cover      string // 已带 ?thumb=1
+	Date       string // 与主站 formatDate 一致：2026-01-02
+	Categories []string
+}
+
+// HomeView 首页。对应主站首页：一句话 + 文章时间线。
+type HomeView struct {
+	BaseView
+	Articles []ListItemView
+}
+
+// ListView 文章列表页，对应主站 pages/search/index.vue 的展示项。
+type ListView struct {
+	BaseView
+	Articles []ListItemView
+
+	// 结果统计栏（主站「全部文章：N 篇」/「符合条件的文章：N 篇（…）」）
+	Total      int64
+	HasFilter  bool
+	FilterText string
+
+	// 主站是无限滚动，没有分页控件；这里是 MPA 必需的分页导航
+	Page       uint64
+	TotalPages uint64
+	HasPrev    bool
+	HasNext    bool
+	PrevURL    string
+	NextURL    string
+
+	// 表单回填与筛选
+	Keyword  string
+	Category string
+	Tag      string
+
+	// 排序（主站「最新发布」/「最近修改」，这里用链接实现）
+	SortUpdated      bool
+	SortPublishedURL string
+	SortUpdatedURL   string
+}
+
+// ArticleView 文章详情页，对应主站 pages/article/index.vue 的展示项：
+// 封面、标题、副标题、创建/修改时间、分类（无分类时显示「未分类」）、
+// 阅读时长（分钟）、正文、版权声明、文章统计。
+type ArticleView struct {
+	BaseView
+	Title      string
+	Subtitle   string
+	Cover      string
+	Content    template.HTML // 后端已渲染好的富文本，直接输出（与主站 v-html 行为一致）
+	CreateTime string        // 与主站的 formatDateTime 一致：2026/01/02 15:04
+	UpdateTime string
+	Categories []string
+	ReadingMin int // 主站 article 页的 readingTime
+
+	// 版权声明（主站 license-info）。作者与链接主站分别取 data.author || 'coco_29'
+	// 与 window.location.href；后端 Post 没有作者字段，因此作者部分与主站实际表现一致。
+	Author     string
+	ArticleURL string
+
+	// 文章统计（主站 info-items）。与主站一样，这三个值是后端返回什么就显示什么。
+	Views    uint64
+	Likes    uint64
+	Comments uint64
+}
+
+// AboutView 关于页。/about 的三个地址共用一套模板，用 Tab 切换正文。
+type AboutView struct {
+	BaseView
+	Tab string // "us" | "friends"
+}
+
+// ErrorView 错误页。
+//
+// 文案固定用主站 notFound 页的那三句（见模板），所以这里只需要状态码与当前地址。
+type ErrorView struct {
+	BaseView
+	Code int
+}

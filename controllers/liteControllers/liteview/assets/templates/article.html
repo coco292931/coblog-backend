@@ -1,0 +1,54 @@
+{{/* 文章详情：对应主站 /articles/:id 的展示项 ——
+   封面 / 标题 / 副标题 / 创建·修改时间 / 分类（无则「未分类」）/ 阅读时长 /
+   正文 / 版权声明 / 文章统计。
+
+   没有目录、灯箱与“编辑”按钮（前两者需要脚本，后者需要登录态）。 */}}
+
+{{define "article"}}{{template "head" .}}
+
+<article class="lite-article">
+
+  {{if .Cover}}
+  <figure class="lite-cover">
+    <img src="{{.Cover}}" alt="{{.Title}}" width="100%">
+  </figure>
+  {{end}}
+
+  <div class="lite-article-head">
+    <div class="lite-article-title">{{.Title}}</div>
+    {{if .Subtitle}}<div class="lite-article-subtitle">{{.Subtitle}}</div>{{end}}
+
+    <div class="lite-article-time">
+      <span class="lite-time-item">创建：{{.CreateTime}}</span>
+      <span class="lite-time-item">修改：{{.UpdateTime}}</span>
+    </div>
+
+    <div class="lite-article-info">
+      <div class="lite-categories">
+        {{if .Categories}}{{range .Categories}}<a class="lite-tag" href="/lite/articles?category={{.}}">{{.}}</a>{{end}}{{else}}未分类{{end}}
+      </div>
+      <div class="lite-reading-time">{{.ReadingMin}} min</div>
+    </div>
+  </div>
+
+  <div class="lite-prose">{{.Content}}</div>
+
+  <div class="lite-license">
+    <div class="lite-license-title">版权声明</div>
+    <div class="lite-license-text">
+      本文作者：{{.Author}}<br>
+      本文链接：<span class="lite-license-link">{{.ArticleURL}}</span><br>
+      除特别声明外，本文采用 <strong>CC BY-NC-SA 4.0</strong> 许可协议，转载请注明出处。
+    </div>
+  </div>
+
+  <div class="lite-article-stats">
+    <div class="lite-stats-title">📊 文章统计</div>
+    <div class="lite-stat-item"><span class="lite-stat-label">👁️ 浏览量：</span><span class="lite-stat-value">{{.Views}}</span></div>
+    <div class="lite-stat-item"><span class="lite-stat-label">👍 点赞量：</span><span class="lite-stat-value">{{.Likes}}</span></div>
+    <div class="lite-stat-item"><span class="lite-stat-label">💬 评论数：</span><span class="lite-stat-value">{{.Comments}}</span></div>
+  </div>
+
+</article>
+
+{{template "foot" .}}{{end}}
