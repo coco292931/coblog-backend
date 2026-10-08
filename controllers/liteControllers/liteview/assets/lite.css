@@ -750,3 +750,80 @@ img {
   margin-top: 18px;
   font-size: 15px;
 }
+
+/* ── 表单页（登录等，主站 .login-box / .form） ───────────────────────── */
+
+.lite-form-box {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 32px 28px;
+  border: 1px solid #d0d0d0;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+}
+
+.lite-form-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 26px;
+  text-align: center;
+  margin-bottom: 26px;
+}
+
+.lite-form-group {
+  margin-bottom: 18px;
+}
+
+.lite-form-options {
+  display: -webkit-box;
+  -webkit-box-pack: justify;
+  -webkit-box-align: center;
+  margin-bottom: 22px;
+  font-size: 16px;
+}
+
+.lite-checkbox {
+  display: inline-block;
+  min-height: 48px;
+  line-height: 48px;
+}
+
+.lite-checkbox input {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.lite-form-link {
+  display: inline-block;
+  min-height: 48px;
+  line-height: 48px;
+}
+
+.lite-btn-block {
+  display: block;
+  width: 100%;
+}
+
+.lite-form-switch {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 16px;
+  color: #4a4a4a;
+}
+
+/* 错误提示（主站 .alert-box）。浅底 + 左侧强调边，小面积用色不会留残影 */
+.lite-alert {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  border: 1px solid #e0b4b4;
+  border-left: 4px solid #c0392b;
+  background: #fdf5f5;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.lite-alert-icon {
+  margin-right: 8px;
+}

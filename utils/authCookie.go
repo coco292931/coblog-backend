@@ -15,20 +15,16 @@ import (
 // 没有 cookie 时，/lite 永远只能以匿名身份取内容，深度文章一篇都看不到。
 const AuthCookieName = "coblog_token"
 
-// 未显式给出有效期时的兜底值，与 account.valid_secs 的默认量级一致。
-const defaultAuthCookieSecs = 30 * 24 * 3600
-
-// SetAuthCookie 写入登录 cookie。maxAgeSecs 应当与 token 自身的有效期一致。
-func SetAuthCookie(c *gin.Context, token string, maxAgeSecs uint64) {
+// SetAuthCookie 写入登录 cookie。
+//
+// maxAgeSecs > 0：持久 cookie，有效期与 token 一致；
+// maxAgeSecs <= 0：会话 cookie（关掉浏览器即失效），对应主站「记住我」未勾选的情形。
+func SetAuthCookie(c *gin.Context, token string, maxAgeSecs int) {
 	if token == "" {
 		return
 	}
-	maxAge := int(maxAgeSecs)
-	if maxAge <= 0 {
-		maxAge = defaultAuthCookieSecs
-	}
 
-	http.SetCookie(c.Writer, &http.Cookie{
+	ck := &http.Cookie{
 		Name:  AuthCookieName,
 		Value: token,
 		Path:  "/",
@@ -38,9 +34,13 @@ func SetAuthCookie(c *gin.Context, token string, maxAgeSecs uint64) {
 		// 老设备若不认识这个属性会直接忽略，忽略后行为仍等同「同站发送」。
 		SameSite: http.SameSiteLaxMode,
 		Secure:   requestIsHTTPS(c),
-		MaxAge:   maxAge,
-		Expires:  time.Now().Add(time.Duration(maxAge) * time.Second),
-	})
+	}
+	if maxAgeSecs > 0 {
+		ck.MaxAge = maxAgeSecs
+		ck.Expires = time.Now().Add(time.Duration(maxAgeSecs) * time.Second)
+	}
+	// 不设 MaxAge/Expires 时为会话 cookie，不额外处理
+	http.SetCookie(c.Writer, ck)
 }
 
 // ClearAuthCookie 清除登录 cookie（登出）。

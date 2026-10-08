@@ -241,6 +241,21 @@ func FormatUptime(started, now time.Time) string {
 	return fmt.Sprintf("已避风 %d天%d时%d分%d秒", days, hours, minutes, seconds)
 }
 
+// SafeRedirect 只接受站内相对路径作为回跳地址。
+//
+// 不校验的话，?redirect=https://evil.com 会把这个登录页变成开放重定向的跳板；
+// 「//evil.com」这种协议相对写法也要一并挡掉。
+func SafeRedirect(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") {
+		return ""
+	}
+	if strings.Contains(raw, "\\") {
+		return ""
+	}
+	return raw
+}
+
 // FormatFilterText 对应主站 search 页的 activeFilterText：
 // 把生效的筛选条件拼成「搜索"x" · 分类"y" · 标签"z"」。
 func FormatFilterText(q, category, tag string) string {

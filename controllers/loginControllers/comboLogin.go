@@ -91,7 +91,7 @@ func AuthByCombo(c *gin.Context) {
 	token := webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, validSecs)
 	// 一并种一份 cookie：后端直出的 /lite 走浏览器导航、带不了 Authorization 头，
 	// 只能靠 cookie 识别身份（深度文章的可见性依赖它）。
-	utils.SetAuthCookie(c, token, validSecs)
+	utils.SetAuthCookie(c, token, int(validSecs))
 
 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
 		"token":     token, //100000000 194年

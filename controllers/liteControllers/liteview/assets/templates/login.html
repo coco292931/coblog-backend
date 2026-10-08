@@ -1,0 +1,47 @@
+{{/* 登录页。字段与文案照搬主站 pages/regAlogin/index.vue：
+   邮箱 / 密码 / 记住我 / 忘记密码？/「还没有账号？立即注册」。
+   主站是「登录 / 注册」双态页，这里拆成两个地址（MPA 不需要切态）。
+   主站那个「显示密码」按钮需要脚本，故不提供。 */}}
+
+{{define "login"}}{{template "head" .}}
+
+<div class="lite-form-box">
+  <div class="lite-form-title">登录</div>
+
+  {{if .Error}}
+  <div class="lite-alert">
+    <span class="lite-alert-icon">⚠️</span>
+    <span class="lite-alert-text">{{.Error}}</span>
+  </div>
+  {{end}}
+
+  <form method="post" action="/lite/login">
+    <div class="lite-form-group">
+      <label class="lite-label" for="account">邮箱</label>
+      <input class="lite-input" type="email" id="account" name="account" value="{{.Account}}" required>
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="password">密码</label>
+      <input class="lite-input" type="password" id="password" name="password" required>
+    </div>
+
+    <div class="lite-form-options">
+      <label class="lite-checkbox">
+        <input type="checkbox" name="rememberMe" value="1">
+        <span>记住我</span>
+      </label>
+      <a class="lite-form-link" href="/lite/forgot-password">忘记密码？</a>
+    </div>
+
+    {{if .Redirect}}<input type="hidden" name="redirect" value="{{.Redirect}}">{{end}}
+
+    <button class="lite-btn lite-btn-primary lite-btn-block" type="submit">登录</button>
+  </form>
+
+  <div class="lite-form-switch">
+    还没有账号？<a href="/lite/register">立即注册</a>
+  </div>
+</div>
+
+{{template "foot" .}}{{end}}

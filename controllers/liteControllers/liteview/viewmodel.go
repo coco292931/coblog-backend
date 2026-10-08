@@ -9,12 +9,13 @@ import "html/template"
 // 主站没有展示的数据（字数、读者数、深度标记…）这里就不该出现。
 // 想加东西之前，先确认主站加了。
 
-// BaseView 所有页面共用的部分（站点名、当前地址、页脚）。
+// BaseView 所有页面共用的部分（当前地址、登录态、页脚）。
 //
-// 没有页面标题字段：主站是 SPA，各路由的 <title> 都是 index.html 里的固定站点名。
+// 没有页面标题与站点名字段：主站是 SPA，<title> 与导航栏品牌都是
+// index.html 里的固定字符串（“Coco の 避风港”），跟路由无关。
 type BaseView struct {
-	SiteTitle   string
 	CurrentPath string
+	LoggedIn    bool // 决定导航栏是否显示「写作」
 	Stats       *StatsView
 }
 
@@ -104,6 +105,15 @@ type ArticleView struct {
 type AboutView struct {
 	BaseView
 	Tab string // "us" | "friends"
+}
+
+// LoginView 登录页。字段与主站 regAlogin 页一致：邮箱 / 密码 / 记住我 / 忘记密码。
+// 主站是「登录 / 注册」双态页，这里拆成两个页面（MPA 不需要切态）。
+type LoginView struct {
+	BaseView
+	Account  string // 提交失败后回填
+	Error    string // 直接显示后端业务错误的原文（与主站弹的 msg 一致）
+	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
 // ErrorView 错误页。

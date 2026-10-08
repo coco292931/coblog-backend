@@ -72,12 +72,20 @@ func TestSetAuthCookieSkipsEmptyToken(t *testing.T) {
 	}
 }
 
-func TestSetAuthCookieFallsBackToDefaultMaxAge(t *testing.T) {
-	c, w := newTestCtx("/api/auth/login/combo")
+func TestSetAuthCookieSessionMode(t *testing.T) {
+	// maxAgeSecs <= 0 表示会话 cookie：不设 MaxAge，也不设 Expires
+	c, w := newTestCtx("/lite/login")
 	SetAuthCookie(c, "tok", 0)
 
-	if ck := w.Result().Cookies()[0]; ck.MaxAge != defaultAuthCookieSecs {
-		t.Errorf("未给出有效期时应回落到默认值 %d，实际 %d", defaultAuthCookieSecs, ck.MaxAge)
+	ck := w.Result().Cookies()[0]
+	if ck.MaxAge != 0 {
+		t.Errorf("会话 cookie 的 MaxAge 应为 0，实际 %d", ck.MaxAge)
+	}
+	if !ck.Expires.IsZero() {
+		t.Errorf("会话 cookie 不应设 Expires，实际 %v", ck.Expires)
+	}
+	if ck.Value != "tok" {
+		t.Errorf("值应为 tok，实际 %q", ck.Value)
 	}
 }
 

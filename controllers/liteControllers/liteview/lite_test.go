@@ -25,7 +25,6 @@ import (
 
 func testBase() BaseView {
 	return BaseView{
-		SiteTitle:   "Coco の 避风港",
 		CurrentPath: "/lite/",
 		Stats: &StatsView{
 			TotalWords:  "34.6k",
@@ -204,6 +203,54 @@ func TestArticleTemplateUncategorizedFallback(t *testing.T) {
 	mustContain(t, html, "未分类", "无分类时与主站一样显示「未分类」")
 }
 
+func TestLoginTemplate(t *testing.T) {
+	html := renderToString(t, "login", LoginView{BaseView: testBase()})
+
+	// 字段与文案照搬主站 regAlogin 页
+	mustContain(t, html, "登录", "标题照搬主站")
+	mustContain(t, html, "邮箱", "字段照搬主站")
+	mustContain(t, html, "密码", "字段照搬主站")
+	mustContain(t, html, "记住我", "选项照搬主站")
+	mustContain(t, html, "忘记密码？", "入口照搬主站")
+	mustContain(t, html, "立即注册", "切换入口照搬主站")
+	mustContain(t, html, `method="post"`, "表单必须是 POST（不依赖脚本）")
+	mustContain(t, html, `action="/lite/login"`, "提交到表单自己的地址")
+	mustNotContain(t, html, "lite-alert", "没有错误时不应渲染提示框")
+}
+
+func TestLoginTemplateShowsErrorAndKeepsInput(t *testing.T) {
+	html := renderToString(t, "login", LoginView{
+		BaseView: testBase(),
+		Account:  "someone@example.com",
+		Error:    "用户密码错误",
+		Redirect: "/lite/me",
+	})
+
+	mustContain(t, html, "用户密码错误", "错误文案应原样显示后端的 msg")
+	mustContain(t, html, "lite-alert", "有错误时应渲染提示框")
+	mustContain(t, html, `value="someone@example.com"`, "邮箱应回填")
+	mustContain(t, html, `name="redirect" value="/lite/me"`, "应保留回跳地址")
+}
+
+func TestSafeRedirect(t *testing.T) {
+	cases := map[string]string{
+		"":                      "",
+		"/lite/me":              "/lite/me",
+		"/lite/articles?page=2": "/lite/articles?page=2",
+		" /lite/me ":            "/lite/me",
+		"https://evil.com":      "",
+		"//evil.com":            "",
+		"/\\evil":               "",
+		"javascript:alert(1)":   "",
+		"lite/me":               "",
+	}
+	for raw, want := range cases {
+		if got := SafeRedirect(raw); got != want {
+			t.Errorf("SafeRedirect(%q) = %q，期望 %q", raw, got, want)
+		}
+	}
+}
+
 func TestAboutTemplateTabs(t *testing.T) {
 	us := renderToString(t, "about", AboutView{BaseView: testBase(), Tab: "us"})
 	mustContain(t, us, "关于本港湾", "默认页签应是「我们的避风港」")
@@ -246,6 +293,26 @@ func TestFooterItemsMatchMainSite(t *testing.T) {
 	banned := []string{"位读者", "篇文章", "已开港", "总访客"}
 	for _, bad := range banned {
 		mustNotContain(t, html, bad, "页脚不得显示主站没有的数据")
+	}
+}
+
+// TestTemplatesHaveNoLiteralEscapes 挡一类手滑：把换行写成字面的 \n。
+// 模板里出现它时不会报错，页面会原样显示「\n」—— 而且只影响观感，
+// 单测里那些 mustContain 断言照样通过，所以需要单独钉住。
+func TestTemplatesHaveNoLiteralEscapes(t *testing.T) {
+	dir := "assets/templates"
+	entries, err := templatesFS.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("读模板目录失败: %v", err)
+	}
+	for _, e := range entries {
+		b, err := templatesFS.ReadFile(dir + "/" + e.Name())
+		if err != nil {
+			t.Fatalf("读 %s 失败: %v", e.Name(), err)
+		}
+		if strings.Contains(string(b), `\n`) {
+			t.Errorf("%s 里出现字面的 \\n，应改为真实换行", e.Name())
+		}
 	}
 }
 

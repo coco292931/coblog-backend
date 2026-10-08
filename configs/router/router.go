@@ -221,6 +221,11 @@ func InitEngine() *gin.Engine {
 		lite.GET("/about", liteControllers.AboutPage)
 		lite.GET("/about/us", liteControllers.AboutPage)
 		lite.GET("/about/friends", liteControllers.AboutPage)
+
+		// 账户（M4）：表单页走 POST + 302，不经过 JSON 接口
+		lite.GET("/login", liteControllers.LoginPage)
+		lite.POST("/login", liteControllers.LoginSubmit)
+		lite.POST("/logout", liteControllers.Logout)
 	}
 
 	// /lite 下的未匹配路径给出同风格的 404 页面；其余依旧交给前端处理。

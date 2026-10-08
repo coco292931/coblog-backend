@@ -220,12 +220,14 @@ func currentContentStatus(c *gin.Context) string {
 
 // newBaseView 组装各页面共用的头部与页脚数据。
 //
-// 不设置页面标题：主站是 SPA，各路由的 <title> 都是 index.html 里的固定站点名。
+// 不设置页面标题：主站各路由的 <title> 与导航栏品牌都是 index.html 里的固定字符串。
 func newBaseView(c *gin.Context) liteview.BaseView {
+	// 游客的 AccountID 是 0（LooseAuth 一定会设置）
+	accountID, _ := accountControllers.GetAccountIDFromContext(c)
 	return liteview.BaseView{
-		SiteTitle: configreader.GetConfig().Site.Title,
 		// 用 RequestURI 而不是 Path：主站的「当前地址」是含查询串的 fullPath
 		CurrentPath: c.Request.URL.RequestURI(),
+		LoggedIn:    accountID != 0,
 		Stats:       buildStats(),
 	}
 }
