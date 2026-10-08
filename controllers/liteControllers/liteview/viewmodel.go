@@ -116,6 +116,26 @@ type LoginView struct {
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
+// RegisterView 注册页。字段与主站 regAlogin 的注册态一致：
+// 用户名 / 邮箱 / 密码 / 确认密码，外加主站那句「注册成功后请使用邮件中的链接完成账户激活。」
+type RegisterView struct {
+	BaseView
+	Username string
+	Email    string
+	Error    string // 失败提示
+	Notice   string // 成功提示（三种文案与 JSON 注册接口一致）
+
+	PasswordRule string
+}
+
+// ActivateView 激活结果页。文案照搬主站 pages/activate/index.vue。
+type ActivateView struct {
+	BaseView
+	Success bool
+	Title   string
+	Message string
+}
+
 // MeView 个人中心。展示项与操作照搬主站 pages/me/index.vue：
 // 用户名、邮箱、激活状态、深度权限/状态、RSS Token、修改密码、重置 RSS Token、退出登录。
 //

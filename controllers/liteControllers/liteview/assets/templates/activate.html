@@ -1,0 +1,21 @@
+{{/* 激活结果页。文案与按钮照搬主站 pages/activate/index.vue。
+   主站在前端请求激活接口，所以有「处理中」态；这里是服务端同步处理，只有成功/失败两种。 */}}
+
+{{define "activate"}}{{template "head" .}}
+
+<div class="lite-form-box">
+  <div class="lite-me-badge">{{if .Success}}已激活{{else}}激活失败{{end}}</div>
+  <div class="lite-form-title">{{.Title}}</div>
+  <p class="lite-me-hint">{{.Message}}</p>
+
+  <div class="lite-form-actions">
+    {{if .Success}}
+    <a class="lite-btn lite-btn-primary" href="/lite/login">去登录</a>
+    {{else}}
+    <a class="lite-btn lite-btn-primary" href="/lite/me">返回我的页面</a>
+    {{end}}
+    <a class="lite-btn" href="/lite/">返回首页</a>
+  </div>
+</div>
+
+{{template "foot" .}}{{end}}

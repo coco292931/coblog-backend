@@ -251,6 +251,55 @@ func TestSafeRedirect(t *testing.T) {
 	}
 }
 
+func TestRegisterTemplate(t *testing.T) {
+	html := renderToString(t, "register", RegisterView{
+		BaseView:     testBase(),
+		PasswordRule: PasswordRuleText,
+	})
+
+	// 字段与文案照搬主站 regAlogin 的注册态
+	mustContain(t, html, "注册", "标题照搬主站")
+	mustContain(t, html, "用户名", "字段照搬主站")
+	mustContain(t, html, "邮箱", "字段照搬主站")
+	mustContain(t, html, "确认密码", "字段照搬主站")
+	mustContain(t, html, "注册成功后请使用邮件中的链接完成账户激活。", "提示语照搬主站")
+	mustContain(t, html, "立即登录", "切换入口照搬主站")
+	mustContain(t, html, `action="/lite/register"`, "提交到表单自己的地址")
+	mustContain(t, html, `method="post"`, "表单必须是 POST")
+}
+
+func TestRegisterTemplateShowsMessages(t *testing.T) {
+	bad := renderToString(t, "register", RegisterView{BaseView: testBase(), Username: "u", Email: "e@x.com", Error: "用户已存在"})
+	mustContain(t, bad, "用户已存在", "应显示后端错误原文")
+	mustContain(t, bad, `value="u"`, "用户名应回填")
+	mustContain(t, bad, `value="e@x.com"`, "邮箱应回填")
+
+	ok := renderToString(t, "register", RegisterView{BaseView: testBase(), Notice: "注册成功，激活邮件已发送，请前往邮箱完成激活"})
+	mustContain(t, ok, "激活邮件已发送", "应显示成功提示")
+	mustContain(t, ok, "lite-alert-ok", "成功提示用成功样式")
+}
+
+func TestActivateTemplate(t *testing.T) {
+	ok := renderToString(t, "activate", ActivateView{
+		BaseView: testBase(),
+		Success:  true,
+		Title:    "账户激活成功",
+		Message:  "你的账户已成功激活，现在可以正常登录。",
+	})
+	mustContain(t, ok, "已激活", "状态标签照搬主站")
+	mustContain(t, ok, "账户激活成功", "标题照搬主站")
+	mustContain(t, ok, "去登录", "按钮照搬主站")
+
+	bad := renderToString(t, "activate", ActivateView{
+		BaseView: testBase(),
+		Title:    "账户激活失败",
+		Message:  "激活链接已失效，请返回“我的”页面重新发送激活邮件。",
+	})
+	mustContain(t, bad, "激活失败", "状态标签照搬主站")
+	mustContain(t, bad, "返回我的页面", "按钮照搬主站")
+	mustContain(t, bad, "返回首页", "按钮照搬主站")
+}
+
 func TestMeTemplate(t *testing.T) {
 	html := renderToString(t, "me", MeView{
 		BaseView:     testBase(),

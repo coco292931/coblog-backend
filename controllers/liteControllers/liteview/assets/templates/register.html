@@ -1,0 +1,54 @@
+{{/* 注册页。字段、提示语与按钮文案照搬主站 regAlogin 的注册态。
+   注册成功后三种提示语与 JSON 注册接口一致（激活邮件发出去了 / 没发出去 / 刚发过）。 */}}
+
+{{define "register"}}{{template "head" .}}
+
+<div class="lite-form-box">
+  <div class="lite-form-title">注册</div>
+
+  {{if .Error}}
+  <div class="lite-alert">
+    <span class="lite-alert-icon">⚠️</span>
+    <span class="lite-alert-text">{{.Error}}</span>
+  </div>
+  {{end}}
+
+  {{if .Notice}}
+  <div class="lite-alert lite-alert-ok">
+    <span class="lite-alert-icon">✅</span>
+    <span class="lite-alert-text">{{.Notice}}</span>
+  </div>
+  {{end}}
+
+  <form method="post" action="/lite/register">
+    <div class="lite-form-group">
+      <label class="lite-label" for="username">用户名</label>
+      <input class="lite-input" type="text" id="username" name="username" value="{{.Username}}" required>
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="email">邮箱</label>
+      <input class="lite-input" type="email" id="email" name="email" value="{{.Email}}" required>
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="password">密码</label>
+      <input class="lite-input" type="password" id="password" name="password" placeholder="{{.PasswordRule}}" required>
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="confirmPassword">确认密码</label>
+      <input class="lite-input" type="password" id="confirmPassword" name="confirmPassword" required>
+    </div>
+
+    <p class="lite-form-tip">注册成功后请使用邮件中的链接完成账户激活。</p>
+
+    <button class="lite-btn lite-btn-primary lite-btn-block" type="submit">注册</button>
+  </form>
+
+  <div class="lite-form-switch">
+    已有账号？<a href="/lite/login">立即登录</a>
+  </div>
+</div>
+
+{{template "foot" .}}{{end}}

@@ -812,6 +812,13 @@ img {
   color: #4a4a4a;
 }
 
+/* 主站注册表单底部的那句提示 */
+.lite-form-tip {
+  margin: 4px 0 20px;
+  font-size: 15px;
+  color: #767676;
+}
+
 /* 错误提示（主站 .alert-box）。浅底 + 左侧强调边，小面积用色不会留残影 */
 .lite-alert {
   margin-bottom: 20px;
