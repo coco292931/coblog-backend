@@ -819,6 +819,11 @@ img {
   color: #767676;
 }
 
+/* 验证码输入框下方的「获取验证码」（主站是输入框内的按钮，这里放到下方） */
+.lite-code-btn {
+  margin-top: 10px;
+}
+
 /* 错误提示（主站 .alert-box）。浅底 + 左侧强调边，小面积用色不会留残影 */
 .lite-alert {
   margin-bottom: 20px;

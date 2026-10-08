@@ -251,6 +251,45 @@ func TestSafeRedirect(t *testing.T) {
 	}
 }
 
+func TestForgotPasswordTemplate(t *testing.T) {
+	html := renderToString(t, "forgotPassword", ForgotPasswordView{
+		BaseView:     testBase(),
+		PasswordRule: PasswordRuleText,
+	})
+
+	mustContain(t, html, "找回密码", "标题照搬主站")
+	mustContain(t, html, "输入注册邮箱，我们会发送一封包含验证码的邮件。", "提示语照搬主站")
+	mustContain(t, html, "验证通过后即可设置新密码。", "提示语照搬主站")
+	mustContain(t, html, "注册邮箱", "字段名照搬主站")
+	mustContain(t, html, "邮箱验证码", "字段名照搬主站")
+	mustContain(t, html, "确认新密码", "字段名照搬主站")
+	mustContain(t, html, "获取验证码", "按钮照搬主站")
+	mustContain(t, html, "重置密码", "按钮照搬主站")
+	mustContain(t, html, "返回登录", "入口照搬主站")
+	mustContain(t, html, `name="action" value="send"`, "发码按钮要有区分标记")
+	mustContain(t, html, `name="action" value="reset"`, "重置按钮要有区分标记")
+	mustContain(t, html, `method="post"`, "表单必须是 POST")
+}
+
+func TestForgotPasswordTemplateShowsMessages(t *testing.T) {
+	html := renderToString(t, "forgotPassword", ForgotPasswordView{
+		BaseView:     testBase(),
+		PasswordRule: PasswordRuleText,
+		Email:        "a@b.com",
+		Error:        "验证码错误或已过期",
+	})
+	mustContain(t, html, "验证码错误或已过期", "应显示后端错误原文")
+	mustContain(t, html, `value="a@b.com"`, "邮箱应回填")
+
+	ok := renderToString(t, "forgotPassword", ForgotPasswordView{
+		BaseView:     testBase(),
+		PasswordRule: PasswordRuleText,
+		Notice:       "验证码已发送",
+	})
+	mustContain(t, ok, "验证码已发送", "应显示成功提示")
+	mustContain(t, ok, "lite-alert-ok", "成功提示用成功样式")
+}
+
 func TestRegisterTemplate(t *testing.T) {
 	html := renderToString(t, "register", RegisterView{
 		BaseView:     testBase(),

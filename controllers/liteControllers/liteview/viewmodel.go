@@ -116,6 +116,20 @@ type LoginView struct {
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
+// ForgotPasswordView 找回密码页。字段与文案照搬主站 pages/forgotPassword/index.vue：
+// 注册邮箱 / 邮箱验证码 / 新密码 / 确认新密码。
+//
+// 主站把「获取验证码」做成页面内的一个按钮（需要脚本）；这里是同一个表单里的
+// 第二个提交按钮（name=action value=send），行为等价。
+type ForgotPasswordView struct {
+	BaseView
+	Email  string
+	Error  string
+	Notice string
+
+	PasswordRule string
+}
+
 // RegisterView 注册页。字段与主站 regAlogin 的注册态一致：
 // 用户名 / 邮箱 / 密码 / 确认密码，外加主站那句「注册成功后请使用邮件中的链接完成账户激活。」
 type RegisterView struct {

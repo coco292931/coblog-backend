@@ -231,6 +231,9 @@ func InitEngine() *gin.Engine {
 		lite.POST("/register", liteControllers.RegisterSubmit)
 		lite.GET("/activate", liteControllers.ActivatePage)
 
+		lite.GET("/forgot-password", liteControllers.ForgotPasswordPage)
+		lite.POST("/forgot-password", liteControllers.ForgotPasswordSubmit)
+
 		lite.GET("/me", liteControllers.MePage)
 		lite.POST("/me/password", liteControllers.MeChangePassword)
 		lite.POST("/me/rss", liteControllers.MeResetRSSToken)
