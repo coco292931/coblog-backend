@@ -137,6 +137,10 @@ func InitEngine() *gin.Engine {
 		auth.GET("/activate", loginControllers.ActivateAccount)
 		// 重发激活邮件
 		auth.POST("/activate/resend", loginControllers.ResendActivationEmail)
+
+		// 登出：清掉 HttpOnly 的登录 cookie（那是前端删不掉的部分），
+		// 否则登出后 /lite 仍然认为用户处于登录态。
+		auth.POST("/logout", loginControllers.Logout)
 	}
 
 	//上传图片这一块,暂时和文件共用权限

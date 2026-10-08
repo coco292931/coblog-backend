@@ -87,8 +87,14 @@ func AuthByCombo(c *gin.Context) {
 	}
 
 	//TODO:解决秘钥签名错误的问题
+	validSecs := configreader.GetConfig().Account.ValidSecs
+	token := webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, validSecs)
+	// 一并种一份 cookie：后端直出的 /lite 走浏览器导航、带不了 Authorization 头，
+	// 只能靠 cookie 识别身份（深度文章的可见性依赖它）。
+	utils.SetAuthCookie(c, token, validSecs)
+
 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
-		"token":     webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, configreader.GetConfig().Account.ValidSecs), //100000000 194年
+		"token":     token, //100000000 194年
 		"userID":    accountInfo.ID,
 		"username":  accountInfo.UserName,
 		"userType":  strconv.FormatUint(uint64(accountInfo.PermGroupID), 10),

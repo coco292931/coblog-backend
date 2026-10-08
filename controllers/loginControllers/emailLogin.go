@@ -61,8 +61,13 @@ func AuthByEmail(c *gin.Context) {
 		}
 	}
 
+	validSecs := configreader.GetConfig().Account.ValidSecs
+	token := webtoken.GenerateWt(user.ID, user.PermGroupID, validSecs)
+	// 同 AuthByCombo：一并种 cookie，供 /lite 这类直出页面识别身份
+	utils.SetAuthCookie(c, token, validSecs)
+
 	utils.JsonSuccessResponse(c, "登录成功", map[string]interface{}{
-		"token":     webtoken.GenerateWt(user.ID, user.PermGroupID, configreader.GetConfig().Account.ValidSecs),
+		"token":     token,
 		"userID":    user.ID,
 		"username":  user.UserName,
 		"userType":  strconv.FormatUint(uint64(user.PermGroupID), 10),
