@@ -869,6 +869,71 @@ img {
   margin: 0 auto;
 }
 
+/* ── RSS 页（主站 rss/index.vue） ────────────────────────────────── */
+
+.lite-rss-card {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 24px;
+  border: 2px solid #d0d0d0;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.lite-rss-badge {
+  display: inline-block;
+  padding: 2px 12px;
+  border: 2px solid #0e7a7a;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  color: #0e7a7a;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.lite-rss-title {
+  margin: 14px 0 8px;
+  font-size: 26px;
+  color: #1a1a1a;
+}
+
+.lite-rss-intro {
+  margin: 0 0 18px;
+  color: #4a4a4a;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.lite-rss-url {
+  padding: 14px;
+  border: 2px dashed #b8b8b8;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+  background: #f6f6f6;
+  color: #1a1a1a;
+  font-family: monospace;
+  font-size: 15px;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.lite-rss-actions {
+  margin-top: 18px;
+}
+
+.lite-rss-actions .lite-btn {
+  margin-right: 12px;
+  margin-bottom: 12px;
+}
+
+.lite-rss-note {
+  margin: 4px 0 0;
+  color: #767676;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
 /* 错误提示（主站 .alert-box）。浅底 + 左侧强调边，小面积用色不会留残影 */
 .lite-alert {
   margin-bottom: 20px;

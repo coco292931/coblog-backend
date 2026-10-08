@@ -150,6 +150,13 @@ type ConfirmDeleteView struct {
 	Error string
 }
 
+// RSSView RSS 订阅页。与主站 /rss 一致，
+// 唯一的降级是没有「复制」按钮 —— 剪贴板需要脚本，地址改为可直接选中的文本。
+type RSSView struct {
+	BaseView
+	URL string
+}
+
 // ForgotPasswordView 找回密码页。字段与文案照搬主站 pages/forgotPassword/index.vue：
 // 注册邮箱 / 邮箱验证码 / 新密码 / 确认新密码。
 //

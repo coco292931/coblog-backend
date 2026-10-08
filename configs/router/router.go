@@ -221,6 +221,7 @@ func InitEngine() *gin.Engine {
 		lite.GET("/about", liteControllers.AboutPage)
 		lite.GET("/about/us", liteControllers.AboutPage)
 		lite.GET("/about/friends", liteControllers.AboutPage)
+		lite.GET("/rss", liteControllers.RSSPage)
 
 		// 账户（M4）：表单页走 POST + 302，不经过 JSON 接口
 		lite.GET("/login", liteControllers.LoginPage)

@@ -1,0 +1,22 @@
+{{/* RSS 订阅页。文案、顺序与主站 rss/index.vue 一致。
+   唯一减少的一项：主站地址框里有个「复制」按钮，这里去掉 ——
+   剪贴板写不进去（无脚本），地址改为可直接长按选中的文本。 */}}
+
+{{define "rss"}}{{template "head" .}}
+
+<div class="lite-rss-card">
+  <div class="lite-rss-badge">RSS</div>
+  <h1 class="lite-rss-title">RSS 订阅</h1>
+  <p class="lite-rss-intro">复制下面的订阅地址，或在新标签页打开。</p>
+
+  <div class="lite-rss-url">{{.URL}}</div>
+
+  <div class="lite-rss-actions">
+    <a class="lite-btn lite-btn-primary" href="{{.URL}}">打开 RSS</a>
+    <a class="lite-btn" href="/lite/me">查看 Token</a>
+  </div>
+
+  <p class="lite-rss-note">已登录用户会自动携带 RSS Token，你可以使用token访问深度模式等的文章。</p>
+</div>
+
+{{template "foot" .}}{{end}}
