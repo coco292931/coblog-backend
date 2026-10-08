@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 个人中心。权限判定逐条对齐主站对应的 JSON 接口：
+// 个人中心。
 //
 //	GET  /lite/me                    ← /api/user/info/     需要 Perm_GetProfile
 //	POST /lite/me/password           ← /api/user/pwd/      需要 Perm_ChangePassword

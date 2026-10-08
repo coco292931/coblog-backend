@@ -164,11 +164,6 @@ func IsWebPURL(raw string) bool {
 	return strings.HasSuffix(strings.ToLower(path), ".webp")
 }
 
-// ────────────────── 以下均为主站已有展示项的等价实现 ──────────────────
-//
-// 这些是照着主站前端的算法一比一搬过来的（Footer.vue / article/index.vue）。
-// 改动前请先确认主站那边对应的实现也被改了 —— /lite 的原则是「只搬运、不发明」。
-
 // FormatCompactNumber 数字缩写，对应主站 Footer 的 formatNumber：
 // ≥1e6 → "x.xm"，≥1000 → "x.xk"，其余原样。
 // 入参是后端返回的字符串（models.SiteInfo 的计数字段都是 string）。
@@ -187,7 +182,7 @@ func FormatCompactNumber(raw string) string {
 	return strconv.FormatInt(n, 10)
 }
 
-// FormatSiteReadingTime 站点总字数的阅读时长，对应主站 Footer 的 readingTime：
+// FormatSiteReadingTime 站点总字数的阅读时长
 // 按每分钟 300 字，输出 "H:MM"（分钟补零、小时不补）。
 func FormatSiteReadingTime(rawWords string) string {
 	words, err := strconv.ParseInt(strings.TrimSpace(rawWords), 10, 64)

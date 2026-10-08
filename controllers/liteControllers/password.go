@@ -17,9 +17,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// 找回密码（M4 最后一块）。
-//
-// 校验与文案逐条对齐 /api/auth/code/send 的 reset 分支与 /api/auth/pwd/reset。
+// 找回密码
 
 // ForgotPasswordPage GET /lite/forgot-password
 func ForgotPasswordPage(c *gin.Context) {

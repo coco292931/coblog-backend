@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 写作页（M5）相对主站的降级：
+// 写作页：
 //   - 正文是纯 Markdown textarea，没有实时预览（预览要脚本）
 //   - 分类 / 标签是逗号分隔的文本框（主站是 chips 输入）
 //   - 封面填 URL（主站的裁剪上传要脚本）

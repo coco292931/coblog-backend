@@ -15,7 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 注册与激活（M4）。
+// 注册与激活。
 
 // RegisterPage GET /lite/register
 func RegisterPage(c *gin.Context) {
@@ -85,13 +85,12 @@ func RegisterSubmit(c *gin.Context) {
 
 // ActivatePage GET /lite/activate?token=xxx
 //
-// 令牌是一次性的（Redis 侧取出即删），所以刷新会变成「激活失败」—— 与主站行为一致。
+// 令牌是一次性的（Redis 侧取出即删），所以刷新会变成「激活失败」
 func ActivatePage(c *gin.Context) {
 	token := strings.TrimSpace(c.Query("token"))
 	view := liteview.ActivateView{BaseView: newBaseView(c)}
 
 	if token == "" {
-		// 主站的「缺少激活参数」分支
 		view.Title = "激活链接无效"
 		view.Message = "缺少激活参数，请重新从邮件中打开完整链接。"
 		liteview.Render(c, http.StatusOK, "activate", view)
@@ -99,7 +98,6 @@ func ActivatePage(c *gin.Context) {
 	}
 
 	if err := userService.ActivateByToken(token); err != nil {
-		// 用主站失败分支的兜底文案（后端返回的 msg 偏技术，这里对用户更友好）
 		view.Title = "账户激活失败"
 		view.Message = "激活链接已失效，请返回“我的”页面重新发送激活邮件。"
 		liteview.Render(c, http.StatusOK, "activate", view)

@@ -223,7 +223,7 @@ func InitEngine() *gin.Engine {
 		lite.GET("/about/friends", liteControllers.AboutPage)
 		lite.GET("/rss", liteControllers.RSSPage)
 
-		// 账户（M4）：表单页走 POST + 302，不经过 JSON 接口
+		// 账户：表单页走 POST + 302，不经过 JSON 接口
 		lite.GET("/login", liteControllers.LoginPage)
 		lite.POST("/login", liteControllers.LoginSubmit)
 		lite.POST("/logout", liteControllers.Logout)
@@ -240,7 +240,7 @@ func InitEngine() *gin.Engine {
 		lite.POST("/me/rss", liteControllers.MeResetRSSToken)
 		lite.POST("/me/resend-activation", liteControllers.MeResendActivation)
 
-		// 写作（M5）：新增 / 编辑 / 删除
+		// 写作：新增 / 编辑 / 删除
 		lite.GET("/write", liteControllers.WritePage)
 		lite.POST("/write", liteControllers.WriteSubmit)
 		lite.GET("/write/:id", liteControllers.WriteEditPage)

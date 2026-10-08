@@ -2,14 +2,9 @@
 //
 // 与主站 SPA 的对应关系：路径层级完全一致，只多一个 /lite 前缀。
 // 页面由后端直出 HTML —— 老 Kindle 的浏览器跑不动 Vue 运行时（缺 Proxy /
-// Promise / Map / Set），客户端渲染在它上面只会白屏，而这类设备没有 devtools，
-// 白屏无从排查。
-//
+
 // ⚠️ 展示项的原则：**只搬运主站已有的，不自己发明**。
-// 每个视图字段都应该对应主站前端的某处渲染；主站没有展示的数据不要出现在这里。
-//
-// 分工：本包负责取数与权限判定，视图（模板 / 样式 / 视图模型 / 纯函数）
-// 在 liteview 子包里。
+
 package liteControllers
 
 import (
@@ -34,7 +29,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// litePageSize /lite 每页条数。主站每页也是 10 条。
+// litePageSize /lite 每页条数。
 const litePageSize = 10
 
 // /lite 下与主站对应的路径。
@@ -43,9 +38,7 @@ const (
 )
 
 // liteArticleAuthor 版权声明里的作者。
-//
-// 主站写的是 `data.author || 'coco_29'`，而后端 Post 没有 author 字段，
-// 所以实际总是落到这个兜底值 —— 这里保持一致，不额外引入配置项。
+
 const liteArticleAuthor = "coco_29"
 
 // ────────────────────────────── 页面 ──────────────────────────────
