@@ -1,0 +1,34 @@
+{{/* 删除确认页。主站要求输入完整标题才能确认（防误删），这里保留同样的要求，
+   只是从弹窗换成独立页面 —— 老设备上没有脚本。 */}}
+
+{{define "confirm-delete"}}{{template "head" .}}
+
+<div class="lite-form-box">
+  <div class="lite-form-title">删除文章</div>
+
+  {{if .Error}}
+  <div class="lite-alert">
+    <span class="lite-alert-icon">⚠️</span>
+    <span class="lite-alert-text">{{.Error}}</span>
+  </div>
+  {{end}}
+
+  <p class="lite-me-hint">
+    即将删除《{{.Title}}》。<br>
+    请输入完整标题以确认：
+  </p>
+
+  <form method="post" action="/lite/write/{{.ID}}/delete">
+    <div class="lite-form-group">
+      <label class="lite-label" for="confirmTitle">文章标题</label>
+      <input class="lite-input" type="text" id="confirmTitle" name="confirmTitle" required>
+    </div>
+
+    <div class="lite-form-actions-row">
+      <button class="lite-btn" type="submit">确认删除</button>
+      <a class="lite-btn" href="/lite/write/{{.ID}}">取消</a>
+    </div>
+  </form>
+</div>
+
+{{template "foot" .}}{{end}}

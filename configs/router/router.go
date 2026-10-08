@@ -238,6 +238,14 @@ func InitEngine() *gin.Engine {
 		lite.POST("/me/password", liteControllers.MeChangePassword)
 		lite.POST("/me/rss", liteControllers.MeResetRSSToken)
 		lite.POST("/me/resend-activation", liteControllers.MeResendActivation)
+
+		// 写作（M5）：新增 / 编辑 / 删除
+		lite.GET("/write", liteControllers.WritePage)
+		lite.POST("/write", liteControllers.WriteSubmit)
+		lite.GET("/write/:id", liteControllers.WriteEditPage)
+		lite.POST("/write/:id", liteControllers.WriteSubmit)
+		lite.GET("/write/:id/delete", liteControllers.WriteDeleteConfirm)
+		lite.POST("/write/:id/delete", liteControllers.WriteDelete)
 	}
 
 	// /lite 下的未匹配路径给出同风格的 404 页面；其余依旧交给前端处理。

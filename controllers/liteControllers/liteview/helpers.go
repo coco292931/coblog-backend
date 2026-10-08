@@ -241,6 +241,35 @@ func FormatUptime(started, now time.Time) string {
 	return fmt.Sprintf("已避风 %d天%d时%d分%d秒", days, hours, minutes, seconds)
 }
 
+// SplitList 把用户输入的逗号分隔串拆成去空白的列表。中英文逗号都认。
+func SplitList(raw string) []string {
+	parts := strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || r == '，' })
+	out := make([]string, 0, len(parts))
+	for _, s := range parts {
+		if s = strings.TrimSpace(s); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// JoinList 与 SplitList 互逆，用于把库里的 JSON 数组回填到逗号分隔输入框。
+func JoinList(list []string) string { return strings.Join(list, ",") }
+
+// ToJSONList 把用户输入的逗号分隔串转成库里存的 JSON 数组字符串。
+// 与主站 buildArticlePayload 的做法一致（trim 后 JSON 化）。
+func ToJSONList(raw string) string {
+	list := SplitList(raw)
+	if len(list) == 0 {
+		return ""
+	}
+	b, err := json.Marshal(list)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
 // PasswordRuleText 新密码强度提示。
 // 与主站 constants/account.js 的 PASSWORD_RULE_TEXT 保持一致。
 const PasswordRuleText = "至少 6 位，建议同时包含字母与数字"

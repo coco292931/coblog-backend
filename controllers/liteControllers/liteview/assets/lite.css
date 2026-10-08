@@ -824,6 +824,51 @@ img {
   margin-top: 10px;
 }
 
+/* ── 写作页（主站 write/index.vue 的降级版） ─────────────────────────── */
+
+.lite-textarea {
+  display: block;
+  width: 100%;
+  min-height: 320px;
+  padding: 14px;
+  border: 2px solid #d0d0d0;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-family: monospace;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.lite-checkbox-line {
+  display: block;
+  min-height: 48px;
+  line-height: 48px;
+  font-size: 16px;
+}
+
+.lite-checkbox-line input {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.lite-form-actions-row {
+  margin-top: 24px;
+}
+
+.lite-form-actions-row .lite-btn {
+  margin-right: 12px;
+  margin-bottom: 12px;
+}
+
+.lite-write-box {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
 /* 错误提示（主站 .alert-box）。浅底 + 左侧强调边，小面积用色不会留残影 */
 .lite-alert {
   margin-bottom: 20px;

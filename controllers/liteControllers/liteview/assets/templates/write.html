@@ -1,0 +1,89 @@
+{{/* 写作 / 编辑页。相对主站的降级：正文是纯 Markdown textarea（无实时预览），
+   分类与标签用逗号分隔文本框，封面填 URL —— 这些都需要脚本才能做成主站那样。
+   但内容处理与主站一致：只提交 md_content，由后端的 goldmark 渲染成 content。 */}}
+
+{{define "write"}}{{template "head" .}}
+
+<div class="lite-write-box">
+  <div class="lite-form-title">{{if .IsEdit}}编辑文章{{else}}写文章{{end}}</div>
+
+  {{if .Error}}
+  <div class="lite-alert">
+    <span class="lite-alert-icon">⚠️</span>
+    <span class="lite-alert-text">{{.Error}}</span>
+  </div>
+  {{end}}
+
+  {{if .Notice}}
+  <div class="lite-alert lite-alert-ok">
+    <span class="lite-alert-icon">✅</span>
+    <span class="lite-alert-text">{{.Notice}}</span>
+  </div>
+  {{end}}
+
+  <form method="post" action="{{if .IsEdit}}/lite/write/{{.ID}}{{else}}/lite/write{{end}}">
+    <div class="lite-form-group">
+      <label class="lite-label" for="title">标题</label>
+      <input class="lite-input" type="text" id="title" name="title" value="{{.Title}}" required>
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="subtitle">副标题</label>
+      <input class="lite-input" type="text" id="subtitle" name="subtitle" value="{{.Subtitle}}">
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="summary">摘要</label>
+      <input class="lite-input" type="text" id="summary" name="summary" value="{{.Summary}}">
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="cover_image">封面图 URL</label>
+      <input class="lite-input" type="text" id="cover_image" name="cover_image" value="{{.Cover}}">
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="category">分类（多个用逗号分隔）</label>
+      <input class="lite-input" type="text" id="category" name="category" value="{{.Category}}">
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="tags">标签（多个用逗号分隔）</label>
+      <input class="lite-input" type="text" id="tags" name="tags" value="{{.Tags}}">
+    </div>
+
+    <div class="lite-form-group">
+      <label class="lite-label" for="md_content">正文（Markdown）</label>
+      <textarea class="lite-textarea" id="md_content" name="md_content" required>{{.MdBody}}</textarea>
+    </div>
+
+    <label class="lite-checkbox-line">
+      <input type="checkbox" name="is_deep" value="1" {{if .IsDeep}}checked{{end}}>
+      <span>深度文章（仅有深度权限的用户可见）</span>
+    </label>
+
+    <label class="lite-checkbox-line">
+      <input type="checkbox" name="hidden" value="1" {{if .Hidden}}checked{{end}}>
+      <span>隐藏文章（对所有人不可见，仅编辑接口可访问）</span>
+    </label>
+
+    <label class="lite-checkbox-line">
+      <input type="checkbox" name="no_stats" value="1" {{if .NoStats}}checked{{end}}>
+      <span>不计入站点统计（不影响页脚的总字数与文章数）</span>
+    </label>
+
+    <div class="lite-form-actions-row">
+      <button class="lite-btn lite-btn-primary" type="submit">{{if .IsEdit}}保存修改{{else}}发布{{end}}</button>
+      <a class="lite-btn" href="/lite/articles">取消</a>
+    </div>
+  </form>
+
+  {{if .IsEdit}}
+  <div class="lite-me-section">
+    <div class="lite-me-section-title">危险操作</div>
+    <a class="lite-btn" href="/lite/write/{{.ID}}/delete">删除这篇文章</a>
+  </div>
+  {{end}}
+</div>
+
+{{template "foot" .}}{{end}}

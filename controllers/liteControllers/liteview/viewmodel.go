@@ -116,6 +116,40 @@ type LoginView struct {
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
+// WriteView 写作 / 编辑页。相对主站的降级：
+// 正文是纯 Markdown textarea（没有实时预览），分类与标签是逗号分隔的文本框，
+// 封面填 URL。内容处理本身与主站一致：只提交 md_content，由后端 goldmark 渲染。
+type WriteView struct {
+	BaseView
+
+	IsEdit   bool
+	ID       uint64
+	Title    string
+	Subtitle string
+	Summary  string
+	Cover    string
+	Category string // 逗号分隔（回填与提交都用它）
+	Tags     string
+	MdBody   string // Markdown 正文
+	IsDeep   bool
+	Hidden   bool
+	NoStats  bool
+
+	Error  string
+	Notice string
+}
+
+// ConfirmDeleteView 删除确认页。
+//
+// 主站要求在弹窗里输入完整标题才能确认（防误删）；这里保留同样的要求，
+// 但换成独立页面：老设备上没有脚本，那个弹窗做不出来。
+type ConfirmDeleteView struct {
+	BaseView
+	ID    uint64
+	Title string
+	Error string
+}
+
 // ForgotPasswordView 找回密码页。字段与文案照搬主站 pages/forgotPassword/index.vue：
 // 注册邮箱 / 邮箱验证码 / 新密码 / 确认新密码。
 //
