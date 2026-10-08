@@ -251,6 +251,70 @@ func TestSafeRedirect(t *testing.T) {
 	}
 }
 
+func TestMeTemplate(t *testing.T) {
+	html := renderToString(t, "me", MeView{
+		BaseView:     testBase(),
+		Username:     "coco",
+		Email:        "coco@example.com",
+		Activated:    true,
+		Deepable:     true,
+		IsDeep:       false,
+		RSSToken:     "tok-abc",
+		PasswordRule: PasswordRuleText,
+	})
+
+	// 展示项与文案照搬主站 pages/me/index.vue
+	mustContain(t, html, "coco", "应显示用户名")
+	mustContain(t, html, "📧 邮箱：", "字段与主站一致")
+	mustContain(t, html, "✅ 账户激活状态：", "字段与主站一致")
+	mustContain(t, html, "📝 深度模式权限：", "字段与主站一致")
+	mustContain(t, html, "🔓 深度模式状态：", "字段与主站一致")
+	mustContain(t, html, "🔑 RSS Token：", "字段与主站一致")
+	mustContain(t, html, "已激活", "状态文案与主站一致")
+	mustContain(t, html, "已开通", "状态文案与主站一致")
+	mustContain(t, html, "未启用", "状态文案与主站一致")
+	mustContain(t, html, "🔒 修改密码", "操作项与主站一致")
+	mustContain(t, html, "🔄 重置 RSS Token", "操作项与主站一致")
+	mustContain(t, html, "确认修改", "按钮文案与主站一致")
+	mustContain(t, html, "确认重置", "按钮文案与主站一致")
+	mustContain(t, html, "退出登录", "登出入口")
+	mustContain(t, html, PasswordRuleText, "新密码提示与主站一致")
+	mustContain(t, html, `method="post"`, "这些操作必须走 POST")
+	mustNotContain(t, html, "账户待激活", "已激活时不显示激活提示")
+}
+
+func TestMeTemplateActivationPrompt(t *testing.T) {
+	html := renderToString(t, "me", MeView{BaseView: testBase(), Username: "u"})
+	mustContain(t, html, "账户待激活", "未激活提示照搬主站")
+	mustContain(t, html, "请先完成邮箱激活", "标题照搬主站")
+	mustContain(t, html, "未激活的账户的权限跟未登录时一致", "说明照搬主站")
+	mustContain(t, html, "重新发送激活邮件", "按钮照搬主站")
+}
+
+func TestMeTemplateDenied(t *testing.T) {
+	html := renderToString(t, "me", MeView{BaseView: testBase(), Denied: true})
+	mustContain(t, html, "权限不足", "照搬主站 permDenied 分支")
+	mustContain(t, html, "无法查看个人信息", "标题照搬主站")
+	mustContain(t, html, "去激活账户", "按钮照搬主站")
+}
+
+func TestValidateNewPassword(t *testing.T) {
+	cases := []struct {
+		pwd, confirm, want string
+	}{
+		{"", "", "请输入新密码"},
+		{"12345", "12345", "新密码长度至少需要6位字符"},
+		{"123456", "123457", "两次输入的密码不一致，请重新输入"},
+		{"123456", "123456", ""},
+		{"密码密码密码", "密码密码密码", ""}, // 6 个字符，按字符数而非字节数计
+	}
+	for _, c := range cases {
+		if got := ValidateNewPassword(c.pwd, c.confirm); got != c.want {
+			t.Errorf("ValidateNewPassword(%q,%q) = %q，期望 %q", c.pwd, c.confirm, got, c.want)
+		}
+	}
+}
+
 func TestAboutTemplateTabs(t *testing.T) {
 	us := renderToString(t, "about", AboutView{BaseView: testBase(), Tab: "us"})
 	mustContain(t, us, "关于本港湾", "默认页签应是「我们的避风港」")

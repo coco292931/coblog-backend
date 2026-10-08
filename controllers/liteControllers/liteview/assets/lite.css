@@ -827,3 +827,102 @@ img {
 .lite-alert-icon {
   margin-right: 8px;
 }
+
+/* 操作成功时的提示（主站 alert-box 的 success 态） */
+.lite-alert-ok {
+  border-color: #b7dcc4;
+  border-left-color: #1e7f4f;
+  background: #f4fbf7;
+}
+
+.lite-form-actions {
+  margin-bottom: 16px;
+}
+
+.lite-form-actions .lite-btn {
+  margin-right: 12px;
+}
+
+.lite-logout-form {
+  margin-top: 16px;
+}
+
+/* ── 个人中心（主站 .user-info-card 等） ────────────────────────────────── */
+
+.lite-me-card {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.lite-me-activation {
+  padding: 20px 22px;
+  margin-bottom: 24px;
+  border: 1px solid #d9eeee;
+  border-left: 4px solid #0e9a9a;
+  background: #f7fafa;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+}
+
+.lite-me-badge {
+  display: inline-block;
+  padding: 2px 12px;
+  margin-bottom: 10px;
+  -webkit-border-radius: 999px;
+  border-radius: 999px;
+  background: #0e9a9a;
+  color: #ffffff;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.lite-me-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.lite-me-hint {
+  color: #4a4a4a;
+  margin-bottom: 16px;
+}
+
+.lite-me-username {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 26px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #1a1a1a;
+  margin-bottom: 20px;
+}
+
+.lite-me-details {
+  margin-bottom: 28px;
+}
+
+.lite-me-item {
+  font-size: 16px;
+  margin-bottom: 12px;
+  word-wrap: break-word;
+}
+
+.lite-me-label {
+  color: #4a4a4a;
+}
+
+.lite-me-token {
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.lite-me-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.lite-me-section-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 18px;
+  margin-bottom: 16px;
+}

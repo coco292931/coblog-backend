@@ -116,6 +116,30 @@ type LoginView struct {
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
+// MeView 个人中心。展示项与操作照搬主站 pages/me/index.vue：
+// 用户名、邮箱、激活状态、深度权限/状态、RSS Token、修改密码、重置 RSS Token、退出登录。
+//
+// 主站把两个安全操作做成折叠面板（需要脚本），这里直接展开。
+type MeView struct {
+	BaseView
+
+	// Denied 对应主站的 permDenied 分支：已登录但权限组读不了个人信息
+	Denied   bool
+	FetchErr string
+
+	Username  string
+	Email     string
+	Activated bool
+	Deepable  bool
+	IsDeep    bool
+	RSSToken  string
+
+	Message string // 上一次操作的结果
+	OK      bool   // 操作是否成功（决定提示框样式）
+
+	PasswordRule string // 新密码强度提示，主站是 input 的 placeholder
+}
+
 // ErrorView 错误页。
 //
 // 文案固定用主站 notFound 页的那三句（见模板），所以这里只需要状态码与当前地址。

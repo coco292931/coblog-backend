@@ -241,6 +241,26 @@ func FormatUptime(started, now time.Time) string {
 	return fmt.Sprintf("已避风 %d天%d时%d分%d秒", days, hours, minutes, seconds)
 }
 
+// PasswordRuleText 新密码强度提示。
+// 与主站 constants/account.js 的 PASSWORD_RULE_TEXT 保持一致。
+const PasswordRuleText = "至少 6 位，建议同时包含字母与数字"
+
+// ValidateNewPassword 校验新密码，返回错误文案；通过时返回空串。
+// 逐条对应主站 constants/account.js 的 validateNewPassword，
+// 「找回密码」页与「我的」页共用同一套规则。
+func ValidateNewPassword(password, confirm string) string {
+	if password == "" {
+		return "请输入新密码"
+	}
+	if len([]rune(password)) < 6 {
+		return "新密码长度至少需要6位字符"
+	}
+	if password != confirm {
+		return "两次输入的密码不一致，请重新输入"
+	}
+	return ""
+}
+
 // SafeRedirect 只接受站内相对路径作为回跳地址。
 //
 // 不校验的话，?redirect=https://evil.com 会把这个登录页变成开放重定向的跳板；

@@ -226,6 +226,11 @@ func InitEngine() *gin.Engine {
 		lite.GET("/login", liteControllers.LoginPage)
 		lite.POST("/login", liteControllers.LoginSubmit)
 		lite.POST("/logout", liteControllers.Logout)
+
+		lite.GET("/me", liteControllers.MePage)
+		lite.POST("/me/password", liteControllers.MeChangePassword)
+		lite.POST("/me/rss", liteControllers.MeResetRSSToken)
+		lite.POST("/me/resend-activation", liteControllers.MeResendActivation)
 	}
 
 	// /lite 下的未匹配路径给出同风格的 404 页面；其余依旧交给前端处理。

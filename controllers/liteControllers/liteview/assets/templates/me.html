@@ -1,0 +1,91 @@
+{{/* 个人中心。展示项与文案照搬主站 pages/me/index.vue。
+   主站的两个安全操作是折叠面板（需要脚本），这里直接展开。
+   登出必须走后端：登录 cookie 是 HttpOnly 的，前端删不掉。 */}}
+
+{{define "me"}}{{template "head" .}}
+
+{{if .Denied}}
+{{/* 已登录，但权限组读不了个人信息（通常是未激活） */}}
+<div class="lite-form-box">
+  <div class="lite-me-badge">权限不足</div>
+  <div class="lite-form-title">无法查看个人信息</div>
+  <p class="lite-me-hint">你的账户已登录，但当前权限组还不能读取个人信息。通常是账户尚未完成邮箱激活，激活后即可正常查看。</p>
+  <div class="lite-form-actions">
+    <a class="lite-btn lite-btn-primary" href="/lite/activate">去激活账户</a>
+    <a class="lite-btn" href="/lite/">返回首页</a>
+  </div>
+  <form method="post" action="/lite/logout" class="lite-logout-form">
+    <button class="lite-btn" type="submit">退出登录</button>
+  </form>
+</div>
+
+{{else}}
+
+<div class="lite-me-card">
+
+  {{if not .Activated}}
+  <div class="lite-me-activation">
+    <div class="lite-me-badge">账户待激活</div>
+    <div class="lite-me-title">请先完成邮箱激活</div>
+    <p class="lite-me-hint">未激活的账户的权限跟未登录时一致</p>
+    <form method="post" action="/lite/me/resend-activation">
+      <button class="lite-btn lite-btn-primary" type="submit">重新发送激活邮件</button>
+    </form>
+  </div>
+  {{end}}
+
+  <div class="lite-me-username">{{.Username}}</div>
+
+  <div class="lite-me-details">
+    <div class="lite-me-item"><span class="lite-me-label">📧 邮箱：</span><span>{{.Email}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">✅ 账户激活状态：</span><span>{{if .Activated}}已激活{{else}}未激活{{end}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">📝 深度模式权限：</span><span>{{if .Deepable}}已开通{{else}}未开通{{end}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">🔓 深度模式状态：</span><span>{{if .IsDeep}}已启用{{else}}未启用{{end}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">🔑 RSS Token：</span><span class="lite-me-token">{{if .RSSToken}}{{.RSSToken}}{{else}}暂无{{end}}</span></div>
+  </div>
+
+  {{if .Message}}
+  <div class="lite-alert{{if .OK}} lite-alert-ok{{end}}">
+    <span class="lite-alert-icon">{{if .OK}}✅{{else}}⚠️{{end}}</span>
+    <span class="lite-alert-text">{{.Message}}</span>
+  </div>
+  {{end}}
+
+  <div class="lite-me-section">
+    <div class="lite-me-section-title">🔒 修改密码</div>
+    <form method="post" action="/lite/me/password">
+      <div class="lite-form-group">
+        <label class="lite-label" for="oldPassword">当前密码</label>
+        <input class="lite-input" type="password" id="oldPassword" name="oldPassword" required>
+      </div>
+      <div class="lite-form-group">
+        <label class="lite-label" for="newPassword">新密码</label>
+        <input class="lite-input" type="password" id="newPassword" name="newPassword" placeholder="{{.PasswordRule}}" required>
+      </div>
+      <div class="lite-form-group">
+        <label class="lite-label" for="confirmPassword">确认新密码</label>
+        <input class="lite-input" type="password" id="confirmPassword" name="confirmPassword" required>
+      </div>
+      <button class="lite-btn lite-btn-primary" type="submit">确认修改</button>
+    </form>
+  </div>
+
+  <div class="lite-me-section">
+    <div class="lite-me-section-title">🔄 重置 RSS Token</div>
+    <p class="lite-me-hint">重置后旧的 RSS 订阅地址会立即失效，需要在阅读器中重新订阅。</p>
+    <form method="post" action="/lite/me/rss">
+      <button class="lite-btn" type="submit">确认重置</button>
+    </form>
+  </div>
+
+  <div class="lite-me-section">
+    <form method="post" action="/lite/logout">
+      <button class="lite-btn" type="submit">退出登录</button>
+    </form>
+  </div>
+
+</div>
+
+{{end}}
+
+{{template "foot" .}}{{end}}
