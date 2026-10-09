@@ -8,8 +8,9 @@
      · 现代浏览器：打开同一个地址时看到彩色版。
 
    因此这里的取舍是：
-     · 布局只用 display: -webkit-box（老代唯一可用的 flexbox，现代浏览器至今仍支持）
-       以及 inline-block / float / table-cell 作为备选；
+     · 布局用块级流 + inline-block（自然折行）+ float（两端分布、放不下自动掉行）。
+       display: -webkit-box 虽然老代可用，但它是硬横排、不会折行，
+       内容一旦放不下就把页面撑宽，所以这里不用；
      · 尺寸只用 px / em / %，间隔用 padding / margin（gap 无效）；
      · 圆角、阴影、渐变都可用，但必须带 -webkit- 前缀，且标准写法也要写一遍；
      · 颜色照写，交互色对齐主站（链接 / 按钮 / 高亮）；
@@ -39,6 +40,8 @@ body {
   font-family: Bookerly, Georgia, serif;
   font-size: 20px;
   line-height: 1.6;
+  /* 兜底：长 URL、长英文单词不许把页面撑宽 */
+  word-wrap: break-word;
 }
 
 /* 内容容器：宽度与左右留白都在这里，页头因此可以放在它外面通栏。
@@ -73,45 +76,61 @@ img {
   margin-bottom: 28px;
 }
 
-/* 与 .lite-shell / .lite-footer-inner 共用同一套「居中 + 左右留白」。
-   这三行缺一不可：只有 .lite-header 通栏而内容容器没有留白时，
-   宽屏下品牌会贴在 x=0，和下面居中的内容区对不齐。 */
+/* 与 .lite-shell / .lite-footer-inner 共用同一套「居中 + 左右留白」。 */
 .lite-header-inner {
   max-width: 860px;
   margin: 0 auto;
-  padding: 16px 4% 12px;
-  display: -webkit-box;
-  -webkit-box-pack: justify;
-  -webkit-box-align: center;
+  padding: 14px 4%;
+  /* 清浮动 */
+  overflow: hidden;
 }
 
+/* 品牌靠左、导航靠右，都用 float。
+   不用 display: -webkit-box：那是硬横排、不会折行，放不下就把整页撑出屏幕。
+   float 放得下就同一行，放不下导航自己掉到下一行，不依赖任何断点；
+   560px 断点里再把两者改成上下两行、左对齐。 */
 .lite-brand {
+  display: block;
+  float: left;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: bold;
   color: #2c3e50;
   text-decoration: none;
   letter-spacing: 0.5px;
+  /* 与导航项同高，两者在同一行时垂直对齐 */
+  line-height: 48px;
 }
 
+/* 品牌后面的 lite 标记，放在 .lite-brand 里面 */
 .lite-lite {
-  font-family: "Amazon Ember", sans-serif;
+  margin-left: 6px;
   font-style: italic;
-  font-size: 22px;
+  font-size: 20px;
+  font-weight: normal;
   color: #0e9a9a;
-  text-decoration: none;
+}
+
+.lite-nav {
+  display: block;
+  float: right;
 }
 
 .lite-nav a {
   position: relative;
   display: inline-block;
-  margin-left: 20px;
-  min-height: 56px;
-  line-height: 56px;
+  margin-right: 22px;
+  min-height: 48px;
+  line-height: 48px;
   color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: bold;
+}
+
+/* 末项不留右边距，导航才能贴齐右侧留白 */
+.lite-nav a:last-child {
+  margin-right: 0;
 }
 
 /* 底部青色短横，对应主站的 router-link-active */
@@ -215,6 +234,7 @@ img {
   line-height: 1.4;
   color: #2c3e50;
   font-weight: bold;
+  word-wrap: break-word;
 }
 
 /* ── 静态时间轴（首页） ───────────────────────────────────────────────── */
@@ -264,27 +284,21 @@ img {
   overflow: hidden;
 }
 
-/* 封面：固定 3:2 的比例容器，图片溢出裁掉。
+/* 封面：固定 3:2 的比例容器，图片按比例铺满、超出部分裁掉。
    比例取自主站 ArticleTimeline 的 .article-photo（165 x 110）。
    容器高度用 padding-top 百分比撑开（老引擎支持），不依赖 aspect-ratio。
-   老引擎不认 object-fit，图片会被拉伸——但高度被比例锁住，
-   不会出现「一张竖图把卡片撑到几屏高」的情况。 */
+
+   图片走 background-image（模板里内联 style），不用 <img>：
+   老引擎不认 object-fit，<img> 塞进固定比例框只会被拉伸 / 压扁；
+   background-size: cover 从 WebKit 534 起就支持，能做到「等比铺满、居中裁切」。 */
 .lite-card-cover {
   display: block;
-  position: relative;
   padding-top: 66.67%;
-  overflow: hidden;
-  background: #eef2f2;
-}
-
-.lite-card-cover img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  background-color: #eef2f2;
+  background-repeat: no-repeat;
+  background-position: center center;
+  -webkit-background-size: cover;
+  background-size: cover;
 }
 
 .lite-card-body {
@@ -310,25 +324,27 @@ img {
   color: #555555;
 }
 
+/* 日期靠左、分类靠右，用 float：放得下同一行，放不下分类自己掉到下一行。
+   不用 -webkit-box 两端对齐：它不折行，窄屏会把两者挤到重叠。 */
 .lite-card-info {
-  display: -webkit-box;
-  -webkit-box-pack: justify;
-  -webkit-box-align: center;
+  overflow: hidden;
   font-family: "Amazon Ember", sans-serif;
   font-size: 20px;
+  line-height: 36px;
 }
 
 .lite-date {
+  float: left;
   color: #999999;
 }
 
 .lite-tags {
-  text-align: right;
+  float: right;
 }
 
 .lite-tag {
   display: inline-block;
-  margin-left: 10px;
+  margin: 0 0 6px 10px;
   padding: 4px 16px;
   border: 1px solid rgba(23, 190, 187, 0.38);
   -webkit-border-radius: 999px;
@@ -352,14 +368,20 @@ img {
   margin-bottom: 28px;
 }
 
+/* 宽屏：输入框占满、按钮贴右。没有 calc() 也没有 -webkit-box-flex 可用时，
+   做法是容器右侧留出按钮宽度，按钮绝对定位进去。
+   700px 断点里改回上下两行、按钮铺满。 */
 .lite-search-row {
-  display: -webkit-box;
-  -webkit-box-align: center;
+  position: relative;
+  padding-right: 140px;
 }
 
-.lite-search-input {
-  -webkit-box-flex: 1;
-  margin-right: 12px;
+.lite-search-row .lite-btn {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  width: 124px;
+  padding: 0;
 }
 
 .lite-filter-panel {
@@ -377,16 +399,24 @@ img {
 
 /* ── 列表页：统计栏与排序（主站 .stats-bar / .sort-bar） ──────────────── */
 
+/* 统计靠左、排序靠右，做法同 .lite-card-info。 */
 .lite-stats-bar {
-  display: -webkit-box;
-  -webkit-box-pack: justify;
-  -webkit-box-align: center;
+  overflow: hidden;
   padding-bottom: 16px;
   margin-bottom: 28px;
   border-bottom: 1px solid #e0e0e0;
   font-family: "Amazon Ember", sans-serif;
   font-size: 22px;
   color: #4a4a4a;
+}
+
+.lite-search-stats {
+  float: left;
+  line-height: 56px;
+}
+
+.lite-sort-bar {
+  float: right;
 }
 
 .lite-filter-text {
@@ -470,38 +500,41 @@ img {
   margin-right: 24px;
 }
 
+/* 分类靠左、阅读时长靠右，做法同 .lite-card-info。 */
 .lite-article-info {
-  display: -webkit-box;
-  -webkit-box-pack: justify;
-  -webkit-box-align: center;
+  overflow: hidden;
   font-family: "Amazon Ember", sans-serif;
   font-size: 24px;
+  line-height: 38px;
+}
+
+.lite-categories {
+  float: left;
+}
+
+.lite-categories .lite-tag {
+  margin: 0 10px 6px 0;
 }
 
 .lite-reading-time {
+  float: right;
   color: #555555;
 }
 
-/* 封面：固定 10:7 的比例容器，图片溢出裁掉。
-   比例取自主站 .main-photo-article 的封面高度上限（视口高度的六成，与宽度的七成取小）。 */
+/* 封面：固定 10:7 的比例容器，图片按比例铺满、超出部分裁掉。
+   比例取自主站 .main-photo-article 的封面高度上限（视口高度的六成，与宽度的七成取小）。
+   做法同 .lite-card-cover：背景图 + background-size: cover。 */
 .lite-cover {
-  position: relative;
   margin: 0 0 36px;
   padding: 70% 0 0;
-  overflow: hidden;
   -webkit-border-radius: 12px;
   border-radius: 12px;
   border: 1px solid #e0e0e0;
-}
-
-.lite-cover img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  background-color: #eef2f2;
+  background-repeat: no-repeat;
+  background-position: center center;
+  -webkit-background-size: cover;
+  background-size: cover;
 }
 
 /* ── 正文排版（主站 article-prose 的等价物） ───────────────────── */
@@ -1044,7 +1077,7 @@ img {
   background: #fdf5f5;
   -webkit-border-radius: 8px;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 /* 操作成功时的提示（alert-box 的 success 态） */
@@ -1067,6 +1100,8 @@ img {
 }
 
 /* ── 个人中心（主站 .user-info-card 等） ────────────────────────────────── */
+/* 字号向全站看齐（正文 20px 起）。主站这里的字段名前带 emoji，
+   老设备没有 emoji 字体会显示成方框，所以模板里去掉了。 */
 
 .lite-me-card {
   max-width: 640px;
@@ -1092,24 +1127,25 @@ img {
   background: #0e9a9a;
   color: #ffffff;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: 18px;
+  line-height: 30px;
 }
 
 .lite-me-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 20px;
+  font-size: 26px;
   margin-bottom: 8px;
 }
 
 .lite-me-hint {
+  font-size: 22px;
   color: #4a4a4a;
   margin-bottom: 16px;
 }
 
 .lite-me-username {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 26px;
+  font-size: 32px;
   padding-bottom: 14px;
   border-bottom: 2px solid #1a1a1a;
   margin-bottom: 20px;
@@ -1120,8 +1156,8 @@ img {
 }
 
 .lite-me-item {
-  font-size: 16px;
-  margin-bottom: 12px;
+  font-size: 24px;
+  margin-bottom: 16px;
   word-wrap: break-word;
 }
 
@@ -1131,7 +1167,8 @@ img {
 
 .lite-me-token {
   font-family: monospace;
-  font-size: 14px;
+  font-size: 20px;
+  word-break: break-all;
 }
 
 .lite-me-section {
@@ -1142,38 +1179,8 @@ img {
 
 .lite-me-section-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 18px;
+  font-size: 28px;
   margin-bottom: 16px;
-}
-
-/* ── 极窄屏（断点 560px） ──────────────────────────────────────────── */
-/* 页头是「品牌 + 导航」横排。实测 375px 下两者要 395px（品牌 170 + 导航 211），
-   直接溢出屏幕。这里折成上下两行：品牌一行，导航一行（导航项自身可折行）。 */
-
-@media (max-width: 560px) {
-
-  .lite-header-inner {
-    display: block;
-    padding: 10px 14px;
-  }
-
-  .lite-brand {
-    display: block;
-    font-size: 22px;
-    line-height: 1.3;
-  }
-
-  .lite-nav {
-    margin-top: 6px;
-  }
-
-  .lite-nav a {
-    margin-left: 0;
-    margin-right: 20px;
-    min-height: 48px;
-    line-height: 48px;
-    font-size: 18px;
-  }
 }
 
 /* ── 小屏适配（断点 700px） ─────────────────────────────────────────── */
@@ -1204,7 +1211,7 @@ img {
   }
 
   .lite-nav a {
-    margin-left: 14px;
+    margin-right: 16px;
     font-size: 18px;
   }
 
@@ -1238,18 +1245,17 @@ img {
 
   /* 卡片：日期与分类改上下排 */
   .lite-card-info {
-    display: block;
     font-size: 18px;
   }
 
+  .lite-date,
   .lite-tags {
-    text-align: left;
-    margin-top: 10px;
+    float: none;
+    display: block;
   }
 
   .lite-tag {
-    margin-left: 0;
-    margin-right: 8px;
+    margin: 0 8px 6px 0;
     font-size: 18px;
   }
 
@@ -1259,26 +1265,32 @@ img {
   }
 
   .lite-search-row {
-    display: block;
+    padding-right: 0;
   }
 
   .lite-search-input {
-    margin-right: 0;
     margin-bottom: 14px;
   }
 
   .lite-search-row .lite-btn {
+    position: static;
     display: block;
     width: 100%;
   }
 
+  /* 统计与排序改上下排 */
   .lite-stats-bar {
-    display: block;
     font-size: 19px;
   }
 
+  .lite-search-stats,
   .lite-sort-bar {
-    margin-top: 12px;
+    float: none;
+  }
+
+  .lite-search-stats {
+    line-height: 1.6;
+    margin-bottom: 8px;
   }
 
   .lite-sort-option {
@@ -1300,16 +1312,15 @@ img {
     font-size: 19px;
   }
 
-  .lite-article-info {
-    display: block;
-  }
-
+  /* 分类与阅读时长改上下排 */
+  .lite-categories,
   .lite-reading-time {
+    float: none;
     display: block;
-    margin-top: 10px;
   }
 
-  .lite-prose {    font-size: 28px;
+  .lite-prose {
+    font-size: 28px;
   }
 
   .lite-prose h2 {
@@ -1390,6 +1401,24 @@ img {
     font-size: 20px;
   }
 
+  .lite-me-username {
+    font-size: 26px;
+  }
+
+  .lite-me-item,
+  .lite-me-hint {
+    font-size: 20px;
+  }
+
+  .lite-me-title,
+  .lite-me-section-title {
+    font-size: 23px;
+  }
+
+  .lite-me-token {
+    font-size: 18px;
+  }
+
   /* 按钮铺满一行 */
   .lite-form-actions-row .lite-btn,
   .lite-form-actions .lite-btn,
@@ -1423,5 +1452,36 @@ img {
 
   .lite-notfound-code {
     font-size: 88px;
+  }
+}
+
+/* ── 极窄屏（断点 560px） ──────────────────────────────────────────── */
+/* 必须写在 700px 断点之后：窄屏两个断点同时命中，后写的同名规则才生效。
+
+   页头的 float 在这里放得下也会挤成「品牌一行、导航贴右一行」，
+   左右不齐。这里明确改成上下两行、都左对齐（导航项自身可折行）。 */
+
+@media (max-width: 560px) {
+
+  .lite-header-inner {
+    padding: 10px 14px;
+  }
+
+  .lite-brand,
+  .lite-nav {
+    float: none;
+  }
+
+  .lite-brand {
+    font-size: 22px;
+    line-height: 1.3;
+  }
+
+  .lite-nav {
+    margin-top: 6px;
+  }
+
+  .lite-nav a {
+    margin-right: 20px;
   }
 }

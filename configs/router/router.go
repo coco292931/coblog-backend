@@ -212,6 +212,7 @@ func InitEngine() *gin.Engine {
 	//
 	//样式表不进 LooseAuth 组：它是静态资源，没必要每次请求都做一次鉴权与日志。
 	ginEngine.GET("/lite/lite.css", liteControllers.ServeLiteCSS)
+	ginEngine.GET("/lite/icon.ico", liteControllers.ServeLiteIcon)
 
 	lite := ginEngine.Group("/lite", middleware.LooseAuth)
 	{

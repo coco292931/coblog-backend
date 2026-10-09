@@ -371,16 +371,20 @@ func TestMeTemplate(t *testing.T) {
 
 	// 展示项与文案照搬主站 pages/me/index.vue
 	mustContain(t, html, "coco", "应显示用户名")
-	mustContain(t, html, "📧 邮箱：", "字段与主站一致")
+	// 字段名与主站一致，但去掉了前面的 emoji（老设备会显示成方框）
+	mustContain(t, html, "邮箱：", "字段与主站一致")
 	mustContain(t, html, "账户激活状态：", "字段与主站一致")
-	mustContain(t, html, "📝 深度模式权限：", "字段与主站一致")
-	mustContain(t, html, "🔓 深度模式状态：", "字段与主站一致")
-	mustContain(t, html, "🔑 RSS Token：", "字段与主站一致")
+	mustContain(t, html, "深度模式权限：", "字段与主站一致")
+	mustContain(t, html, "深度模式状态：", "字段与主站一致")
+	mustContain(t, html, "RSS Token：", "字段与主站一致")
 	mustContain(t, html, "已激活", "状态文案与主站一致")
 	mustContain(t, html, "已开通", "状态文案与主站一致")
 	mustContain(t, html, "未启用", "状态文案与主站一致")
-	mustContain(t, html, "🔒 修改密码", "操作项与主站一致")
-	mustContain(t, html, "🔄 重置 RSS Token", "操作项与主站一致")
+	mustContain(t, html, "修改密码", "操作项与主站一致")
+	mustContain(t, html, "重置 RSS Token", "操作项与主站一致")
+	for _, code := range []int{0x1F4E7, 0x1F4DD, 0x1F513, 0x1F511, 0x1F512, 0x1F504} {
+		mustNotContain(t, html, string(rune(code)), "/me 不应出现 emoji")
+	}
 	mustContain(t, html, "确认修改", "按钮文案与主站一致")
 	mustContain(t, html, "确认重置", "按钮文案与主站一致")
 	mustContain(t, html, "退出登录", "登出入口")
@@ -490,6 +494,17 @@ func TestTemplatesHaveNoLiteralEscapes(t *testing.T) {
 }
 
 // TestTemplatesHaveNoScript 是老 Kindle 的硬要求：内容写在 HTML 里，别指望脚本填。
+// 图标必须走 /lite 自己的地址，且内嵌的确实是 ico。
+// 前端构建后图标文件名带哈希，/src/assets/... 只在 Vite 开发服务器上存在，
+// 引用它们在生产环境都会退回默认的 Vue 图标。
+func TestLiteIconIsSelfServed(t *testing.T) {
+	html := renderToString(t, "home", HomeView{BaseView: testBase()})
+	mustContain(t, html, `href="/lite/icon.ico"`, "图标应指向 /lite/icon.ico")
+	if len(liteIcon) < 4 || liteIcon[0] != 0 || liteIcon[1] != 0 || liteIcon[2] != 1 || liteIcon[3] != 0 {
+		t.Error("内嵌的 icon.ico 不是有效的 ICO 文件")
+	}
+}
+
 func TestTemplatesHaveNoScript(t *testing.T) {
 	pages := map[string]any{
 		"home":    HomeView{BaseView: testBase(), Articles: []ListItemView{sampleItem()}},
@@ -766,10 +781,19 @@ func TestFormatFilterText(t *testing.T) {
 
 // ────────────────────────────── 样式约束 ──────────────────────────────
 
+// stripCSSComments 去掉 /* */ 注释。
+//
+// 语法检查必须在剥掉注释的文本上做：注释里提到某个写法（比如
+// 「不用 display: -webkit-box」「主站用的是 60vh」）不该被算作「用了」它。
+// 之前就因此误报过三次（1.05rem、60vh、-webkit-box）。
+func stripCSSComments(css string) string {
+	return regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(css, "")
+}
+
 // TestLiteCSSAvoidsUnsupportedSyntax 把「发布前过一遍」那份清单固化成断言：
 // 老 Kindle 的 CSS 引擎不认识这些写法，写了不报错、只静默降级，很难在真机上发现。
 func TestLiteCSSAvoidsUnsupportedSyntax(t *testing.T) {
-	css := string(liteCSS)
+	css := stripCSSComments(string(liteCSS))
 	if len(css) == 0 {
 		t.Fatal("lite.css 应当被内嵌进二进制，实际为空")
 	}
@@ -789,6 +813,7 @@ func TestLiteCSSAvoidsUnsupportedSyntax(t *testing.T) {
 		{regexp.MustCompile(`(?i)position\s*:\s*sticky`), "不支持 sticky"},
 		{regexp.MustCompile(`(?i)\btransition\s*:`), "不写过渡（不解析，且墨水屏上会留残影）"},
 		{regexp.MustCompile(`(?i)\banimation\s*:`), "不写动画"},
+		{regexp.MustCompile(`(?i)object-fit`), "老引擎不认 object-fit，图片会被拉伸；裁切用 background-size: cover"},
 	}
 
 	for _, b := range banned {
@@ -802,10 +827,11 @@ func TestLiteCSSAvoidsUnsupportedSyntax(t *testing.T) {
 // TestLiteCSSKeepsWebkitPrefixes 圆角 / 阴影在老引擎上需要 -webkit- 前缀，
 // 现代浏览器需要标准写法，两个都得写。
 func TestLiteCSSKeepsWebkitPrefixes(t *testing.T) {
-	css := string(liteCSS)
+	css := stripCSSComments(string(liteCSS))
 	pairs := []struct{ webkit, standard string }{
 		{"-webkit-border-radius", "border-radius"},
 		{"-webkit-box-shadow", "box-shadow"},
+		{"-webkit-box-sizing", "box-sizing"},
 	}
 
 	for _, p := range pairs {
@@ -817,8 +843,10 @@ func TestLiteCSSKeepsWebkitPrefixes(t *testing.T) {
 		}
 	}
 
-	if !strings.Contains(css, "display: -webkit-box") {
-		t.Error("lite.css 应使用 display: -webkit-box 做并排布局")
+	// 布局不用 -webkit-box：它是硬横排、不会折行，内容放不下就把页面撑宽。
+	// 现在全部是块级流 + inline-block 自然折行 + float。
+	if regexp.MustCompile(`display:\s*-webkit-box`).MatchString(css) {
+		t.Error("布局不要用 display: -webkit-box -- 它不折行，窄屏下会溢出")
 	}
 }
 

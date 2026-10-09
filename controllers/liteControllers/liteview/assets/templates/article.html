@@ -5,9 +5,8 @@
 <article class="lite-article">
 
   {{if .Cover}}
-  <figure class="lite-cover">
-    <img src="{{.Cover}}" alt="{{.Title}}" width="100%">
-  </figure>
+  {{/* 背景图而不是 <img>：老引擎不认 object-fit，见 lite.css 的 .lite-cover */}}
+  <div class="lite-cover" style="background-image: url('{{.Cover}}')" role="img" aria-label="{{.Title}}"></div>
   {{end}}
 
   <div class="lite-article-head">

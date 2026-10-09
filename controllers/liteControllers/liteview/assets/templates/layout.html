@@ -7,14 +7,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Coco の 避风港</title>
 <link rel="stylesheet" href="/lite/lite.css">
+<link rel="icon" type="image/x-icon" href="/lite/icon.ico">
+
 </head>
 <body>
 
 {{/* 导航项与主站一致：足迹 / 写作（登录后）/ RSS / 关于 / 我的 */}}
 <header class="lite-header">
   <div class="lite-header-inner">
-    <a class="lite-brand" href="/lite/">Coco の 避风港</a>
-    <a class="lite-lite" > lite</a>
+    <a class="lite-brand" href="/lite/">Coco の 避风港<span class="lite-lite">lite</span></a>
     <nav class="lite-nav">
       <a href="/lite/articles"{{if eq .NavKey "articles"}} class="is-active"{{end}}>足迹</a>
       {{if .LoggedIn}}<a href="/lite/write"{{if eq .NavKey "write"}} class="is-active"{{end}}>写作</a>{{end}}
@@ -60,9 +61,8 @@
 {{define "card"}}
 <article class="lite-card">
   {{if .Cover}}
-  <a class="lite-card-cover" href="/lite/articles/{{.ID}}">
-    <img src="{{.Cover}}" alt="{{.Title}}" width="100%">
-  </a>
+  {{/* 背景图而不是 <img>：老引擎不认 object-fit，见 lite.css 的 .lite-card-cover */}}
+  <a class="lite-card-cover" href="/lite/articles/{{.ID}}" style="background-image: url('{{.Cover}}')" aria-label="{{.Title}}"></a>
   {{end}}
   <div class="lite-card-body">
     <div class="lite-card-title"><a href="/lite/articles/{{.ID}}">{{.Title}}</a></div>

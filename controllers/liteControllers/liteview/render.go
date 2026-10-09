@@ -24,6 +24,15 @@ var templatesFS embed.FS
 //go:embed assets/lite.css
 var liteCSS []byte
 
+// 站点图标。复制自前端 src/assets/icon.ico。
+//
+// 不能直接引用 /src/assets/icon.ico：那个路径只在 Vite 开发服务器上存在，
+// 生产环境 nginx 给的是 index.html，浏览器随即退回 /favicon.ico ——
+// 那是前端 public 里默认的 Vue 图标。
+//
+//go:embed assets/icon.ico
+var liteIcon []byte
+
 // liteTemplates 在进程启动时解析一次。模板有语法错误会在这里直接 panic，
 // 属于「启动即失败」，比运行到某个页面才报错更容易发现。
 var liteTemplates = template.Must(
@@ -51,4 +60,9 @@ func Render(c *gin.Context, status int, name string, data any) {
 // 但不要依赖文件系统上的 static 目录。
 func ServeCSS(c *gin.Context) {
 	c.Data(http.StatusOK, "text/css; charset=utf-8", liteCSS)
+}
+
+// ServeIcon 提供 /lite/icon.ico。
+func ServeIcon(c *gin.Context) {
+	c.Data(http.StatusOK, "image/x-icon", liteIcon)
 }

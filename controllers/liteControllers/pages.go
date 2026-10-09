@@ -196,6 +196,11 @@ func ServeLiteCSS(c *gin.Context) {
 	liteview.ServeCSS(c)
 }
 
+// ServeLiteIcon GET /lite/icon.ico
+func ServeLiteIcon(c *gin.Context) {
+	liteview.ServeIcon(c)
+}
+
 // ────────────────────────────── 辅助 ──────────────────────────────
 
 // currentContentStatus 取当前请求的内容级别。匿名一律为 def。

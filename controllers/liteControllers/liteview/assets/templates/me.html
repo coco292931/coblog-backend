@@ -35,11 +35,11 @@
   <div class="lite-me-username">{{.Username}}</div>
 
   <div class="lite-me-details">
-    <div class="lite-me-item"><span class="lite-me-label">📧 邮箱：</span><span>{{.Email}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">邮箱：</span><span>{{.Email}}</span></div>
     <div class="lite-me-item"><span class="lite-me-label">账户激活状态：</span><span>{{if .Activated}}已激活{{else}}未激活{{end}}</span></div>
-    <div class="lite-me-item"><span class="lite-me-label">📝 深度模式权限：</span><span>{{if .Deepable}}已开通{{else}}未开通{{end}}</span></div>
-    <div class="lite-me-item"><span class="lite-me-label">🔓 深度模式状态：</span><span>{{if .IsDeep}}已启用{{else}}未启用{{end}}</span></div>
-    <div class="lite-me-item"><span class="lite-me-label">🔑 RSS Token：</span><span class="lite-me-token">{{if .RSSToken}}{{.RSSToken}}{{else}}暂无{{end}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">深度模式权限：</span><span>{{if .Deepable}}已开通{{else}}未开通{{end}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">深度模式状态：</span><span>{{if .IsDeep}}已启用{{else}}未启用{{end}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">RSS Token：</span><span class="lite-me-token">{{if .RSSToken}}{{.RSSToken}}{{else}}暂无{{end}}</span></div>
   </div>
 
   {{if .Message}}
@@ -49,7 +49,7 @@
   {{end}}
 
   <div class="lite-me-section">
-    <div class="lite-me-section-title">🔒 修改密码</div>
+    <div class="lite-me-section-title">修改密码</div>
     <form method="post" action="/lite/me/password">
       <div class="lite-form-group">
         <label class="lite-label" for="oldPassword">当前密码</label>
@@ -68,7 +68,7 @@
   </div>
 
   <div class="lite-me-section">
-    <div class="lite-me-section-title">🔄 重置 RSS Token</div>
+    <div class="lite-me-section-title">重置 RSS Token</div>
     <p class="lite-me-hint">重置后旧的 RSS 订阅地址会立即失效，需要在阅读器中重新订阅。</p>
     <form method="post" action="/lite/me/rss">
       <button class="lite-btn" type="submit">确认重置</button>

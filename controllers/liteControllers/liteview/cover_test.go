@@ -38,30 +38,106 @@ func TestCoverUsesAspectRatio(t *testing.T) {
 	}
 }
 
-// 页头在极窄屏必须折成两行。
+// 封面必须「等比铺满、超出裁掉」，不能拉伸。
 //
-// 实测 375px 视口下「品牌 + 四个导航项」横排需要 395px（品牌 170 + 导航 211），
-// 直接撑出屏幕。断点 560px 里把 .lite-header-inner 改成 display: block，
-// 品牌占一行、导航占一行，导航项自身可以继续折行。
-func TestHeaderWrapsOnNarrowScreens(t *testing.T) {
+// 老引擎不认 object-fit，<img> 塞进固定比例框只会被拉伸 / 压扁。
+// 所以封面走背景图：background-size: cover（带 -webkit- 前缀）。
+func TestCoverCropsInsteadOfStretching(t *testing.T) {
+	css := string(liteCSS)
+	for _, sel := range []string{".lite-card-cover", ".lite-cover"} {
+		block := cssBlock(t, css, sel)
+		for _, want := range []string{"-webkit-background-size: cover", "background-size: cover", "background-position: center"} {
+			if !strings.Contains(block, want) {
+				t.Errorf("%s 缺少 %q，实际:\n%s", sel, want, block)
+			}
+		}
+	}
+
+	card := renderToString(t, "home", HomeView{BaseView: testBase(), Articles: []ListItemView{sampleItem()}})
+	mustContain(t, card, `class="lite-card-cover"`, "列表应有封面")
+	mustContain(t, card, "background-image: url(", "列表封面应走背景图")
+	mustContain(t, card, "x.jpg?thumb=1", "封面地址应原样带上")
+	mustNotContain(t, card, "<img", "列表封面不应再用 <img>（老引擎会拉伸）")
+
+	art := renderToString(t, "article", ArticleView{BaseView: testBase(), Title: "t", Cover: "https://api.example.com/static/uploads/y.jpg"})
+	mustContain(t, art, "background-image: url(", "详情封面应走背景图")
+	mustContain(t, art, "y.jpg", "封面地址应原样带上")
+}
+
+// 560px 断点必须写在 700px 之后。
+//
+// 窄屏两个断点同时命中，后写的同名规则胜出。之前 560 写在前面，
+// 里面对页头的覆盖全被 700 盖掉了。
+func TestNarrowBreakpointComesLast(t *testing.T) {
+	css := string(liteCSS)
+	i560 := strings.Index(css, "@media (max-width: 560px)")
+	i700 := strings.Index(css, "@media (max-width: 700px)")
+	if i560 < 0 || i700 < 0 {
+		t.Fatal("找不到 560px / 700px 断点")
+	}
+	if i560 < i700 {
+		t.Error("560px 断点必须写在 700px 断点之后，否则会被覆盖")
+	}
+}
+
+// 页头必须「天生不溢出」：品牌左、导航右都用 float，放不下导航自己掉行，
+// 不依赖任何断点。
+//
+// 之前用 -webkit-box 两端对齐，它不折行，375px 下「品牌 + 导航」要 395px，
+// 直接撑出屏幕。
+func TestHeaderIsFluidByDefault(t *testing.T) {
 	css := string(liteCSS)
 
-	re := regexp.MustCompile(`@media \(max-width: 560px\) \{([\s\S]*?)\n\}`)
-	m := re.FindStringSubmatch(css)
-	if m == nil {
-		t.Fatal("找不到 max-width: 560px 的断点")
+	inner := cssBlock(t, css, ".lite-header-inner")
+	if inner == "" {
+		t.Fatal("找不到 .lite-header-inner")
 	}
-	block := m[1]
+	if strings.Contains(inner, "-webkit-box") {
+		t.Error(".lite-header-inner 不能用 -webkit-box 横排（不折行，窄屏会溢出）")
+	}
 
-	if !strings.Contains(block, ".lite-header-inner") {
-		t.Error("窄屏断点里应覆盖 .lite-header-inner")
+	if !strings.Contains(inner, "overflow: hidden") {
+		t.Error(".lite-header-inner 要 overflow: hidden 清浮动，否则页头高度塌陷")
 	}
-	if !strings.Contains(block, "display: block") {
-		t.Error("窄屏断点里应把 .lite-header-inner 改成 display: block（品牌与导航折成两行）")
+
+	brand := cssBlock(t, css, ".lite-brand")
+	if !strings.Contains(brand, "float: left") {
+		t.Errorf(".lite-brand 应 float: left，实际:\n%s", brand)
 	}
-	// 横排时靠 -webkit-box-pack 两端对齐；折行后必须靠 margin 拉开导航项间距，
-	// 否则四项会挤成一坨。
-	if !strings.Contains(block, "margin-right") {
-		t.Error("窄屏折行后，导航项要靠 margin-right 拉开间距（原来的 margin-left 会让首项贴边）")
+
+	nav := cssBlock(t, css, ".lite-nav")
+	if !strings.Contains(nav, "float: right") {
+		t.Errorf(".lite-nav 应 float: right，实际:\n%s", nav)
+	}
+
+	// 导航项 inline-block + margin-right：
+	// 太窄时自己折行，且折行后首项不贴边，末尾不会多出空白
+	link := cssBlock(t, css, ".lite-nav a")
+	if !strings.Contains(link, "inline-block") {
+		t.Error(".lite-nav a 应是 inline-block（可自然折行）")
+	}
+	if !strings.Contains(link, "margin-right") {
+		t.Error(".lite-nav a 应该用 margin-right 拉开间距（margin-left 会让折行后的首项贴边）")
+	}
+}
+
+// 另外四处曾经用 -webkit-box 硬横排的地方，全部改成 float / 块级流。
+// 它们同样不能依赖断点才不溢出。
+func TestNoFlexHacksForLayout(t *testing.T) {
+	css := string(liteCSS)
+	for _, sel := range []string{
+		".lite-search-row",
+		".lite-stats-bar",
+		".lite-card-info",
+		".lite-article-info",
+	} {
+		block := cssBlock(t, css, sel)
+		if block == "" {
+			t.Errorf("找不到 %s", sel)
+			continue
+		}
+		if strings.Contains(block, "-webkit-box") {
+			t.Errorf("%s 不能用 -webkit-box 硬横排（窄屏会溢出）", sel)
+		}
 	}
 }
