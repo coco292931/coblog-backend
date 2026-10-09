@@ -94,6 +94,14 @@ img {
   letter-spacing: 0.5px;
 }
 
+.lite-lite {
+  font-family: "Amazon Ember", sans-serif;
+  font-style: italic;
+  font-size: 22px;
+  color: #0e9a9a;
+  text-decoration: none;
+}
+
 .lite-nav a {
   position: relative;
   display: inline-block;
