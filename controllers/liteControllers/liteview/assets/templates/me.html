@@ -38,7 +38,7 @@
 
   <div class="lite-me-details">
     <div class="lite-me-item"><span class="lite-me-label">📧 邮箱：</span><span>{{.Email}}</span></div>
-    <div class="lite-me-item"><span class="lite-me-label">✅ 账户激活状态：</span><span>{{if .Activated}}已激活{{else}}未激活{{end}}</span></div>
+    <div class="lite-me-item"><span class="lite-me-label">账户激活状态：</span><span>{{if .Activated}}已激活{{else}}未激活{{end}}</span></div>
     <div class="lite-me-item"><span class="lite-me-label">📝 深度模式权限：</span><span>{{if .Deepable}}已开通{{else}}未开通{{end}}</span></div>
     <div class="lite-me-item"><span class="lite-me-label">🔓 深度模式状态：</span><span>{{if .IsDeep}}已启用{{else}}未启用{{end}}</span></div>
     <div class="lite-me-item"><span class="lite-me-label">🔑 RSS Token：</span><span class="lite-me-token">{{if .RSSToken}}{{.RSSToken}}{{else}}暂无{{end}}</span></div>
@@ -46,7 +46,6 @@
 
   {{if .Message}}
   <div class="lite-alert{{if .OK}} lite-alert-ok{{end}}">
-    <span class="lite-alert-icon">{{if .OK}}✅{{else}}⚠️{{end}}</span>
     <span class="lite-alert-text">{{.Message}}</span>
   </div>
   {{end}}

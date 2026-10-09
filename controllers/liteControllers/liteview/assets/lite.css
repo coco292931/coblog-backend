@@ -989,10 +989,6 @@ img {
   font-size: 16px;
 }
 
-.lite-alert-icon {
-  display: none;
-}
-
 /* 操作成功时的提示（主站 alert-box 的 success 态） */
 .lite-alert-ok {
   border-color: #b7dcc4;

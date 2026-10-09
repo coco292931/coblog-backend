@@ -378,7 +378,7 @@ func TestMeTemplate(t *testing.T) {
 	// 展示项与文案照搬主站 pages/me/index.vue
 	mustContain(t, html, "coco", "应显示用户名")
 	mustContain(t, html, "📧 邮箱：", "字段与主站一致")
-	mustContain(t, html, "✅ 账户激活状态：", "字段与主站一致")
+	mustContain(t, html, "账户激活状态：", "字段与主站一致")
 	mustContain(t, html, "📝 深度模式权限：", "字段与主站一致")
 	mustContain(t, html, "🔓 深度模式状态：", "字段与主站一致")
 	mustContain(t, html, "🔑 RSS Token：", "字段与主站一致")
