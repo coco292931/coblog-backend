@@ -73,11 +73,16 @@ img {
 .lite-header {
   background: #ffffff;
   border-bottom: 2px solid #17bebb;
-  padding: 18px 0 14px;
   margin-bottom: 28px;
 }
 
+/* 与 .lite-shell / .lite-footer-inner 共用同一套「居中 + 左右留白」。
+   ⚠️ 这三行缺一不可：只有 .lite-header 通栏而内容容器没有留白时，
+   宽屏下品牌会贴在 x=0，和下面居中的内容区对不齐。 */
 .lite-header-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px 4% 12px;
   display: -webkit-box;
   -webkit-box-pack: justify;
   -webkit-box-align: center;
