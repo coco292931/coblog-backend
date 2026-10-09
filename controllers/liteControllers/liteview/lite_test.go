@@ -73,7 +73,7 @@ func TestHomeTemplateRendersContent(t *testing.T) {
 	mustContain(t, html, "第一篇", "首页应直出文章标题")
 	mustContain(t, html, "/lite/articles/7", "首页卡片应链接到文章详情")
 	mustContain(t, html, "2026-01-02", "应显示日期")
-	mustContain(t, html, "海内存知己，天涯若比邻_", "首屏是主站的那句欢迎语")
+	mustContain(t, html, "海内存知己，天涯若比邻", "首屏是主站的那句欢迎语")
 }
 
 func TestCardShowsOnlyMainSiteItems(t *testing.T) {
