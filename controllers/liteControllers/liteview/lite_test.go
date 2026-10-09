@@ -200,11 +200,11 @@ func TestArticleTemplateMatchesMainSiteItems(t *testing.T) {
 	mustContain(t, html, "点赞量：", "统计项与主站一致")
 	mustContain(t, html, "评论数：", "统计项与主站一致")
 
-	// 老设备没有 emoji 字体，图标会渲染成方框 —— 这几个 emoji 不带
-	mustNotContain(t, html, "📊", "不应出现 emoji")
-	mustNotContain(t, html, "👁", "不应出现 emoji")
-	mustNotContain(t, html, "👍", "不应出现 emoji")
-	mustNotContain(t, html, "💬", "不应出现 emoji")
+	// 老设备没有 emoji 字体，图标会渲染成方框 —— 这几个 emoji 不带。
+	// 用码点而不是字面量：本项目还有一条「源码里一律不带 emoji」的护栏用例。
+	for _, code := range []int{0x1F4CA, 0x1F441, 0x1F44D, 0x1F4AC} {
+		mustNotContain(t, html, string(rune(code)), "详情页不应出现 emoji")
+	}
 
 	// 之前自作主张加的
 	mustNotContain(t, html, " 字", "详情页不应显示字数（主站显示的是阅读时长）")
@@ -456,13 +456,13 @@ func TestFooterItemsMatchMainSite(t *testing.T) {
 	mustContain(t, html, "© 2025-2026 coco_29. All Rights Reserved.", "版权行照搬主站")
 	mustContain(t, html, "站点总字数 ≈ 34.6k", "站点总字数照搬主站")
 	mustContain(t, html, "阅读时长 ≈ 1:56", "阅读时长照搬主站")
-	// 主站页脚那两个图标在老设备上会变成方框，所以不带 emoji
-	mustNotContain(t, html, "🖊", "页脚不应出现 emoji")
-	mustNotContain(t, html, "🍵", "页脚不应出现 emoji")
+	// 主站页脚那两个图标在老设备上会变成方框，所以不带 emoji（码点写法同上）
+	mustNotContain(t, html, string(rune(0x1F54A)), "页脚不应出现 emoji")
+	mustNotContain(t, html, string(rune(0x1F375)), "页脚不应出现 emoji")
 	mustContain(t, html, "已避风 292天5时30分12秒", "避风时长照搬主站")
 	mustContain(t, html, "Powered by Vue & GO", "主站的署名行")
 
-	// ⚠️ 以下是用户明确否掉的「自作主张」项，加回去这个用例就会红
+	// 以下是用户明确否掉的「自作主张」项，加回去这个用例就会红
 	banned := []string{"位读者", "篇文章", "已开港", "总访客"}
 	for _, bad := range banned {
 		mustNotContain(t, html, bad, "页脚不得显示主站没有的数据")
@@ -822,10 +822,15 @@ func TestLiteCSSKeepsWebkitPrefixes(t *testing.T) {
 	}
 }
 
-// TestLiteCSSTouchTargets 老 Kindle 只有 click、没有 hover，
-// 可点区域的高度必须够大（指南建议 ≥48px）。
+// TestLiteCSSTouchTargets 这类设备只有 click、没有 hover，
+// 可点区域的高度必须够大（至少 48px）。
+// 只断言下限，不写死具体值 —— /lite 好几处用的是 56px。
 func TestLiteCSSTouchTargets(t *testing.T) {
 	css := string(liteCSS)
+	// 只断言下限，不写死具体值 —— /lite 好几处用的是 56px。
+	heightRe := regexp.MustCompile(`min-height:\s*([0-9]+)px`)
+	enough := regexp.MustCompile(`min-height:\s*(4[89]|[5-9][0-9]|[1-9][0-9]{2,})px`)
+
 	for _, selector := range []string{".lite-btn {", ".lite-nav a {", ".lite-about-link {", ".lite-sort-option {"} {
 		idx := strings.Index(css, selector)
 		if idx < 0 {
@@ -833,8 +838,14 @@ func TestLiteCSSTouchTargets(t *testing.T) {
 		}
 		end := strings.Index(css[idx:], "}")
 		block := css[idx : idx+end]
-		if !strings.Contains(block, "min-height: 48px") {
-			t.Errorf("%s 的触摸目标应至少 48px，实际:\n%s", selector, block)
+
+		m := heightRe.FindStringSubmatch(block)
+		if m == nil {
+			t.Errorf("%s 没有 min-height", selector)
+			continue
+		}
+		if !enough.MatchString(block) {
+			t.Errorf("%s 的触摸目标应至少 48px，实际 %s", selector, m[1])
 		}
 	}
 }

@@ -208,7 +208,7 @@ func FormatDateTime(t time.Time) string {
 // FormatUptime 对应主站 Footer 的 uptimeDisplay：
 // "已避风 X天X时X分X秒"（未开港时为 "本港湾还有 … 开放"）。
 //
-// ⚠️ 主站是每秒刷新的实时值；这里只能给服务端渲染那一刻的快照 ——
+// 主站是每秒刷新的实时值；这里只能给服务端渲染那一刻的快照 ——
 // 老 Kindle 的定时器不可信（100ms 会退化成 ~400ms），不为此在页面上挂脚本。
 func FormatUptime(started, now time.Time) string {
 	diff := now.Sub(started)

@@ -12,11 +12,9 @@
        以及 inline-block / float / table-cell 作为备选；
      · 尺寸只用 px / em / %，间隔用 padding / margin（gap 无效）；
      · 圆角、阴影、渐变都可用，但必须带 -webkit- 前缀，且标准写法也要写一遍；
-     · 颜色照写 —— 墨水屏把颜色映射成灰度，只要保证明度层次分得开即可。
-       链接一律带下划线，避免「只靠颜色区分」在灰度屏上失效；
-     · 不写 transition / animation（老代不解析，墨水屏上也只会留残影）；
-     · 整页背景保持纯白：大面积浅色/淡色图会触发局部重绘而留残影，
-       小面积的浅底（卡片、代码块、引用）没有问题。
+     · 颜色照写，交互色对齐主站（链接 / 按钮 / 高亮）；
+     · transition / animation 写了会被丢弃，界面不能依赖它们；
+     · 背景与卡片一律纯白。
 
    类名与主站的对应关系见各段注释。样式本身是自由的（用户已说明后续再优化），
    但**展示项不能增减**。
@@ -25,8 +23,7 @@
 /* ── 基础 ─────────────────────────────────────────────────────────────── */
 
 /* 老引擎自 Safari 5.1（WebKit 534）起就支持 box-sizing。
-   ⚠️ 不加它，.lite-input 的 width:100% 会把 padding 和 border 顶上容器外 ——
-   登录/注册页的输入框就是这么溢出卡片的。 */
+   不加它，.lite-input 的 width:100% 会把 padding 和 border 顶上容器外。 */
 *,
 *::before,
 *::after {
@@ -37,15 +34,15 @@
 body {
   margin: 0;
   padding: 0;
-  background: #f6f8f8;
+  background: #ffffff;
   color: #1a1a1a;
   font-family: Bookerly, Georgia, serif;
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1.6;
 }
 
-/* 内容容器：宽度与左右留白都在这里 —— 页头因此可以放在它外面通栏。
-   用百分比留白而不是固定 40px：老旧手持设备宽度多在 480~800px，
+/* 内容容器：宽度与左右留白都在这里，页头因此可以放在它外面通栏。
+   用百分比留白而不是固定值：这类设备宽度多在 480~800px，
    固定值会把正文挤成窄窄一条。 */
 .lite-shell {
   max-width: 860px;
@@ -53,7 +50,7 @@ body {
   padding: 0 4%;
 }
 
-/* 链接一律不带下划线（下划线交给具体场景：正文里的链接用细下边框代替）。 */
+/* 链接一律不带下划线（正文里的链接用细下边框代替）。 */
 a {
   color: #0e9a9a;
   text-decoration: none;
@@ -77,7 +74,7 @@ img {
 }
 
 /* 与 .lite-shell / .lite-footer-inner 共用同一套「居中 + 左右留白」。
-   ⚠️ 这三行缺一不可：只有 .lite-header 通栏而内容容器没有留白时，
+   这三行缺一不可：只有 .lite-header 通栏而内容容器没有留白时，
    宽屏下品牌会贴在 x=0，和下面居中的内容区对不齐。 */
 .lite-header-inner {
   max-width: 860px;
@@ -90,7 +87,7 @@ img {
 
 .lite-brand {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 24px;
+  font-size: 30px;
   font-weight: bold;
   color: #2c3e50;
   text-decoration: none;
@@ -100,12 +97,12 @@ img {
 .lite-nav a {
   position: relative;
   display: inline-block;
-  margin-left: 18px;
-  min-height: 48px;
-  line-height: 48px;
+  margin-left: 20px;
+  min-height: 56px;
+  line-height: 56px;
   color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 17px;
+  font-size: 22px;
   font-weight: bold;
 }
 
@@ -119,7 +116,7 @@ img {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 9px;
+  bottom: 10px;
   height: 3px;
   background: #17bebb;
   -webkit-border-radius: 2px;
@@ -127,20 +124,20 @@ img {
 }
 
 /* ── 按钮 ─────────────────────────────────────────────────────────────── */
-/* 触摸目标 ≥48px */
+/* 触摸目标 ≥56px：这类设备只有 click，没有 hover，按下的反馈靠足够大的面积。 */
 
 .lite-btn {
   display: inline-block;
-  min-height: 48px;
-  line-height: 44px;
-  padding: 0 24px;
+  min-height: 56px;
+  line-height: 52px;
+  padding: 0 28px;
   border: 1px solid #17bebb;
   -webkit-border-radius: 999px;
   border-radius: 999px;
   background: #ffffff;
   color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 16px;
+  font-size: 22px;
   font-weight: bold;
   text-align: center;
   text-decoration: none;
@@ -170,43 +167,43 @@ img {
 
 .lite-label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 15px;
+  font-size: 20px;
   color: #4a4a4a;
 }
 
 .lite-input {
   display: block;
   width: 100%;
-  min-height: 48px;
-  padding: 0 14px;
+  min-height: 60px;
+  padding: 0 16px;
   border: 2px solid #d8dee4;
-  -webkit-border-radius: 8px;
-  border-radius: 8px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
   background: #ffffff;
   color: #1a1a1a;
   font-family: Bookerly, Georgia, serif;
-  font-size: 17px;
+  font-size: 24px;
 }
 
-/* 聚焦反馈：老设备没有 hover，输入框得自己把焦点画出来 */
+/* 聚焦反馈：这类设备没有 hover，输入框得自己把焦点画出来 */
 .lite-input:focus,
 .lite-textarea:focus {
   outline: none;
   border-color: #17bebb;
-  -webkit-box-shadow: 0 0 0 3px rgba(23, 190, 187, 0.18);
-  box-shadow: 0 0 0 3px rgba(23, 190, 187, 0.18);
+  -webkit-box-shadow: 0 0 0 4px rgba(23, 190, 187, 0.18);
+  box-shadow: 0 0 0 4px rgba(23, 190, 187, 0.18);
 }
 
 /* ── 首页首屏（主站 .welcome-text） ───────────────────────────────────── */
 
 .lite-hero {
-  padding: 0 0 20px;
+  padding: 0 0 24px;
   border-bottom: 3px solid #17bebb;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 28px;
+  font-size: 40px;
   line-height: 1.4;
   color: #2c3e50;
   font-weight: bold;
@@ -237,13 +234,13 @@ img {
   content: "";
   position: absolute;
   left: -23px;
-  top: 24px;
-  width: 10px;
-  height: 10px;
-  -webkit-border-radius: 6px;
-  border-radius: 6px;
+  top: 30px;
+  width: 12px;
+  height: 12px;
+  -webkit-border-radius: 7px;
+  border-radius: 7px;
   background: #17bebb;
-  border: 2px solid #f6f8f8;
+  border: 2px solid #ffffff;
 }
 
 /* ── 列表卡片（主站 ArticleTimeline 的 .article） ─────────────────────── */
@@ -251,33 +248,45 @@ img {
 .lite-card {
   background: #ffffff;
   border: 1px solid #e0e0e0;
-  -webkit-border-radius: 12px;
-  border-radius: 12px;
+  -webkit-border-radius: 14px;
+  border-radius: 14px;
   -webkit-box-shadow: 0 2px 8px rgba(14, 154, 154, 0.10);
   box-shadow: 0 2px 8px rgba(14, 154, 154, 0.10);
-  margin-bottom: 18px;
+  margin-bottom: 24px;
   overflow: hidden;
 }
 
+/* 封面：固定 5:2 的比例容器，图片溢出裁掉。
+   容器高度用 padding-top 百分比撑开（老引擎支持），不依赖 aspect-ratio。
+   老引擎不认 object-fit，图片会被拉伸——但高度被比例锁住，
+   不会出现「一张竖图把卡片撑到几屏高」的情况。 */
 .lite-card-cover {
   display: block;
+  position: relative;
+  padding-top: 40%;
+  overflow: hidden;
+  background: #eef2f2;
 }
 
 .lite-card-cover img {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
 }
 
 .lite-card-body {
-  padding: 16px 18px 18px;
+  padding: 20px 22px 22px;
 }
 
 .lite-card-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 21px;
+  font-size: 30px;
   line-height: 1.35;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .lite-card-title a {
@@ -286,9 +295,9 @@ img {
 }
 
 .lite-card-summary {
-  margin-bottom: 12px;
-  font-size: 16px;
-  line-height: 1.65;
+  margin-bottom: 16px;
+  font-size: 24px;
+  line-height: 1.6;
   color: #555555;
 }
 
@@ -297,7 +306,7 @@ img {
   -webkit-box-pack: justify;
   -webkit-box-align: center;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 14px;
+  font-size: 20px;
 }
 
 .lite-date {
@@ -310,16 +319,16 @@ img {
 
 .lite-tag {
   display: inline-block;
-  margin-left: 8px;
-  padding: 2px 12px;
+  margin-left: 10px;
+  padding: 4px 16px;
   border: 1px solid rgba(23, 190, 187, 0.38);
   -webkit-border-radius: 999px;
   border-radius: 999px;
   background: #f6f8f8;
   color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 14px;
-  line-height: 22px;
+  font-size: 20px;
+  line-height: 28px;
   text-decoration: none;
 }
 
@@ -327,11 +336,11 @@ img {
 
 .lite-search-bar {
   border: 1px solid #d0d0d0;
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
   background: #fbfdfd;
-  padding: 20px 22px;
-  margin-bottom: 24px;
+  padding: 24px 26px;
+  margin-bottom: 28px;
 }
 
 .lite-search-row {
@@ -363,32 +372,32 @@ img {
   display: -webkit-box;
   -webkit-box-pack: justify;
   -webkit-box-align: center;
-  padding-bottom: 14px;
-  margin-bottom: 24px;
+  padding-bottom: 16px;
+  margin-bottom: 28px;
   border-bottom: 1px solid #e0e0e0;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 15px;
+  font-size: 22px;
   color: #4a4a4a;
 }
 
 .lite-filter-text {
   color: #767676;
-  margin-left: 6px;
+  margin-left: 8px;
 }
 
 .lite-sort-label {
   color: #767676;
-  margin-right: 10px;
+  margin-right: 12px;
 }
 
 .lite-sort-option {
   display: inline-block;
-  min-height: 48px;
-  line-height: 48px;
-  padding: 0 16px;
+  min-height: 56px;
+  line-height: 56px;
+  padding: 0 20px;
   -webkit-border-radius: 999px;
   border-radius: 999px;
-  font-size: 15px;
+  font-size: 22px;
   color: #0e7a7a;
 }
 
@@ -413,9 +422,9 @@ img {
 
 .lite-pager-info {
   display: block;
-  margin: 16px 0;
+  margin: 18px 0;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 15px;
+  font-size: 22px;
   color: #767676;
 }
 
@@ -427,28 +436,29 @@ img {
 
 .lite-article-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 34px;
+  font-size: 52px;
   line-height: 1.25;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   color: #2c3e50;
 }
 
 .lite-article-subtitle {
-  margin-bottom: 14px;
-  font-size: 18px;
+  margin-bottom: 18px;
+  font-size: 32px;
+  line-height: 1.5;
   color: #555555;
 }
 
 .lite-article-time {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 15px;
+  font-size: 24px;
   color: #999999;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .lite-time-item {
   display: inline-block;
-  margin-right: 20px;
+  margin-right: 24px;
 }
 
 .lite-article-info {
@@ -456,80 +466,86 @@ img {
   -webkit-box-pack: justify;
   -webkit-box-align: center;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 15px;
+  font-size: 24px;
 }
 
 .lite-reading-time {
   color: #555555;
 }
 
+/* 封面：限高 + 裁切，避免竖图占满好几屏 */
 .lite-cover {
-  margin: 0 0 32px;
+  margin: 0 0 36px;
   padding: 0;
+  max-height: 560px;
+  overflow: hidden;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
 }
 
 .lite-cover img {
   display: block;
   width: 100%;
-  height: auto;
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
-  border: 1px solid #e0e0e0;
+  max-height: 560px;
+  object-fit: cover;
 }
 
-/* ── 正文排版（主站 article-prose 的老设备等价物） ───────────────────── */
+/* ── 正文排版（主站 article-prose 的等价物） ───────────────────── */
+/* 字号是主站那套的两倍：这类设备屏幕小、观看距离近，
+   主站的小四号字在上面太吃力。 */
 
 .lite-prose {
-  font-size: 18px;
-  line-height: 1.75;
+  font-size: 34px;
+  line-height: 1.7;
 }
 
 .lite-prose h2 {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 26px;
+  font-size: 46px;
   line-height: 1.3;
-  margin: 36px 0 14px;
-  padding-bottom: 8px;
+  margin: 48px 0 20px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #e0e0e0;
   color: #2c3e50;
 }
 
 .lite-prose h3 {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 21px;
+  font-size: 40px;
   line-height: 1.35;
-  margin: 30px 0 12px;
+  margin: 40px 0 16px;
   color: #2c3e50;
 }
 
 .lite-prose h4 {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 19px;
-  margin: 24px 0 10px;
+  font-size: 36px;
+  margin: 32px 0 14px;
   color: #2c3e50;
 }
 
 .lite-prose p {
-  margin: 0 0 22px;
+  margin: 0 0 28px;
 }
 
 .lite-prose ul,
 .lite-prose ol {
-  margin: 0 0 18px;
-  padding-left: 28px;
+  margin: 0 0 28px;
+  padding-left: 40px;
 }
 
 .lite-prose li {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .lite-prose blockquote {
-  margin: 22px 0;
-  padding: 14px 18px;
-  border-left: 4px solid #17bebb;
+  margin: 28px 0;
+  padding: 20px 24px;
+  border-left: 6px solid #17bebb;
   background: #f6f8f8;
-  -webkit-border-radius: 0 8px 8px 0;
-  border-radius: 0 8px 8px 0;
+  -webkit-border-radius: 0 10px 10px 0;
+  border-radius: 0 10px 10px 0;
   color: #555555;
 }
 
@@ -537,32 +553,35 @@ img {
   margin-bottom: 0;
 }
 
+/* 正文图：只限最大宽高，不写死宽高，老引擎也能保持比例。 */
 .lite-prose img {
   display: block;
   max-width: 100%;
+  max-height: 640px;
+  width: auto;
   height: auto;
-  margin: 24px auto;
-  -webkit-border-radius: 8px;
-  border-radius: 8px;
+  margin: 32px auto;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
   border: 1px solid #e0e0e0;
 }
 
 .lite-prose code {
   font-family: monospace;
-  font-size: 15px;
-  padding: 2px 6px;
+  font-size: 26px;
+  padding: 2px 8px;
   background: #f2f2f2;
-  -webkit-border-radius: 4px;
-  border-radius: 4px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
 }
 
 .lite-prose pre {
-  margin: 22px 0;
-  padding: 18px;
+  margin: 28px 0;
+  padding: 22px;
   background: #f5f5f5;
   border: 1px solid #e0e0e0;
-  -webkit-border-radius: 8px;
-  border-radius: 8px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
   white-space: pre-wrap;
   word-wrap: break-word;
 }
@@ -571,7 +590,7 @@ img {
   display: block;
   padding: 0;
   background: none;
-  font-size: 15px;
+  font-size: 26px;
   line-height: 1.55;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -579,15 +598,15 @@ img {
 
 .lite-prose table {
   width: 100%;
-  margin: 22px 0;
+  margin: 28px 0;
   border-collapse: collapse;
-  font-size: 16px;
+  font-size: 26px;
 }
 
 .lite-prose th,
 .lite-prose td {
   border: 1px solid #d0d0d0;
-  padding: 10px 12px;
+  padding: 14px 18px;
   text-align: left;
 }
 
@@ -599,29 +618,29 @@ img {
 .lite-prose hr {
   border: 0;
   border-top: 1px solid #e0e0e0;
-  margin: 36px 0;
+  margin: 44px 0;
 }
 
 /* 公式：后端输出 TeX 原文，这里只做等宽呈现 */
 
 .lite-prose .math-inline {
   font-family: monospace;
-  font-size: 16px;
-  padding: 1px 5px;
+  font-size: 28px;
+  padding: 2px 6px;
   background: #f7f7f7;
-  -webkit-border-radius: 4px;
-  border-radius: 4px;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
 }
 
 .lite-prose .math-block {
   font-family: monospace;
-  font-size: 16px;
-  margin: 22px 0;
-  padding: 16px;
+  font-size: 28px;
+  margin: 28px 0;
+  padding: 20px;
   background: #f7f7f7;
   border: 1px solid #e6e6e6;
-  -webkit-border-radius: 8px;
-  border-radius: 8px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
   text-align: center;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -630,25 +649,25 @@ img {
 /* ── 文章详情：版权声明（主站 .license-info） ─────────────────────────── */
 
 .lite-license {
-  margin-top: 40px;
-  padding: 18px 20px;
+  margin-top: 48px;
+  padding: 22px 24px;
   background: #f6f8f8;
   border: 1px solid #dceeee;
-  border-left: 3px solid #17bebb;
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
+  border-left: 4px solid #17bebb;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
 }
 
 .lite-license-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 17px;
-  margin-bottom: 10px;
+  font-size: 28px;
+  margin-bottom: 12px;
   color: #2c3e50;
 }
 
 .lite-license-text {
-  font-size: 16px;
-  line-height: 1.8;
+  font-size: 26px;
+  line-height: 1.7;
   color: #555555;
   word-wrap: break-word;
 }
@@ -659,24 +678,24 @@ img {
 
 /* ── 文章详情：文章统计（主站 .article-info） ─────────────────────────── */
 .lite-article-stats {
-  margin-top: 22px;
-  padding: 18px 20px;
+  margin-top: 28px;
+  padding: 22px 24px;
   border: 1px solid #e0e0e0;
   background: #ffffff;
-  -webkit-border-radius: 12px;
-  border-radius: 12px;
+  -webkit-border-radius: 14px;
+  border-radius: 14px;
 }
 
 .lite-stats-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 17px;
-  margin-bottom: 12px;
+  font-size: 28px;
+  margin-bottom: 16px;
   color: #2c3e50;
 }
 
 .lite-stat-item {
-  font-size: 16px;
-  margin-bottom: 8px;
+  font-size: 26px;
+  margin-bottom: 12px;
 }
 
 .lite-stat-label {
@@ -688,54 +707,63 @@ img {
 }
 
 /* ── 关于（主站 /about） ──────────────────────────────────────────────── */
+/* 两个页签横排，用与顶部导航栏同一套观感（当前项底部青色短横），
+   不再是左侧一竖条。 */
 
-.lite-about {
-  display: -webkit-box;
-  -webkit-box-align: start;
-}
-
-.lite-about-side {
-  width: 200px;
-  margin-right: 36px;
-}
-
-.lite-about-body {
-  -webkit-box-flex: 1;
+.lite-about-head {
+  margin-bottom: 32px;
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .lite-about-name {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 22px;
-  padding-bottom: 14px;
-  border-bottom: 2px solid #1a1a1a;
-  margin-bottom: 18px;
+  font-size: 30px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.lite-about-nav {
+  display: block;
 }
 
 .lite-about-link {
-  display: block;
-  min-height: 48px;
-  line-height: 48px;
+  position: relative;
+  display: inline-block;
+  margin-right: 28px;
+  min-height: 56px;
+  line-height: 56px;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 17px;
-  color: #0e7a7a;
+  font-size: 22px;
+  font-weight: bold;
+  color: #0e9a9a;
 }
 
 .lite-about-link.is-active {
-  color: #1a1a1a;
-  font-weight: bold;
-  text-decoration: none;
+  color: #2c3e50;
+}
+
+.lite-about-link.is-active:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  height: 3px;
+  background: #17bebb;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
 }
 
 /* ── 错误页（主站 pages/notFound） ────────────────────────────────────── */
 
 .lite-notfound {
-  padding: 40px 0 60px;
+  padding: 48px 0 72px;
   text-align: center;
 }
 
 .lite-notfound-code {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 88px;
+  font-size: 120px;
   font-weight: bold;
   line-height: 1;
   color: #0e9a9a;
@@ -743,44 +771,44 @@ img {
 
 .lite-notfound-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 28px;
-  margin: 20px 0 12px;
+  font-size: 40px;
+  margin: 24px 0 16px;
 }
 
 .lite-notfound-msg {
-  font-size: 17px;
+  font-size: 26px;
   color: #4a4a4a;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .lite-notfound-tips {
-  font-size: 16px;
+  font-size: 24px;
   color: #767676;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .lite-notfound-path {
   font-family: monospace;
-  font-size: 15px;
+  font-size: 22px;
   color: #767676;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
   word-wrap: break-word;
 }
 
 .lite-notfound-actions .lite-btn {
-  margin: 0 8px;
+  margin: 0 8px 12px;
 }
 
 /* ── 页脚（主站 Footer.vue 的四项 + 一个回完整站的出口） ──────────────── */
 
 .lite-footer {
-  margin-top: 48px;
+  margin-top: 56px;
   background: #ffffff;
   border-top: 1px solid #d8dee4;
-  padding: 26px 0 40px;
+  padding: 30px 0 48px;
   text-align: center;
   color: #555555;
-  font-size: 16px;
+  font-size: 22px;
 }
 
 .lite-footer-inner {
@@ -791,71 +819,79 @@ img {
 
 .lite-copyright {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 15px;
-  margin-bottom: 12px;
+  font-size: 22px;
+  margin-bottom: 14px;
 }
 
 .lite-stats {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .lite-uptime {
   color: #767676;
-  font-size: 15px;
-  margin-bottom: 10px;
+  font-size: 22px;
+  margin-bottom: 12px;
 }
 
 .lite-powered {
   color: #767676;
-  font-size: 15px;
+  font-size: 22px;
 }
 
 .lite-switch {
-  margin-top: 18px;
-  font-size: 15px;
+  margin-top: 22px;
+  font-size: 22px;
 }
 
 /* ── 表单页（登录等，主站 .login-box / .form） ───────────────────────── */
 
 .lite-form-box {
-  max-width: 460px;
+  max-width: 560px;
   margin: 0 auto;
-  padding: 32px 28px;
+  padding: 36px 32px;
   border: 1px solid #d0d0d0;
-  -webkit-border-radius: 12px;
-  border-radius: 12px;
+  -webkit-border-radius: 14px;
+  border-radius: 14px;
 }
 
 .lite-form-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 26px;
+  font-size: 36px;
   text-align: center;
-  margin-bottom: 26px;
+  margin-bottom: 30px;
 }
 
 .lite-form-group {
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 /* 记住我 ←→ 忘记密码？用 float 而不是 -webkit-box，后者推不到两端 */
 .lite-form-options {
   overflow: hidden;
-  margin-bottom: 24px;
-  font-size: 16px;
+  margin-bottom: 28px;
+  font-size: 24px;
 }
 
 .lite-checkbox {
   float: left;
   display: inline-block;
-  min-height: 48px;
-  line-height: 48px;
+  min-height: 56px;
+  line-height: 56px;
 }
 
 .lite-form-link {
   float: right;
   display: inline-block;
-  min-height: 48px;
-  line-height: 48px;
+  min-height: 56px;
+  line-height: 56px;
+}
+
+.lite-checkbox input,
+.lite-checkbox-line input {
+  width: 26px;
+  height: 26px;
+  vertical-align: middle;
+  margin-right: 10px;
 }
 
 .lite-btn-block {
@@ -864,16 +900,16 @@ img {
 }
 
 .lite-form-switch {
-  margin-top: 20px;
+  margin-top: 24px;
   text-align: center;
-  font-size: 16px;
+  font-size: 24px;
   color: #4a4a4a;
 }
 
 /* 主站注册表单底部的那句提示 */
 .lite-form-tip {
-  margin: 4px 0 20px;
-  font-size: 15px;
+  margin: 6px 0 24px;
+  font-size: 22px;
   color: #767676;
 }
 
@@ -887,30 +923,24 @@ img {
 .lite-textarea {
   display: block;
   width: 100%;
-  min-height: 320px;
-  padding: 14px;
+  min-height: 420px;
+  padding: 18px;
   border: 2px solid #d0d0d0;
-  -webkit-border-radius: 8px;
-  border-radius: 8px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
   background: #ffffff;
   color: #1a1a1a;
   font-family: monospace;
-  font-size: 16px;
+  font-size: 28px;
   line-height: 1.6;
 }
 
 .lite-checkbox-line {
   display: block;
-  min-height: 48px;
-  line-height: 48px;
-  font-size: 16px;
-}
-
-.lite-checkbox-line input {
-  width: 20px;
-  height: 20px;
-  vertical-align: middle;
-  margin-right: 8px;
+  min-height: 56px;
+  line-height: 1.5;
+  padding: 10px 0;
+  font-size: 24px;
 }
 
 .lite-form-actions-row {
@@ -930,48 +960,48 @@ img {
 /* ── RSS 页（主站 rss/index.vue） ────────────────────────────────── */
 
 .lite-rss-card {
-  max-width: 640px;
+  max-width: 700px;
   margin: 0 auto;
-  padding: 28px 24px;
+  padding: 32px 28px;
   border: 2px solid #d0d0d0;
-  -webkit-border-radius: 12px;
-  border-radius: 12px;
+  -webkit-border-radius: 14px;
+  border-radius: 14px;
   background: #ffffff;
 }
 
 .lite-rss-badge {
   display: inline-block;
-  padding: 2px 12px;
+  padding: 4px 16px;
   border: 2px solid #0e7a7a;
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
   color: #0e7a7a;
-  font-size: 14px;
+  font-size: 20px;
   letter-spacing: 1px;
 }
 
 .lite-rss-title {
-  margin: 14px 0 8px;
-  font-size: 26px;
+  margin: 18px 0 12px;
+  font-size: 38px;
   color: #1a1a1a;
 }
 
 .lite-rss-intro {
-  margin: 0 0 18px;
+  margin: 0 0 22px;
   color: #4a4a4a;
-  font-size: 16px;
+  font-size: 24px;
   line-height: 1.7;
 }
 
 .lite-rss-url {
-  padding: 14px;
+  padding: 18px;
   border: 2px dashed #b8b8b8;
-  -webkit-border-radius: 8px;
-  border-radius: 8px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
   background: #f6f6f6;
   color: #1a1a1a;
   font-family: monospace;
-  font-size: 15px;
+  font-size: 22px;
   word-wrap: break-word;
   word-break: break-all;
 }
@@ -1104,20 +1134,22 @@ img {
 }
 
 /* ── 小屏适配（断点 700px） ─────────────────────────────────────────── */
+/* 这里只改「尺寸与位置」，展示项一个不动。 */
 
 @media (max-width: 700px) {
 
   body {
-    font-size: 17px;
+    font-size: 19px;
   }
 
+  /* 左右留白挪到容器上，页头/页脚才能通栏（同宽屏的 4%） */
   .lite-shell,
   .lite-footer-inner {
     padding: 0 14px;
   }
 
   .lite-header {
-    margin-bottom: 22px;
+    margin-bottom: 24px;
   }
 
   .lite-header-inner {
@@ -1125,19 +1157,19 @@ img {
   }
 
   .lite-brand {
-    font-size: 21px;
+    font-size: 24px;
   }
 
   .lite-nav a {
     margin-left: 14px;
-    font-size: 16px;
+    font-size: 18px;
   }
 
   /* 首页 */
   .lite-hero {
-    font-size: 23px;
-    padding-bottom: 16px;
-    margin-bottom: 24px;
+    font-size: 30px;
+    padding-bottom: 18px;
+    margin-bottom: 28px;
   }
 
   .lite-timeline {
@@ -1146,35 +1178,41 @@ img {
 
   .lite-tl-item:before {
     left: -17px;
-    top: 22px;
+    top: 26px;
   }
 
   .lite-card-body {
-    padding: 14px 15px 16px;
+    padding: 16px 16px 18px;
   }
 
   .lite-card-title {
-    font-size: 19px;
+    font-size: 24px;
+  }
+
+  .lite-card-summary {
+    font-size: 20px;
   }
 
   /* 卡片：日期与分类改上下排 */
   .lite-card-info {
     display: block;
+    font-size: 18px;
   }
 
   .lite-tags {
     text-align: left;
-    margin-top: 8px;
+    margin-top: 10px;
   }
 
   .lite-tag {
     margin-left: 0;
     margin-right: 8px;
+    font-size: 18px;
   }
 
   /* 列表页：搜索框与按钮改上下排 */
   .lite-search-bar {
-    padding: 16px 15px;
+    padding: 18px 16px;
   }
 
   .lite-search-row {
@@ -1183,7 +1221,7 @@ img {
 
   .lite-search-input {
     margin-right: 0;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .lite-search-row .lite-btn {
@@ -1193,23 +1231,30 @@ img {
 
   .lite-stats-bar {
     display: block;
+    font-size: 19px;
   }
 
   .lite-sort-bar {
-    margin-top: 10px;
+    margin-top: 12px;
   }
 
   .lite-sort-option {
-    padding: 0 12px;
+    padding: 0 14px;
+    font-size: 19px;
   }
 
   /* 详情页 */
   .lite-article-title {
-    font-size: 26px;
+    font-size: 34px;
   }
 
   .lite-article-subtitle {
-    font-size: 17px;
+    font-size: 24px;
+  }
+
+  .lite-article-time,
+  .lite-article-info {
+    font-size: 19px;
   }
 
   .lite-article-info {
@@ -1218,46 +1263,94 @@ img {
 
   .lite-reading-time {
     display: block;
-    margin-top: 8px;
+    margin-top: 10px;
+  }
+
+  .lite-cover,
+  .lite-cover img {
+    max-height: 380px;
   }
 
   .lite-prose {
-    font-size: 17px;
+    font-size: 28px;
   }
 
   .lite-prose h2 {
-    font-size: 23px;
+    font-size: 36px;
   }
 
   .lite-prose h3 {
-    font-size: 20px;
+    font-size: 32px;
   }
 
-  /* 关于 */
-  .lite-about {
-    display: block;
+  .lite-prose h4 {
+    font-size: 30px;
   }
 
-  .lite-about-side {
-    width: auto;
-    margin-right: 0;
-    margin-bottom: 18px;
+  .lite-prose code,
+  .lite-prose pre code {
+    font-size: 22px;
+  }
+
+  .lite-prose table {
+    font-size: 22px;
+  }
+
+  .lite-prose img {
+    max-height: 460px;
+  }
+
+  .lite-prose .math-inline,
+  .lite-prose .math-block {
+    font-size: 24px;
+  }
+
+  .lite-license-text,
+  .lite-stat-item {
+    font-size: 22px;
+  }
+
+  /* 关于：页签横排，窄屏收紧间距免得折行 */
+  .lite-about-head {
+    margin-bottom: 24px;
   }
 
   .lite-about-link {
-    display: inline-block;
-    margin-right: 20px;
+    margin-right: 18px;
+    font-size: 19px;
   }
 
   /* 表单与卡片型页面 */
   .lite-form-box,
   .lite-rss-card {
-    padding: 22px 16px;
+    padding: 24px 18px;
   }
 
   .lite-form-title {
-    font-size: 22px;
-    margin-bottom: 20px;
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+
+  .lite-rss-title {
+    font-size: 30px;
+  }
+
+  .lite-rss-intro,
+  .lite-alert {
+    font-size: 20px;
+  }
+
+  .lite-rss-url {
+    font-size: 19px;
+  }
+
+  .lite-rss-note,
+  .lite-form-tip {
+    font-size: 18px;
+  }
+
+  .lite-form-switch {
+    font-size: 20px;
   }
 
   /* 按钮铺满一行 */
@@ -1273,16 +1366,25 @@ img {
   .lite-pager .lite-btn {
     display: inline-block;
     width: auto;
-    min-width: 104px;
-    padding: 0 14px;
+    min-width: 124px;
+    padding: 0 16px;
     margin: 0 4px;
   }
 
   .lite-footer {
-    margin-top: 36px;
-    padding: 20px 0 30px;
+    margin-top: 40px;
+    padding: 24px 0 36px;
+    font-size: 19px;
   }
+
+  .lite-copyright,
+  .lite-uptime,
+  .lite-powered,
+  .lite-switch {
+    font-size: 19px;
+  }
+
   .lite-notfound-code {
-    font-size: 64px;
+    font-size: 88px;
   }
 }
