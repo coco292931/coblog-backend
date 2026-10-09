@@ -1,4 +1,6 @@
-{{/* 写作 / 编辑页。正文是纯 Markdown（无预览），只提交 md_content。 */}}
+{{/* 写作 / 编辑页，字段顺序与文案对齐主站 pages/write/index.vue。
+   正文只有 Markdown 一种（无预览），只提交 md_content。
+   图片：有脚本时 write.js 选完即传（插到光标处）；没脚本时随表单一起提交。见 write.go。 */}}
 
 {{define "write"}}{{template "head" .}}
 
@@ -17,40 +19,40 @@
   </div>
   {{end}}
 
-  <form method="post" action="{{if .IsEdit}}/lite/write/{{.ID}}{{else}}/lite/write{{end}}">
+  <form id="write-form" class="lite-write-form" method="post" enctype="multipart/form-data" action="{{if .IsEdit}}/lite/write/{{.ID}}{{else}}/lite/write{{end}}">
+
     <div class="lite-form-group">
-      <label class="lite-label" for="title">标题</label>
-      <input class="lite-input" type="text" id="title" name="title" value="{{.Title}}" required>
+      <label class="lite-label" for="title">标题 <span class="lite-required">*</span></label>
+      <input class="lite-input" type="text" id="title" name="title" value="{{.Title}}" placeholder="给文章起个标题" required>
     </div>
 
     <div class="lite-form-group">
       <label class="lite-label" for="subtitle">副标题</label>
-      <input class="lite-input" type="text" id="subtitle" name="subtitle" value="{{.Subtitle}}">
+      <input class="lite-input" type="text" id="subtitle" name="subtitle" value="{{.Subtitle}}" placeholder="可选">
     </div>
 
     <div class="lite-form-group">
       <label class="lite-label" for="summary">摘要</label>
-      <input class="lite-input" type="text" id="summary" name="summary" value="{{.Summary}}">
+      <textarea class="lite-textarea lite-textarea-sm" id="summary" name="summary" rows="2" placeholder="列表页展示的简介">{{.Summary}}</textarea>
     </div>
 
     <div class="lite-form-group">
-      <label class="lite-label" for="cover_image">封面图 URL</label>
-      <input class="lite-input" type="text" id="cover_image" name="cover_image" value="{{.Cover}}">
+      <label class="lite-label" for="category">分类</label>
+      <input class="lite-input" type="text" id="category" name="category" value="{{.Category}}" placeholder="多个用逗号分隔，如：技术, 随笔">
     </div>
 
     <div class="lite-form-group">
-      <label class="lite-label" for="category">分类（多个用逗号分隔）</label>
-      <input class="lite-input" type="text" id="category" name="category" value="{{.Category}}">
+      <label class="lite-label" for="tags">标签</label>
+      <input class="lite-input" type="text" id="tags" name="tags" value="{{.Tags}}" placeholder="多个用逗号分隔，如：vue, go">
     </div>
 
     <div class="lite-form-group">
-      <label class="lite-label" for="tags">标签（多个用逗号分隔）</label>
-      <input class="lite-input" type="text" id="tags" name="tags" value="{{.Tags}}">
-    </div>
-
-    <div class="lite-form-group">
-      <label class="lite-label" for="md_content">正文（Markdown）</label>
-      <textarea class="lite-textarea" id="md_content" name="md_content" required>{{.MdBody}}</textarea>
+      <label class="lite-label" for="cover_image">封面图</label>
+      <input class="lite-input" type="text" id="cover_image" name="cover_image" value="{{.Cover}}" placeholder="图片 URL{{if .CanUpload}}，或在下方上传{{end}}">
+      {{if .CanUpload}}
+      <input class="lite-file" type="file" id="cover_file" name="cover_file" accept="image/jpeg,image/png,image/gif" aria-label="上传封面">
+      {{end}}
+      <div id="cover-preview" class="lite-write-cover"{{if .CoverPreview}} style="background-image: url('{{.CoverPreview}}')"{{else}} style="display: none"{{end}} role="img" aria-label="封面预览"></div>
     </div>
 
     <label class="lite-checkbox-line">
@@ -68,18 +70,38 @@
       <span>不计入站点统计（不影响页脚的总字数与文章数）</span>
     </label>
 
-    <div class="lite-form-actions-row">
-      <button class="lite-btn lite-btn-primary" type="submit">{{if .IsEdit}}保存修改{{else}}发布{{end}}</button>
+    <div class="lite-editor">
+      {{if .CanUpload}}
+      <div class="lite-editor-toolbar">
+        <label class="lite-label" for="images">插入图片（一次最多 {{.MaxUploads}} 张）</label>
+        <input class="lite-file" type="file" id="images" name="images" accept="image/jpeg,image/png,image/gif" multiple>
+        <div class="lite-form-tip lite-tip-fallback">图片会在提交时一起上传，并追加到正文末尾。</div>
+        <div class="lite-form-tip lite-tip-enhanced">选好后立即上传，插入到光标所在位置。</div>
+        <div id="upload-status" class="lite-upload-status" aria-live="polite"></div>
+      </div>
+      {{end}}
+      <textarea class="lite-textarea" id="md_content" name="md_content" placeholder="在这里用 Markdown 写作…" aria-label="正文（Markdown）" required>{{.MdBody}}</textarea>
+      <div class="lite-editor-status"><span id="char-count"></span></div>
+    </div>
+
+    {{if .IsEdit}}
+    {{/* 危险操作区：与主操作区分开，避免误触（同主站 .danger-zone） */}}
+    <div class="lite-danger-zone">
+      <div class="lite-danger-title">危险操作</div>
+      <div class="lite-danger-desc">删除后不可恢复，请谨慎操作。</div>
+      <a class="lite-btn lite-btn-danger" href="/lite/write/{{.ID}}/delete">删除文章</a>
+    </div>
+    {{end}}
+
+    {{/* 主按钮写在前面：在输入框里按回车，浏览器提交的是第一个提交按钮。
+       视觉上靠 float: right 把它放到右边，与主站「取消 | 发表」的顺序一致。 */}}
+    <div class="lite-write-actions">
+      <button class="lite-btn lite-btn-primary" type="submit">{{if .IsEdit}}保存修改{{else}}发表文章{{end}}</button>
       <a class="lite-btn" href="/lite/articles">取消</a>
     </div>
   </form>
-
-  {{if .IsEdit}}
-  <div class="lite-me-section">
-    <div class="lite-me-section-title">危险操作</div>
-    <a class="lite-btn" href="/lite/write/{{.ID}}/delete">删除这篇文章</a>
-  </div>
-  {{end}}
 </div>
+
+{{if .CanUpload}}<script src="/lite/write.js"></script>{{end}}
 
 {{template "foot" .}}{{end}}

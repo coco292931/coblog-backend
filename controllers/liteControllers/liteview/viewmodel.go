@@ -108,7 +108,7 @@ type LoginView struct {
 }
 
 // WriteView 写作 / 编辑页。正文是纯 Markdown textarea（无预览），
-// 分类与标签是逗号分隔的文本框，封面填 URL。
+// 分类与标签是逗号分隔的文本框，封面填 URL 或随表单上传。
 type WriteView struct {
 	BaseView
 
@@ -124,6 +124,10 @@ type WriteView struct {
 	IsDeep   bool
 	Hidden   bool
 	NoStats  bool
+
+	CoverPreview string // 封面预览地址（站内图已带 ?thumb=1），空表示不显示预览
+	CanUpload    bool   // 有上传图片权限才显示文件选择框
+	MaxUploads   int    // 一次最多上传几张正文图
 
 	Error  string
 	Notice string

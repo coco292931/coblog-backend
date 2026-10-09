@@ -104,6 +104,24 @@ func LatestTime(p models.Post) time.Time {
 	return p.CreatedAt
 }
 
+// AppendImageMarkdown 把图片以 ![](url) 追加到 Markdown 正文末尾，每张独占一段。
+//
+// 老设备没有脚本，做不到「插在光标处」，只能追加到末尾，由用户自己剪切到合适位置。
+func AppendImageMarkdown(md string, urls []string) string {
+	if len(urls) == 0 {
+		return md
+	}
+	lines := make([]string, 0, len(urls))
+	for _, u := range urls {
+		lines = append(lines, "![]("+u+")")
+	}
+	body := strings.TrimRight(md, " \t\r\n")
+	if body != "" {
+		body += "\n\n"
+	}
+	return body + strings.Join(lines, "\n\n") + "\n"
+}
+
 // ThumbURL 给本站图片地址加上 ?thumb=1（后端换成压缩图，没有则回退原图）。幂等。
 func ThumbURL(raw string) string {
 	raw = strings.TrimSpace(raw)

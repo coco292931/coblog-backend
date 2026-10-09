@@ -1,12 +1,15 @@
 package liteControllers
 
 import (
+	"errors"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"coblog-backend/common/exception"
 	"coblog-backend/common/permission"
+	"coblog-backend/controllers/fileController"
 	"coblog-backend/controllers/liteControllers/liteview"
 	"coblog-backend/models"
 	"coblog-backend/services/articleService"
@@ -16,6 +19,136 @@ import (
 
 // 写作页。正文是纯 Markdown（无预览），只提交 md_content，
 // 由后端 goldmark 渲染出 content。
+//
+// 图片上传分两层：
+//   - 有脚本（write.js，纯 ES5）：选完文件立即走 XHR 传到 /lite/upload，
+//     封面填进封面框、正文图插到光标处，和主站体验一致；
+//   - 没脚本或脚本失败：文件框就在文章表单里（multipart），点「发表 / 保存」时
+//     先存图片（封面替换 URL、正文图追加到末尾），再保存文章。
+
+// maxBodyImages 一次最多上传几张正文图（每张上限 10 MiB，见 fileController）
+const maxBodyImages = 5
+
+// maxWriteBody 整个写作表单的大小上限：正文图 + 封面各 10 MiB，再留 2 MiB 给文字字段。
+// 单张大小在 fileController 里卡，这里防的是一次塞进超大请求体。
+const maxWriteBody = int64(maxBodyImages+1)*10240000 + 2<<20
+
+// writeView 写作页公共的那几项
+func writeView(c *gin.Context) liteview.WriteView {
+	return liteview.WriteView{
+		BaseView:   newBaseView(c),
+		CanUpload:  hasPerm(c, permission.Perm_UploadFile),
+		MaxUploads: maxBodyImages,
+	}
+}
+
+// handleUploads 保存表单里选中的封面与正文图，结果写回 view。
+// 返回值是给用户看的提示（上传了几张）；出错时返回 error，view 不变。
+func handleUploads(c *gin.Context, view *liteview.WriteView) (string, error) {
+	form := c.Request.MultipartForm
+	if form == nil {
+		// 不是 multipart（旧页面缓存的普通表单）就当作没有上传
+		return "", nil
+	}
+	cover := nonEmptyFiles(form.File["cover_file"])
+	images := nonEmptyFiles(form.File["images"])
+	if len(cover) == 0 && len(images) == 0 {
+		return "", nil
+	}
+	if !hasPerm(c, permission.Perm_UploadFile) {
+		return "", exception.UsrNotPermitted
+	}
+	if len(images) > maxBodyImages {
+		return "", exception.NewException(exception.ApiFileTooLarge.Code,
+			"一次最多上传 "+strconv.Itoa(maxBodyImages)+" 张正文图")
+	}
+
+	var coverURL string
+	if len(cover) > 0 {
+		u, err := fileController.SaveImageFile(cover[0])
+		if err != nil {
+			return "", err
+		}
+		coverURL = u
+	}
+	urls := make([]string, 0, len(images))
+	for _, fh := range images {
+		u, err := fileController.SaveImageFile(fh)
+		if err != nil {
+			return "", err
+		}
+		urls = append(urls, u)
+	}
+
+	// 全部成功才写回，避免一半成功一半失败时表单状态不一致
+	var parts []string
+	if coverURL != "" {
+		view.Cover = coverURL
+		parts = append(parts, "封面已更新")
+	}
+	if len(urls) > 0 {
+		view.MdBody = liteview.AppendImageMarkdown(view.MdBody, urls)
+		parts = append(parts, strconv.Itoa(len(urls))+" 张图片已追加到正文末尾")
+	}
+	return strings.Join(parts, "，"), nil
+}
+
+// nonEmptyFiles 过滤掉空文件：没选文件的 <input type="file"> 有的浏览器也会提交一个空项
+func nonEmptyFiles(fs []*multipart.FileHeader) []*multipart.FileHeader {
+	out := fs[:0:0]
+	for _, f := range fs {
+		if f != nil && f.Size > 0 && f.Filename != "" {
+			out = append(out, f)
+		}
+	}
+	return out
+}
+
+// UploadImage POST /lite/upload：写作页脚本用的图片上传，返回 JSON。
+//
+// 主站的 /api/upload/image 只认 Authorization 头，/lite 是 cookie 登录，所以单开一个。
+// 防 CSRF 两道：登录 cookie 是 SameSite=Lax（跨站 POST 不带）；
+// 再要求 X-Requested-With 头 —— 跨站的普通表单设不了自定义头，
+// 跨站脚本要设就得过 CORS 预检，而 /lite 不在 CORS 放行范围里。
+func UploadImage(c *gin.Context) {
+	if c.GetHeader("X-Requested-With") != "XMLHttpRequest" {
+		uploadJSON(c, http.StatusBadRequest, exception.ApiParamError.Msg, nil)
+		return
+	}
+	accountID, _ := c.Get("AccountID")
+	if id, _ := accountID.(uint64); id == 0 {
+		uploadJSON(c, http.StatusUnauthorized, "登录已失效，请重新登录", nil)
+		return
+	}
+	if !hasPerm(c, permission.Perm_PostPost) || !hasPerm(c, permission.Perm_UploadFile) {
+		uploadJSON(c, http.StatusForbidden, exception.UsrNotPermitted.Msg, nil)
+		return
+	}
+
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 10240000+1<<20)
+	fh, err := c.FormFile("file")
+	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			uploadJSON(c, http.StatusOK, exception.ApiFileTooLarge.Msg, nil)
+			return
+		}
+		uploadJSON(c, http.StatusOK, exception.ApiNoFormFile.Msg, nil)
+		return
+	}
+	url, err := fileController.SaveImageFile(fh)
+	if err != nil {
+		uploadJSON(c, http.StatusOK, errMsg(err), nil)
+		return
+	}
+	uploadJSON(c, http.StatusOK, "", gin.H{"url": url, "thumb_url": liteview.ThumbURL(url)})
+}
+
+// uploadJSON 统一的返回格式：{ ok, msg, data }。
+// 失败也尽量回 200，老设备的 XHR 拿非 2xx 时 responseText 不一定可靠。
+func uploadJSON(c *gin.Context, status int, msg string, data gin.H) {
+	c.JSON(status, gin.H{"ok": data != nil, "msg": msg, "data": data})
+}
 
 // requireWritePerm 取账号并校验发帖权限，未登录跳登录页。
 func requireWritePerm(c *gin.Context) (uint64, bool) {
@@ -51,9 +184,7 @@ func WritePage(c *gin.Context) {
 	if _, ok := requireWritePerm(c); !ok {
 		return
 	}
-	liteview.Render(c, http.StatusOK, "write", liteview.WriteView{
-		BaseView: newBaseView(c),
-	})
+	liteview.Render(c, http.StatusOK, "write", writeView(c))
 }
 
 // WriteEditPage GET /lite/write/:id 编辑文章
@@ -66,21 +197,26 @@ func WriteEditPage(c *gin.Context) {
 		return
 	}
 
-	liteview.Render(c, http.StatusOK, "write", liteview.WriteView{
-		BaseView: newBaseView(c),
-		IsEdit:   true,
-		ID:       post.ID,
-		Title:    post.Title,
-		Subtitle: post.Subtitle,
-		Summary:  post.Summary,
-		Cover:    post.CoverImage,
-		Category: liteview.JoinList(liteview.ParseJSONList(post.Category)),
-		Tags:     liteview.JoinList(liteview.ParseJSONList(post.Tags)),
-		MdBody:   post.MdContent,
-		IsDeep:   post.IsDeep,
-		Hidden:   post.Hidden,
-		NoStats:  post.NoStats,
-	})
+	view := writeView(c)
+	view.IsEdit = true
+	view.ID = post.ID
+	view.Title = post.Title
+	view.Subtitle = post.Subtitle
+	view.Summary = post.Summary
+	view.Cover = post.CoverImage
+	view.Category = liteview.JoinList(liteview.ParseJSONList(post.Category))
+	view.Tags = liteview.JoinList(liteview.ParseJSONList(post.Tags))
+	view.MdBody = post.MdContent
+	view.IsDeep = post.IsDeep
+	view.Hidden = post.Hidden
+	view.NoStats = post.NoStats
+	renderWrite(c, view)
+}
+
+// renderWrite 补上封面预览后渲染写作页
+func renderWrite(c *gin.Context, view liteview.WriteView) {
+	view.CoverPreview = liteview.ThumbURL(view.Cover)
+	liteview.Render(c, http.StatusOK, "write", view)
 }
 
 // WriteSubmit POST /lite/write 与 POST /lite/write/:id
@@ -91,24 +227,41 @@ func WriteSubmit(c *gin.Context) {
 	if _, ok := requireWritePerm(c); !ok {
 		return
 	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxWriteBody)
+	// 先显式解析：超限时 PostForm 会静默返回空值，用户只会看到「参数错误」。
+	// 不是 multipart（旧页面缓存的普通表单）不算错。
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil && !errors.Is(err, http.ErrNotMultipart) {
+		var tooLarge *http.MaxBytesError
+		view := writeView(c)
+		if errors.As(err, &tooLarge) {
+			view.Error = exception.ApiFileTooLarge.Msg + "（一次提交的图片合计不能超过 60 MB）"
+		} else {
+			view.Error = exception.ApiParamError.Msg
+		}
+		// 表单没能读出来，只能给一张空表单
+		view.IsEdit = c.Param("id") != ""
+		if view.IsEdit {
+			view.ID, _ = strconv.ParseUint(c.Param("id"), 10, 64)
+		}
+		renderWrite(c, view)
+		return
+	}
 
 	idStr := strings.TrimSpace(c.Param("id"))
 	isEdit := idStr != ""
 
-	view := liteview.WriteView{
-		BaseView: newBaseView(c),
-		IsEdit:   isEdit,
-		Title:    strings.TrimSpace(c.PostForm("title")),
-		Subtitle: strings.TrimSpace(c.PostForm("subtitle")),
-		Summary:  strings.TrimSpace(c.PostForm("summary")),
-		Cover:    strings.TrimSpace(c.PostForm("cover_image")),
-		Category: strings.TrimSpace(c.PostForm("category")),
-		Tags:     strings.TrimSpace(c.PostForm("tags")),
-		MdBody:   c.PostForm("md_content"),
-		IsDeep:   c.PostForm("is_deep") != "",
-		Hidden:   c.PostForm("hidden") != "",
-		NoStats:  c.PostForm("no_stats") != "",
-	}
+	view := writeView(c)
+	view.IsEdit = isEdit
+	view.Title = strings.TrimSpace(c.PostForm("title"))
+	view.Subtitle = strings.TrimSpace(c.PostForm("subtitle"))
+	view.Summary = strings.TrimSpace(c.PostForm("summary"))
+	view.Cover = strings.TrimSpace(c.PostForm("cover_image"))
+	view.Category = strings.TrimSpace(c.PostForm("category"))
+	view.Tags = strings.TrimSpace(c.PostForm("tags"))
+	view.MdBody = c.PostForm("md_content")
+	view.IsDeep = c.PostForm("is_deep") != ""
+	view.Hidden = c.PostForm("hidden") != ""
+	view.NoStats = c.PostForm("no_stats") != ""
 
 	if isEdit {
 		id, err := strconv.ParseUint(idStr, 10, 64)
@@ -119,11 +272,22 @@ func WriteSubmit(c *gin.Context) {
 		view.ID = id
 	}
 
+	notice, err := handleUploads(c, &view)
+	if err != nil {
+		view.Error = errMsg(err)
+		renderWrite(c, view)
+		return
+	}
+
 	// 校验与后端接口一致：标题非空，且正文非空
 	// （主站允许 content / md_content 二选一，这里只有 Markdown 一种输入）
 	if view.Title == "" || strings.TrimSpace(view.MdBody) == "" {
 		view.Error = exception.ApiParamError.Msg
-		liteview.Render(c, http.StatusOK, "write", view)
+		if notice != "" {
+			// 图片已经存好、地址已经填回表单，提示用户不用重新选
+			view.Notice = notice
+		}
+		renderWrite(c, view)
 		return
 	}
 
@@ -157,7 +321,7 @@ func WriteSubmit(c *gin.Context) {
 		})
 		if err != nil {
 			view.Error = errMsg(err)
-			liteview.Render(c, http.StatusOK, "write", view)
+			renderWrite(c, view)
 			return
 		}
 		postID = post.ID
@@ -165,7 +329,7 @@ func WriteSubmit(c *gin.Context) {
 		post, err := articleService.CreatePost(fields)
 		if err != nil {
 			view.Error = errMsg(err)
-			liteview.Render(c, http.StatusOK, "write", view)
+			renderWrite(c, view)
 			return
 		}
 		postID = post.ID

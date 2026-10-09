@@ -24,6 +24,11 @@ var templatesFS embed.FS
 //go:embed assets/lite.css
 var liteCSS []byte
 
+// 写作页的增强脚本。必须是 ES5（老 Kindle 遇到 ES6 语法整段不执行），见 write_test.go。
+//
+//go:embed assets/write.js
+var writeJS []byte
+
 // 站点图标。复制自前端 src/assets/icon.ico。
 //
 // 不能直接引用 /src/assets/icon.ico：那个路径只在 Vite 开发服务器上存在，
@@ -60,6 +65,11 @@ func Render(c *gin.Context, status int, name string, data any) {
 // 但不要依赖文件系统上的 static 目录。
 func ServeCSS(c *gin.Context) {
 	c.Data(http.StatusOK, "text/css; charset=utf-8", liteCSS)
+}
+
+// ServeWriteJS 提供 /lite/write.js。
+func ServeWriteJS(c *gin.Context) {
+	c.Data(http.StatusOK, "application/javascript; charset=utf-8", writeJS)
 }
 
 // ServeIcon 提供 /lite/icon.ico。

@@ -212,6 +212,7 @@ func InitEngine() *gin.Engine {
 	//
 	//样式表不进 LooseAuth 组：它是静态资源，没必要每次请求都做一次鉴权与日志。
 	ginEngine.GET("/lite/lite.css", liteControllers.ServeLiteCSS)
+	ginEngine.GET("/lite/write.js", liteControllers.ServeLiteWriteJS)
 	ginEngine.GET("/lite/icon.ico", liteControllers.ServeLiteIcon)
 
 	lite := ginEngine.Group("/lite", middleware.LooseAuth)
@@ -248,6 +249,7 @@ func InitEngine() *gin.Engine {
 		lite.POST("/write/:id", liteControllers.WriteSubmit)
 		lite.GET("/write/:id/delete", liteControllers.WriteDeleteConfirm)
 		lite.POST("/write/:id/delete", liteControllers.WriteDelete)
+		lite.POST("/upload", liteControllers.UploadImage)
 	}
 
 	// /lite 下的未匹配路径给出同风格的 404 页面；其余依旧交给前端处理。

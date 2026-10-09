@@ -190,6 +190,11 @@ func NotFoundPage(c *gin.Context) {
 	renderError(c, http.StatusNotFound)
 }
 
+// ServeLiteWriteJS GET /lite/write.js
+func ServeLiteWriteJS(c *gin.Context) {
+	liteview.ServeWriteJS(c)
+}
+
 // ServeLiteCSS GET /lite/lite.css
 // 转发到视图层，避免 router 直接依赖 liteview。
 func ServeLiteCSS(c *gin.Context) {

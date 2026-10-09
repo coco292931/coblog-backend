@@ -977,7 +977,7 @@ img {
   background: #ffffff;
   color: #1a1a1a;
   font-family: monospace;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1.6;
 }
 
@@ -1001,6 +1001,143 @@ img {
 .lite-write-box {
   max-width: 760px;
   margin: 0 auto;
+}
+
+.lite-required {
+  color: #c0392b;
+}
+
+/* 摘要框：两行高，不要正文那么大 */
+.lite-textarea-sm {
+  min-height: 0;
+  height: auto;
+  font-family: Bookerly, Georgia, serif;
+  font-size: 22px;
+}
+
+/* 封面预览：与列表卡片同为 3:2，背景图等比裁切（原因见 .lite-card-cover） */
+.lite-write-cover {
+  max-width: 360px;
+  padding-top: 240px;
+  margin-top: 12px;
+  border: 1px solid #e0e0e0;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  background-color: #eef2f2;
+  background-repeat: no-repeat;
+  background-position: center center;
+  -webkit-background-size: cover;
+  background-size: cover;
+}
+
+/* 文件选择框：原生控件，只放大字号与点击区域 */
+.lite-file {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 0;
+  font-size: 20px;
+}
+
+/* 编辑器：工具条 + 正文 + 字数，同主站 .editor-section */
+.lite-editor {
+  margin-top: 24px;
+  border: 2px solid #d0d0d0;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lite-editor-toolbar {
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f6f8f8;
+}
+
+.lite-editor .lite-textarea {
+  border: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+}
+
+.lite-editor .lite-textarea:focus {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+.lite-editor-status {
+  min-height: 36px;
+  padding: 6px 18px;
+  border-top: 1px solid #e0e0e0;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 18px;
+  line-height: 24px;
+  color: #767676;
+  text-align: right;
+}
+
+/* 两套提示：默认显示「随表单上传」，write.js 生效后给表单加 .is-enhanced 换成「即时上传」 */
+.lite-tip-enhanced {
+  display: none;
+}
+
+.is-enhanced .lite-tip-enhanced {
+  display: block;
+}
+
+.is-enhanced .lite-tip-fallback {
+  display: none;
+}
+
+.lite-upload-status {
+  font-size: 20px;
+  color: #0e7a7a;
+}
+
+.lite-upload-status.is-error {
+  color: #c0392b;
+}
+
+/* 危险操作区（主站 .danger-zone） */
+.lite-danger-zone {
+  margin-top: 36px;
+  padding: 20px 22px;
+  border: 1px solid #e0b4b4;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+}
+
+.lite-danger-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  color: #c0392b;
+  margin-bottom: 6px;
+}
+
+.lite-danger-desc {
+  font-size: 20px;
+  color: #767676;
+  margin-bottom: 14px;
+}
+
+.lite-btn-danger {
+  border-color: #c0392b;
+  color: #c0392b;
+}
+
+/* 操作区：主按钮在 DOM 里排第一（回车提交它），视觉上靠右，与主站「取消 | 发表」一致 */
+.lite-write-actions {
+  overflow: hidden;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.lite-write-actions .lite-btn {
+  float: right;
+  margin-left: 12px;
+  margin-bottom: 12px;
 }
 
 /* ── RSS 页（主站 rss/index.vue） ────────────────────────────────── */
@@ -1399,6 +1536,29 @@ img {
 
   .lite-form-switch {
     font-size: 20px;
+  }
+
+  .lite-textarea {
+    min-height: 360px;
+    font-size: 20px;
+  }
+
+  .lite-checkbox-line {
+    font-size: 20px;
+  }
+
+  /* 封面预览按宽度等比缩放（3:2） */
+  .lite-write-cover {
+    max-width: none;
+    padding-top: 66.67%;
+  }
+
+  /* 操作区按钮铺满、上下排，主按钮在上 */
+  .lite-write-actions .lite-btn {
+    float: none;
+    display: block;
+    width: 100%;
+    margin-left: 0;
   }
 
   .lite-me-username {
