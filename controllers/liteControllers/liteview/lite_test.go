@@ -201,10 +201,16 @@ func TestArticleTemplateMatchesMainSiteItems(t *testing.T) {
 	mustContain(t, html, "本文作者：coco_29", "版权作者与主站一致")
 	mustContain(t, html, "https://blog.coco-29.wang/articles/7", "本文链接指向主站地址")
 	mustContain(t, html, "CC BY-NC-SA 4.0", "许可协议与主站一致")
-	mustContain(t, html, "📊 文章统计", "主站有文章统计块")
-	mustContain(t, html, "👁️ 浏览量：", "统计项与主站一致")
-	mustContain(t, html, "👍 点赞量：", "统计项与主站一致")
-	mustContain(t, html, "💬 评论数：", "统计项与主站一致")
+	mustContain(t, html, "文章统计", "主站有文章统计块")
+	mustContain(t, html, "浏览量：", "统计项与主站一致")
+	mustContain(t, html, "点赞量：", "统计项与主站一致")
+	mustContain(t, html, "评论数：", "统计项与主站一致")
+
+	// 老设备没有 emoji 字体，图标会渲染成方框 —— 这几个 emoji 不带
+	mustNotContain(t, html, "📊", "不应出现 emoji")
+	mustNotContain(t, html, "👁", "不应出现 emoji")
+	mustNotContain(t, html, "👍", "不应出现 emoji")
+	mustNotContain(t, html, "💬", "不应出现 emoji")
 
 	// 之前自作主张加的
 	mustNotContain(t, html, " 字", "详情页不应显示字数（主站显示的是阅读时长）")
@@ -454,8 +460,11 @@ func TestFooterItemsMatchMainSite(t *testing.T) {
 
 	// 主站页脚有的
 	mustContain(t, html, "© 2025-2026 coco_29. All Rights Reserved.", "版权行照搬主站")
-	mustContain(t, html, "🖊️ 站点总字数 ≈ 34.6k", "站点总字数照搬主站")
-	mustContain(t, html, "🍵 阅读时长 ≈ 1:56", "阅读时长照搬主站")
+	mustContain(t, html, "站点总字数 ≈ 34.6k", "站点总字数照搬主站")
+	mustContain(t, html, "阅读时长 ≈ 1:56", "阅读时长照搬主站")
+	// 主站页脚那两个图标在老设备上会变成方框，所以不带 emoji
+	mustNotContain(t, html, "🖊", "页脚不应出现 emoji")
+	mustNotContain(t, html, "🍵", "页脚不应出现 emoji")
 	mustContain(t, html, "已避风 292天5时30分12秒", "避风时长照搬主站")
 	mustContain(t, html, "Powered by Vue & GO", "主站的署名行")
 

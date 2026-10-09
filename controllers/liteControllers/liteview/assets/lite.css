@@ -24,11 +24,19 @@
 
 /* ── 基础 ─────────────────────────────────────────────────────────────── */
 
+/* 老引擎自 Safari 5.1（WebKit 534）起就支持 box-sizing。
+   ⚠️ 不加它，.lite-input 的 width:100% 会把 padding 和 border 顶上容器外 ——
+   登录/注册页的输入框就是这么溢出卡片的。 */
+*,
+*::before,
+*::after {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  /* 用百分比而不是固定 40px：老旧手持设备宽度多在 480~800px，
-     固定 40px 会把正文挤成窄窄一条；4% 在大屏约等于原来的 40px。 */
-  padding: 0 4%;
+  padding: 0;
   background: #f6f8f8;
   color: #1a1a1a;
   font-family: Bookerly, Georgia, serif;
@@ -36,14 +44,19 @@ body {
   line-height: 1.6;
 }
 
+/* 内容容器：宽度与左右留白都在这里 —— 页头因此可以放在它外面通栏。
+   用百分比留白而不是固定 40px：老旧手持设备宽度多在 480~800px，
+   固定值会把正文挤成窄窄一条。 */
 .lite-shell {
-  max-width: 900px;
+  max-width: 860px;
   margin: 0 auto;
+  padding: 0 4%;
 }
 
+/* 链接一律不带下划线（下划线交给具体场景：正文里的链接用细下边框代替）。 */
 a {
   color: #0e9a9a;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 img {
@@ -146,13 +159,23 @@ img {
   width: 100%;
   min-height: 48px;
   padding: 0 14px;
-  border: 2px solid #d0d0d0;
+  border: 2px solid #d8dee4;
   -webkit-border-radius: 8px;
   border-radius: 8px;
   background: #ffffff;
   color: #1a1a1a;
   font-family: Bookerly, Georgia, serif;
   font-size: 17px;
+}
+
+/* 聚焦反馈：老设备上只有点击、没有 hover，输入框得自己把焦点状态画出来。
+   outline 换成青色描边 + 外发光，与主站的交互色一致。 */
+.lite-input:focus,
+.lite-textarea:focus {
+  outline: none;
+  border-color: #17bebb;
+  -webkit-box-shadow: 0 0 0 3px rgba(23, 190, 187, 0.18);
+  box-shadow: 0 0 0 3px rgba(23, 190, 187, 0.18);
 }
 
 /* ── 首页首屏（主站 .welcome-text） ───────────────────────────────────── */
@@ -618,7 +641,6 @@ img {
 }
 
 /* ── 文章详情：文章统计（主站 .article-info） ─────────────────────────── */
-
 .lite-article-stats {
   margin-top: 22px;
   padding: 18px 20px;
@@ -736,11 +758,18 @@ img {
 
 .lite-footer {
   margin-top: 48px;
+  background: #ffffff;
   border-top: 1px solid #d8dee4;
-  padding: 22px 0 36px;
+  padding: 26px 0 40px;
   text-align: center;
   color: #555555;
   font-size: 16px;
+}
+
+.lite-footer-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 4%;
 }
 
 .lite-copyright {
@@ -791,28 +820,24 @@ img {
   margin-bottom: 18px;
 }
 
+/* 记住我 ←→ 忘记密码？
+   原来用 -webkit-box + justify，实测两个行内子元素并不会被推到两端；
+   改成 float 两端对齐（配 overflow:hidden 清浮动）更可靠。 */
 .lite-form-options {
-  display: -webkit-box;
-  -webkit-box-pack: justify;
-  -webkit-box-align: center;
-  margin-bottom: 22px;
+  overflow: hidden;
+  margin-bottom: 24px;
   font-size: 16px;
 }
 
 .lite-checkbox {
+  float: left;
   display: inline-block;
   min-height: 48px;
   line-height: 48px;
 }
 
-.lite-checkbox input {
-  width: 20px;
-  height: 20px;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-
 .lite-form-link {
+  float: right;
   display: inline-block;
   min-height: 48px;
   line-height: 48px;
@@ -965,7 +990,7 @@ img {
 }
 
 .lite-alert-icon {
-  margin-right: 8px;
+  display: none;
 }
 
 /* 操作成功时的提示（主站 alert-box 的 success 态） */
@@ -1075,13 +1100,21 @@ img {
 @media (max-width: 700px) {
 
   body {
-    padding: 0 14px;
     font-size: 17px;
   }
 
+  /* 左右留白挪到容器上，页头/页脚才能通栏（同宽屏的 4%） */
+  .lite-shell,
+  .lite-footer-inner {
+    padding: 0 14px;
+  }
+
   .lite-header {
-    padding: 14px 0 10px;
     margin-bottom: 22px;
+  }
+
+  .lite-header-inner {
+    padding: 12px 14px 10px;
   }
 
   .lite-brand {
@@ -1242,7 +1275,6 @@ img {
     margin-top: 36px;
     padding: 20px 0 30px;
   }
-
   .lite-notfound-code {
     font-size: 64px;
   }

@@ -15,10 +15,10 @@
 <link rel="stylesheet" href="/lite/lite.css">
 </head>
 <body>
-<div class="lite-shell">
 
 {{/* 导航项与主站 NavBar 一致：足迹 / 写作（登录后）/ RSS / 关于 / 我的。
-     主站导航栏还有个搜索框，这里不放 —— 列表页已经有了，塞进窄条会挤。 */}}
+     页头在 .lite-shell 之外 —— 白底与下方青线要像主站导航栏那样通栏，
+     不能被内容容器的左右留白截断。 */}}
 <header class="lite-header">
   <div class="lite-header-inner">
     <a class="lite-brand" href="/lite/">Coco の 避风港</a>
@@ -32,33 +32,36 @@
   </div>
 </header>
 
+<div class="lite-shell">
 <main class="lite-main">
 {{end}}
 
 
 {{define "foot"}}</main>
-
-{{/* 页脚：展示项、措辞、顺序、分隔符均照搬主站 Footer.vue
-     （版权行 / 站点总字数 / 阅读时长 / 已避风时长 / Powered by Vue & GO）。
-     ⚠️ 不要在这里添主站没有的东西。 */}}
-<footer class="lite-footer">
-  <div class="lite-copyright">© 2025-2026 coco_29. All Rights Reserved.</div>
-  {{with .Stats}}
-  <div class="lite-stats">
-    <span class="lite-stat">🖊️ 站点总字数 ≈ {{.TotalWords}}</span>
-    <span class="lite-sep">|</span>
-    <span class="lite-stat">🍵 阅读时长 ≈ {{.ReadingTime}}</span>
-  </div>
-  <div class="lite-uptime">{{.Uptime}}</div>
-  {{end}}
-  <div class="lite-powered">Powered by Vue & GO</div>
-
-  {{/* 只有这一项主站没有：老设备需要一个回到完整站的出口，
-     点一次会写 cookie，之后不再自动跳转回 /lite。 */}}
-  <div class="lite-switch"><a href="/?full=1">切换到完整版</a></div>
-</footer>
-
 </div>
+
+{{/* 页脚：展示项、措辞、顺序、分隔符均照搬主站 Footer.vue。
+     ⚠️ 不带 emoji：老设备没有 emoji 字体，主站那几个图标在那边会变成方框。
+     ⚠️ 不要在这里添主站没有的东西。
+     与页头一样放在 .lite-shell 之外 —— 白底要通栏。 */}}
+<footer class="lite-footer">
+  <div class="lite-footer-inner">
+    <div class="lite-copyright">© 2025-2026 coco_29. All Rights Reserved.</div>
+    {{with .Stats}}
+    <div class="lite-stats">
+      <span class="lite-stat">站点总字数 ≈ {{.TotalWords}}</span>
+      <span class="lite-sep">|</span>
+      <span class="lite-stat">阅读时长 ≈ {{.ReadingTime}}</span>
+    </div>
+    <div class="lite-uptime">{{.Uptime}}</div>
+    {{end}}
+    <div class="lite-powered">Powered by Vue & GO</div>
+
+    {{/* 只有这一项主站没有：老设备需要一个回到完整站的出口，
+       点一次会写 cookie，之后不再自动跳转回 /lite。 */}}
+    <div class="lite-switch"><a href="/?full=1">切换到完整版</a></div>
+  </div>
+</footer>
 </body>
 </html>
 {{end}}
