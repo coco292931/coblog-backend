@@ -236,6 +236,26 @@ func FormatUptime(started, now time.Time) string {
 	return fmt.Sprintf("已避风 %d天%d时%d分%d秒", days, hours, minutes, seconds)
 }
 
+// NavKeyFor 由请求路径推出当前所在的导航项（articles / write / rss / about / me），
+// 供模板给对应项加高亮。语义与主站的 router-link-active 一致：详情页归它的上级栏目。
+//
+// ⚠️ 传入的应当是 URL.Path（不含查询串）—— 否则 /lite/articles?page=2 匹配不上。
+func NavKeyFor(path string) string {
+	switch {
+	case path == "/lite/articles" || strings.HasPrefix(path, "/lite/articles/"):
+		return "articles"
+	case path == "/lite/write" || strings.HasPrefix(path, "/lite/write/"):
+		return "write"
+	case path == "/lite/rss":
+		return "rss"
+	case path == "/lite/about" || strings.HasPrefix(path, "/lite/about/"):
+		return "about"
+	case path == "/lite/me":
+		return "me"
+	}
+	return ""
+}
+
 // SplitList 把用户输入的逗号分隔串拆成去空白的列表。中英文逗号都认。
 func SplitList(raw string) []string {
 	parts := strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || r == '，' })

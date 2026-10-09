@@ -93,6 +93,7 @@ img {
 }
 
 .lite-nav a {
+  position: relative;
   display: inline-block;
   margin-left: 18px;
   min-height: 48px;
@@ -101,6 +102,25 @@ img {
   font-family: "Amazon Ember", sans-serif;
   font-size: 17px;
   font-weight: bold;
+}
+
+/* 当前所在栏目：底部一条青色短横，语义与主站 NavBar 的 router-link-active 一致。
+   主站在 ≤800px 会切成汉堡菜单（需要脚本），/lite 做不到 ——
+   所以这个高亮尤其重要，它是窄屏上唯一能说明「你在哪」的线索。 */
+.lite-nav a.is-active {
+  color: #2c3e50;
+}
+
+.lite-nav a.is-active:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 9px;
+  height: 3px;
+  background: #17bebb;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
 }
 
 /* ── 按钮 ─────────────────────────────────────────────────────────────── */

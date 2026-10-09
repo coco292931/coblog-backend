@@ -220,6 +220,7 @@ func newBaseView(c *gin.Context) liteview.BaseView {
 	return liteview.BaseView{
 		// 用 RequestURI 而不是 Path：主站的「当前地址」是含查询串的 fullPath
 		CurrentPath: c.Request.URL.RequestURI(),
+		NavKey:      liteview.NavKeyFor(c.Request.URL.Path),
 		LoggedIn:    accountID != 0,
 		Stats:       buildStats(),
 	}

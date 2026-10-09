@@ -12,8 +12,11 @@ import "html/template"
 // index.html 里的固定字符串（“Coco の 避风港”），跟路由无关。
 type BaseView struct {
 	CurrentPath string
-	LoggedIn    bool // 决定导航栏是否显示「写作」
-	Stats       *StatsView
+	// NavKey 是当前所在的导航项（articles / write / rss / about / me），
+	// 供模板给对应项加高亮；空串表示没有匹配项（首页、404 等）。
+	NavKey   string
+	LoggedIn bool // 决定导航栏是否显示「写作」
+	Stats    *StatsView
 }
 
 // StatsView 页脚统计，字段与主站 Footer.vue 一一对应。

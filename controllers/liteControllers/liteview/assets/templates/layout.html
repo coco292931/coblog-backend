@@ -23,11 +23,11 @@
   <div class="lite-header-inner">
     <a class="lite-brand" href="/lite/">Coco の 避风港</a>
     <nav class="lite-nav">
-      <a href="/lite/articles">足迹</a>
-      {{if .LoggedIn}}<a href="/lite/write">写作</a>{{end}}
-      <a href="/lite/rss">RSS</a>
-      <a href="/lite/about">关于</a>
-      <a href="/lite/me">我的</a>
+      <a href="/lite/articles"{{if eq .NavKey "articles"}} class="is-active"{{end}}>足迹</a>
+      {{if .LoggedIn}}<a href="/lite/write"{{if eq .NavKey "write"}} class="is-active"{{end}}>写作</a>{{end}}
+      <a href="/lite/rss"{{if eq .NavKey "rss"}} class="is-active"{{end}}>RSS</a>
+      <a href="/lite/about"{{if eq .NavKey "about"}} class="is-active"{{end}}>关于</a>
+      <a href="/lite/me"{{if eq .NavKey "me"}} class="is-active"{{end}}>我的</a>
     </nav>
   </div>
 </header>
