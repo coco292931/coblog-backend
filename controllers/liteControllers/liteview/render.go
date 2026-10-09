@@ -31,10 +31,6 @@ var writeJS []byte
 
 // 站点图标。复制自前端 src/assets/icon.ico。
 //
-// 不能直接引用 /src/assets/icon.ico：那个路径只在 Vite 开发服务器上存在，
-// 生产环境 nginx 给的是 index.html，浏览器随即退回 /favicon.ico ——
-// 那是前端 public 里默认的 Vue 图标。
-//
 //go:embed assets/icon.ico
 var liteIcon []byte
 
