@@ -26,8 +26,10 @@
 
 body {
   margin: 0;
-  padding: 0 40px;
-  background: #ffffff;
+  /* 用百分比而不是固定 40px：老旧手持设备宽度多在 480~800px，
+     固定 40px 会把正文挤成窄窄一条；4% 在大屏约等于原来的 40px。 */
+  padding: 0 4%;
+  background: #f6f8f8;
   color: #1a1a1a;
   font-family: Bookerly, Georgia, serif;
   font-size: 18px;
@@ -40,7 +42,7 @@ body {
 }
 
 a {
-  color: #0e7a7a;
+  color: #0e9a9a;
   text-decoration: underline;
 }
 
@@ -56,9 +58,10 @@ img {
 /* ── 页头（主站 NavBar） ──────────────────────────────────────────────── */
 
 .lite-header {
-  border-bottom: 2px solid #1a1a1a;
-  padding: 22px 0 14px;
-  margin-bottom: 36px;
+  background: #ffffff;
+  border-bottom: 2px solid #17bebb;
+  padding: 18px 0 14px;
+  margin-bottom: 28px;
 }
 
 .lite-header-inner {
@@ -69,21 +72,22 @@ img {
 
 .lite-brand {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: bold;
-  color: #1a1a1a;
+  color: #2c3e50;
   text-decoration: none;
   letter-spacing: 0.5px;
 }
 
 .lite-nav a {
   display: inline-block;
-  margin-left: 22px;
+  margin-left: 18px;
   min-height: 48px;
   line-height: 48px;
-  color: #0e7a7a;
+  color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
   font-size: 17px;
+  font-weight: bold;
 }
 
 /* ── 按钮 ─────────────────────────────────────────────────────────────── */
@@ -94,25 +98,30 @@ img {
   min-height: 48px;
   line-height: 44px;
   padding: 0 24px;
-  border: 2px solid #1a1a1a;
+  border: 1px solid #17bebb;
   -webkit-border-radius: 999px;
   border-radius: 999px;
   background: #ffffff;
-  color: #1a1a1a;
+  color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
   font-size: 16px;
+  font-weight: bold;
   text-align: center;
   text-decoration: none;
 }
 
+/* 主站 primary-link 的渐变胶囊（渐变降级为平色也更接近主站观感） */
 .lite-btn-primary {
-  background: #0e9a9a;
-  border-color: #0e9a9a;
+  border-color: #17bebb;
+  background: -webkit-linear-gradient(135deg, #1fefff 0%, #17bebb 100%);
+  background: linear-gradient(135deg, #1fefff 0%, #17bebb 100%);
   color: #ffffff;
+  -webkit-box-shadow: 0 4px 12px rgba(23, 190, 187, 0.22);
+  box-shadow: 0 4px 12px rgba(23, 190, 187, 0.22);
 }
 
 .lite-btn-disabled {
-  border-color: #d0d0d0;
+  border-color: #d8dee4;
   color: #b0b0b0;
 }
 
@@ -149,12 +158,14 @@ img {
 /* ── 首页首屏（主站 .welcome-text） ───────────────────────────────────── */
 
 .lite-hero {
-  padding: 0 0 36px;
-  border-bottom: 2px solid #1a1a1a;
-  margin-bottom: 40px;
+  padding: 0 0 20px;
+  border-bottom: 3px solid #17bebb;
+  margin-bottom: 32px;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 30px;
+  font-size: 28px;
   line-height: 1.4;
+  color: #2c3e50;
+  font-weight: bold;
 }
 
 /* ── 静态时间轴（首页） ───────────────────────────────────────────────── */
@@ -163,7 +174,7 @@ img {
 
 .lite-timeline {
   position: relative;
-  padding-left: 30px;
+  padding-left: 26px;
 }
 
 .lite-timeline:before {
@@ -173,7 +184,7 @@ img {
   top: 10px;
   bottom: 10px;
   width: 2px;
-  background: #dcdcdc;
+  background: #cfe6e6;
 }
 
 .lite-tl-item {
@@ -183,26 +194,26 @@ img {
 .lite-tl-item:before {
   content: "";
   position: absolute;
-  left: -27px;
-  top: 30px;
+  left: -23px;
+  top: 24px;
   width: 10px;
   height: 10px;
   -webkit-border-radius: 6px;
   border-radius: 6px;
-  background: #0e9a9a;
-  border: 2px solid #ffffff;
+  background: #17bebb;
+  border: 2px solid #f6f8f8;
 }
 
 /* ── 列表卡片（主站 ArticleTimeline 的 .article） ─────────────────────── */
 
 .lite-card {
   background: #ffffff;
-  border: 1px solid #d0d0d0;
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
-  -webkit-box-shadow: 3px 3px 0 #ececec;
-  box-shadow: 3px 3px 0 #ececec;
-  margin-bottom: 22px;
+  border: 1px solid #e0e0e0;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
+  -webkit-box-shadow: 0 2px 8px rgba(14, 154, 154, 0.10);
+  box-shadow: 0 2px 8px rgba(14, 154, 154, 0.10);
+  margin-bottom: 18px;
   overflow: hidden;
 }
 
@@ -217,26 +228,26 @@ img {
 }
 
 .lite-card-body {
-  padding: 18px 22px 20px;
+  padding: 16px 18px 18px;
 }
 
 .lite-card-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 22px;
+  font-size: 21px;
   line-height: 1.35;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .lite-card-title a {
-  color: #1a1a1a;
+  color: #2c3e50;
   text-decoration: none;
 }
 
 .lite-card-summary {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   font-size: 16px;
   line-height: 1.65;
-  color: #4a4a4a;
+  color: #555555;
 }
 
 .lite-card-info {
@@ -248,7 +259,7 @@ img {
 }
 
 .lite-date {
-  color: #767676;
+  color: #999999;
 }
 
 .lite-tags {
@@ -259,11 +270,11 @@ img {
   display: inline-block;
   margin-left: 8px;
   padding: 2px 12px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid rgba(23, 190, 187, 0.38);
   -webkit-border-radius: 999px;
   border-radius: 999px;
-  background: #f7fafa;
-  color: #4a4a4a;
+  background: #f6f8f8;
+  color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
   font-size: 14px;
   line-height: 22px;
@@ -374,22 +385,23 @@ img {
 
 .lite-article-title {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 38px;
+  font-size: 34px;
   line-height: 1.25;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  color: #2c3e50;
 }
 
 .lite-article-subtitle {
-  margin-bottom: 16px;
-  font-size: 20px;
-  color: #4a4a4a;
+  margin-bottom: 14px;
+  font-size: 18px;
+  color: #555555;
 }
 
 .lite-article-time {
   font-family: "Amazon Ember", sans-serif;
   font-size: 15px;
-  color: #767676;
-  margin-bottom: 12px;
+  color: #999999;
+  margin-bottom: 10px;
 }
 
 .lite-time-item {
@@ -406,7 +418,7 @@ img {
 }
 
 .lite-reading-time {
-  color: #4a4a4a;
+  color: #555555;
 }
 
 .lite-cover {
@@ -428,33 +440,36 @@ img {
 
 .lite-prose {
   font-size: 18px;
-  line-height: 1.7;
+  line-height: 1.75;
 }
 
 .lite-prose h2 {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 27px;
+  font-size: 26px;
   line-height: 1.3;
-  margin: 40px 0 16px;
+  margin: 36px 0 14px;
   padding-bottom: 8px;
   border-bottom: 1px solid #e0e0e0;
+  color: #2c3e50;
 }
 
 .lite-prose h3 {
   font-family: "Amazon Ember", sans-serif;
-  font-size: 22px;
+  font-size: 21px;
   line-height: 1.35;
-  margin: 32px 0 14px;
+  margin: 30px 0 12px;
+  color: #2c3e50;
 }
 
 .lite-prose h4 {
   font-family: "Amazon Ember", sans-serif;
   font-size: 19px;
-  margin: 26px 0 12px;
+  margin: 24px 0 10px;
+  color: #2c3e50;
 }
 
 .lite-prose p {
-  margin: 0 0 18px;
+  margin: 0 0 22px;
 }
 
 .lite-prose ul,
@@ -469,12 +484,12 @@ img {
 
 .lite-prose blockquote {
   margin: 22px 0;
-  padding: 14px 20px;
-  border-left: 4px solid #0e9a9a;
-  background: #f7fafa;
+  padding: 14px 18px;
+  border-left: 4px solid #17bebb;
+  background: #f6f8f8;
   -webkit-border-radius: 0 8px 8px 0;
   border-radius: 0 8px 8px 0;
-  color: #4a4a4a;
+  color: #555555;
 }
 
 .lite-prose blockquote p:last-child {
@@ -575,46 +590,49 @@ img {
 /* ── 文章详情：版权声明（主站 .license-info） ─────────────────────────── */
 
 .lite-license {
-  margin-top: 48px;
-  padding: 20px 22px;
-  background: #f8fbfb;
+  margin-top: 40px;
+  padding: 18px 20px;
+  background: #f6f8f8;
   border: 1px solid #dceeee;
-  border-left: 3px solid #0e9a9a;
-  -webkit-border-radius: 8px;
-  border-radius: 8px;
+  border-left: 3px solid #17bebb;
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
 }
 
 .lite-license-title {
   font-family: "Amazon Ember", sans-serif;
   font-size: 17px;
   margin-bottom: 10px;
+  color: #2c3e50;
 }
 
 .lite-license-text {
   font-size: 16px;
   line-height: 1.8;
-  color: #4a4a4a;
+  color: #555555;
   word-wrap: break-word;
 }
 
 .lite-license-link {
-  color: #0e7a7a;
+  color: #0e9a9a;
 }
 
 /* ── 文章详情：文章统计（主站 .article-info） ─────────────────────────── */
 
 .lite-article-stats {
-  margin-top: 28px;
-  padding: 20px 22px;
-  border: 1px solid #d0d0d0;
-  -webkit-border-radius: 10px;
-  border-radius: 10px;
+  margin-top: 22px;
+  padding: 18px 20px;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  -webkit-border-radius: 12px;
+  border-radius: 12px;
 }
 
 .lite-stats-title {
   font-family: "Amazon Ember", sans-serif;
   font-size: 17px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
+  color: #2c3e50;
 }
 
 .lite-stat-item {
@@ -717,11 +735,11 @@ img {
 /* ── 页脚（主站 Footer.vue 的四项 + 一个回完整站的出口） ──────────────── */
 
 .lite-footer {
-  margin-top: 64px;
-  border-top: 2px solid #1a1a1a;
-  padding: 24px 0 48px;
+  margin-top: 48px;
+  border-top: 1px solid #d8dee4;
+  padding: 22px 0 36px;
   text-align: center;
-  color: #4a4a4a;
+  color: #555555;
   font-size: 16px;
 }
 
@@ -1047,4 +1065,185 @@ img {
   font-family: "Amazon Ember", sans-serif;
   font-size: 18px;
   margin-bottom: 16px;
+}
+
+/* ── 小屏适配（老旧手持设备） ────────────────────────────────────────── */
+/* 这类设备的视口多在 480~800px，真正的问题不是配色而是「尺寸与位置」：
+   固定 40px 的页边把正文挤窄、标题比屏幕还宽、横排的元信息挤成一行。
+   这里只改尺寸与位置，展示项一个不动；断点 700px 与主站移动端的收窄时机接近。 */
+
+@media (max-width: 700px) {
+
+  body {
+    padding: 0 14px;
+    font-size: 17px;
+  }
+
+  .lite-header {
+    padding: 14px 0 10px;
+    margin-bottom: 22px;
+  }
+
+  .lite-brand {
+    font-size: 21px;
+  }
+
+  .lite-nav a {
+    margin-left: 14px;
+    font-size: 16px;
+  }
+
+  /* 首页 */
+  .lite-hero {
+    font-size: 23px;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+
+  .lite-timeline {
+    padding-left: 20px;
+  }
+
+  .lite-tl-item:before {
+    left: -17px;
+    top: 22px;
+  }
+
+  .lite-card-body {
+    padding: 14px 15px 16px;
+  }
+
+  .lite-card-title {
+    font-size: 19px;
+  }
+
+  /* 卡片底部：宽屏是「日期左、分类右」，窄屏这样会把分类挤成第二行且右对齐 */
+  .lite-card-info {
+    display: block;
+  }
+
+  .lite-tags {
+    text-align: left;
+    margin-top: 8px;
+  }
+
+  .lite-tag {
+    margin-left: 0;
+    margin-right: 8px;
+  }
+
+  /* 列表页：搜索框与按钮改上下排，避免输入框只剩一半宽 */
+  .lite-search-bar {
+    padding: 16px 15px;
+  }
+
+  .lite-search-row {
+    display: block;
+  }
+
+  .lite-search-input {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+
+  .lite-search-row .lite-btn {
+    display: block;
+    width: 100%;
+  }
+
+  .lite-stats-bar {
+    display: block;
+  }
+
+  .lite-sort-bar {
+    margin-top: 10px;
+  }
+
+  .lite-sort-option {
+    padding: 0 12px;
+  }
+
+  /* 详情页 */
+  .lite-article-title {
+    font-size: 26px;
+  }
+
+  .lite-article-subtitle {
+    font-size: 17px;
+  }
+
+  .lite-article-info {
+    display: block;
+  }
+
+  .lite-reading-time {
+    display: block;
+    margin-top: 8px;
+  }
+
+  .lite-prose {
+    font-size: 17px;
+  }
+
+  .lite-prose h2 {
+    font-size: 23px;
+  }
+
+  .lite-prose h3 {
+    font-size: 20px;
+  }
+
+  /* 关于：侧栏与正文改上下排 */
+  .lite-about {
+    display: block;
+  }
+
+  .lite-about-side {
+    width: auto;
+    margin-right: 0;
+    margin-bottom: 18px;
+  }
+
+  .lite-about-link {
+    display: inline-block;
+    margin-right: 20px;
+  }
+
+  /* 表单与卡片型页面：收窄内边距 */
+  .lite-form-box,
+  .lite-rss-card {
+    padding: 22px 16px;
+  }
+
+  .lite-form-title {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
+
+  /* 按钮铺满一行，窄屏上不至于误触相邻元素 */
+  .lite-form-actions-row .lite-btn,
+  .lite-form-actions .lite-btn,
+  .lite-rss-actions .lite-btn {
+    display: block;
+    width: 100%;
+    margin-right: 0;
+  }
+
+  /* 分页按钮：窄屏上不铺满，并排居中即可，否则纵向占太多 */
+  .lite-pager .lite-btn {
+    display: inline-block;
+    width: auto;
+    min-width: 104px;
+    padding: 0 14px;
+    margin: 0 4px;
+  }
+
+  .lite-footer {
+    margin-top: 36px;
+    padding: 20px 0 30px;
+  }
+
+  .lite-notfound-code {
+    font-size: 64px;
+  }
 }

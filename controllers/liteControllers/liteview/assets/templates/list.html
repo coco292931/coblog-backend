@@ -47,7 +47,9 @@
   {{range .Articles}}{{template "card" .}}{{end}}
 </div>
 
-{{/* 主站是无限滚动，没有分页控件；这里是 MPA 必需的分页导航 */}}
+{{/* 主站是无限滚动，没有分页控件；这里是 MPA 必需的分页导航。
+     只有一页时不渲染 —— 两个灰掉的按钮占地方却没有任何作用。 */}}
+{{if gt .TotalPages 1}}
 <nav class="lite-pager">
   {{if .HasPrev}}
   <a class="lite-btn" href="{{.PrevURL}}">← 上一页</a>
@@ -63,6 +65,7 @@
   <span class="lite-btn lite-btn-disabled">下一页 →</span>
   {{end}}
 </nav>
+{{end}}
 {{else}}
 <p class="lite-empty">没有找到匹配的文章</p>
 {{end}}

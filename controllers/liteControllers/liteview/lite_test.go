@@ -145,8 +145,26 @@ func TestListTemplateAllArticlesWording(t *testing.T) {
 		SortUpdatedURL:   "/lite/articles?page=1&sort=updated",
 	})
 	mustContain(t, html, "全部文章：", "无筛选时用主站的措辞")
-	mustContain(t, html, "lite-btn-disabled", "首页的「上一页」应是禁用态")
 	mustNotContain(t, html, `href=""`, "不应产生空链接")
+	// 只有一页时收掉分页控件：两个点不动的灰按钮占地方却没有任何作用
+	mustNotContain(t, html, "lite-pager", "只有一页时不应渲染分页控件")
+	mustNotContain(t, html, "lite-btn-disabled", "只有一页时不应有禁用按钮")
+}
+
+func TestListTemplatePagerDisabledEnds(t *testing.T) {
+	html := renderToString(t, "list", ListView{
+		BaseView:   testBase(),
+		Articles:   []ListItemView{sampleItem()},
+		Total:      25,
+		TotalPages: 3,
+		Page:       1,
+		HasPrev:    false,
+		HasNext:    true,
+		PrevURL:    "/lite/articles?page=1",
+		NextURL:    "/lite/articles?page=2",
+	})
+	mustContain(t, html, "lite-btn-disabled", "首页的「上一页」应是禁用态")
+	mustContain(t, html, "/lite/articles?page=2", "「下一页」应是链接")
 }
 
 func TestListTemplateEmptyState(t *testing.T) {
