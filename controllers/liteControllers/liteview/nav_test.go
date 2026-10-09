@@ -5,8 +5,7 @@ import (
 	"testing"
 )
 
-// 导航高亮：路径 → 当前栏目。
-// 语义与主站 router-link-active 一致 —— 详情页归它的上级栏目。
+// 导航高亮：路径 → 当前栏目，详情页归它的上级栏目。
 func TestNavKeyFor(t *testing.T) {
 	cases := []struct{ path, want string }{
 		{"/lite/", ""},
@@ -21,8 +20,7 @@ func TestNavKeyFor(t *testing.T) {
 		{"/lite/about/friends", "about"},
 		{"/lite/me", "me"},
 		// 这些不属于任何导航项
-		{"/lite/login", ""},
-		{"/lite/register", ""},
+		{"/lite/login", ""},		{"/lite/register", ""},
 		{"/lite/forgot-password", ""},
 		{"/lite/activate", ""},
 		{"/lite/nope", ""},

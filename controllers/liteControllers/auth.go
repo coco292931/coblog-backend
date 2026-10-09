@@ -18,13 +18,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// 这一组是 /lite 的账户表单页。
-//
-// 与 JSON 接口的分工：/api/auth/* 返回 JSON 给 SPA 用；这里的表单走
-// POST + 302（PRG），不依赖任何脚本 —— 老 Kindle 上表单本身是可用的。
-//
-// 校验与错误文案刻意与 JSON 接口保持一致（直接用 exception 里的 msg），
-// 这样两个入口对同一件事的提示不会出现两套说法。
+// /lite 的账户表单页，走 POST + 302（PRG）。
+// 错误文案直接复用 exception 的 msg，与 JSON 接口保持一致。
 
 // LoginPage GET /lite/login
 func LoginPage(c *gin.Context) {
@@ -102,13 +97,8 @@ func LoginSubmit(c *gin.Context) {
 	c.Redirect(http.StatusFound, target)
 }
 
-// Logout POST /lite/logout
-//
-// 表单只能发 GET/POST（老设备上就更别指望 DELETE 了），所以这里用 POST。
-// JSON 侧的登出是 /api/auth/logout，两者做的是同一件事。
+// Logout POST /lite/logout。JSON 侧的登出是 /api/auth/logout，
 func Logout(c *gin.Context) {
 	utils.ClearAuthCookie(c)
 	c.Redirect(http.StatusFound, "/lite/")
 }
-
-// safeRedirect 已移到 liteview.SafeRedirect：它是纯函数，放在视图层才能被单测覆盖。

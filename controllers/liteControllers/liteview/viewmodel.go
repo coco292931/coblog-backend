@@ -2,36 +2,27 @@ package liteview
 
 import "html/template"
 
-// 本文件定义 /lite 各页面模板的视图模型。
-//
-// ⚠️ 原则：**只搬运主站已有的展示项，不自己发明**。
+// /lite 各页面模板的视图模型。展示项只搬运主站已有的，不自己发明。
 
-// BaseView 所有页面共用的部分（当前地址、登录态、页脚）。
-//
-// 没有页面标题与站点名字段：主站是 SPA，<title> 与导航栏品牌都是
-// index.html 里的固定字符串（“Coco の 避风港”），跟路由无关。
+// BaseView 所有页面共用的部分。没有页面标题字段 —— 主站的 <title>
+// 与导航栏品牌都是 index.html 里的固定字符串，跟路由无关。
 type BaseView struct {
 	CurrentPath string
-	// NavKey 是当前所在的导航项（articles / write / rss / about / me），
-	// 供模板给对应项加高亮；空串表示没有匹配项（首页、404 等）。
+	// NavKey 当前所在的导航项，供模板加高亮；空串表示无匹配项。
 	NavKey   string
 	LoggedIn bool // 决定导航栏是否显示「写作」
 	Stats    *StatsView
 }
 
-// StatsView 页脚统计，字段与主站 Footer.vue 一一对应。
-//
-// 主站 Footer 展示四项：版权行（硬编码在模板里）、站点总字数、阅读时长、
-// 已避风时长，外加一行 "Powered by Vue & GO"。这里只放需要计算的三项。
+// StatsView 页脚统计，对应主站 Footer 里需要计算的三项。
 type StatsView struct {
 	TotalWords  string // 站点总字数，已按主站的 formatNumber 缩写（如 34.6k）
 	ReadingTime string // 阅读时长，已按主站的 readingTime 格式化（如 0:38）
 	Uptime      string // 已避风 X天X时X分X秒（服务端渲染那一刻的快照）
 }
 
-// ListItemView 对应主站 ArticleTimeline.vue 里的一个 .article：
-// 封面（无封面时主站显示占位图，这里直接不渲染）、标题、
-// 描述（主站映射的是 summary）、日期、分类。
+// ListItemView 对应主站 ArticleTimeline 的一个 .article。
+// 无封面时直接不渲染（主站显示占位图）。
 type ListItemView struct {
 	ID         uint64
 	Title      string
@@ -76,7 +67,7 @@ type ListView struct {
 	SortUpdatedURL   string
 }
 
-// ArticleView 文章详情页，对应主站 pages/article/index.vue 的展示项：
+// ArticleView 文章详情页，对应主站 pages/article/index.vue 的展示项。
 // 封面、标题、副标题、创建/修改时间、分类（无分类时显示「未分类」）、
 // 阅读时长（分钟）、正文、版权声明、文章统计。
 type ArticleView struct {
@@ -90,8 +81,8 @@ type ArticleView struct {
 	Categories []string
 	ReadingMin int // 主站 article 页的 readingTime
 
-	// 版权声明（主站 license-info）。作者与链接主站分别取 data.author || 'coco_29'
-	// 与 window.location.href；后端 Post 没有作者字段，因此作者部分与主站实际表现一致。
+	// 版权声明（主站 license-info）。后端 Post 没有作者字段，
+	// 所以作者固定用 liteArticleAuthor 的值。
 	Author     string
 	ArticleURL string
 
@@ -107,7 +98,7 @@ type AboutView struct {
 	Tab string // "us" | "friends"
 }
 
-// LoginView 登录页。字段与主站 regAlogin 页一致：邮箱 / 密码 / 记住我 / 忘记密码。
+// LoginView 登录页。字段与主站 regAlogin 页一致。
 // 主站是「登录 / 注册」双态页，这里拆成两个页面（MPA 不需要切态）。
 type LoginView struct {
 	BaseView
@@ -116,9 +107,8 @@ type LoginView struct {
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
-// WriteView 写作 / 编辑页。相对主站的降级：
-// 正文是纯 Markdown textarea（没有实时预览），分类与标签是逗号分隔的文本框，
-// 封面填 URL。内容处理本身与主站一致：只提交 md_content，由后端 goldmark 渲染。
+// WriteView 写作 / 编辑页。正文是纯 Markdown textarea（无预览），
+// 分类与标签是逗号分隔的文本框，封面填 URL。
 type WriteView struct {
 	BaseView
 
@@ -139,10 +129,8 @@ type WriteView struct {
 	Notice string
 }
 
-// ConfirmDeleteView 删除确认页。
-//
-// 主站要求在弹窗里输入完整标题才能确认（防误删）；这里保留同样的要求，
-// 但换成独立页面：老设备上没有脚本，那个弹窗做不出来。
+// ConfirmDeleteView 删除确认页。主站是在弹窗里输入完整标题确认，
+// 这里换成独立页面。
 type ConfirmDeleteView struct {
 	BaseView
 	ID    uint64
@@ -150,14 +138,13 @@ type ConfirmDeleteView struct {
 	Error string
 }
 
-// RSSView RSS 订阅页。与主站 /rss 一致，
-// 唯一的降级是没有「复制」按钮 —— 剪贴板需要脚本，地址改为可直接选中的文本。
+// RSSView RSS 订阅页。没有主站那个「复制」按钮（剪贴板需要脚本）。
 type RSSView struct {
 	BaseView
 	URL string
 }
 
-// ForgotPasswordView 找回密码页。字段与文案照搬主站 pages/forgotPassword/index.vue：
+// ForgotPasswordView 找回密码页。
 // 注册邮箱 / 邮箱验证码 / 新密码 / 确认新密码。
 //
 // 主站把「获取验证码」做成页面内的一个按钮（需要脚本）；这里是同一个表单里的
@@ -183,7 +170,7 @@ type RegisterView struct {
 	PasswordRule string
 }
 
-// ActivateView 激活结果页。文案照搬主站 pages/activate/index.vue。
+// ActivateView 激活结果页。
 type ActivateView struct {
 	BaseView
 	Success bool

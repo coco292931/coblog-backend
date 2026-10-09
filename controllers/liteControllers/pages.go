@@ -1,10 +1,6 @@
-// Package liteControllers 实现 /lite（老设备只读页面）的请求处理。
-//
-// 与主站 SPA 的对应关系：路径层级完全一致，只多一个 /lite 前缀。
-// 页面由后端直出 HTML —— 老 Kindle 的浏览器跑不动 Vue 运行时（缺 Proxy /
-
-// ⚠️ 展示项的原则：**只搬运主站已有的，不自己发明**。
-
+// Package liteControllers 实现 /lite（老设备页面）的请求处理。
+// 路径层级与主站一致，只多一个 /lite 前缀；页面由 html/template 直出。
+// 展示项原则：只搬运主站已有的，不自己发明。
 package liteControllers
 
 import (

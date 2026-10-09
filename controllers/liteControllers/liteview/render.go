@@ -1,10 +1,5 @@
-// Package liteview 是 /lite（老设备只读页面）的视图层。
-//
-// 它只负责「数据 → HTML」这一段：模板、样式、视图模型与几个纯函数。
-// 特意不依赖 configReader / database：这样这一层的单测不需要任何外部环境
-// （不必有 MySQL，也不会因为读不到配置而中断），跑起来是一瞬间的事。
-//
-// 页面数据从哪里来、账号有没有深度权限，都由 liteControllers 决定后传进来。
+// Package liteview 是 /lite 的视图层：模板、样式、视图模型与几个纯函数。
+// 不依赖 configReader / database，单测不需要 MySQL。
 package liteview
 
 import (

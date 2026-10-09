@@ -104,9 +104,7 @@ img {
   font-weight: bold;
 }
 
-/* 当前所在栏目：底部一条青色短横，语义与主站 NavBar 的 router-link-active 一致。
-   主站在 ≤800px 会切成汉堡菜单（需要脚本），/lite 做不到 ——
-   所以这个高亮尤其重要，它是窄屏上唯一能说明「你在哪」的线索。 */
+/* 底部青色短横，对应主站的 router-link-active */
 .lite-nav a.is-active {
   color: #2c3e50;
 }
@@ -124,7 +122,7 @@ img {
 }
 
 /* ── 按钮 ─────────────────────────────────────────────────────────────── */
-/* 触摸目标 ≥48px：老 Kindle 只有 click，没有 hover，按下的反馈得靠足够大的面积。 */
+/* 触摸目标 ≥48px */
 
 .lite-btn {
   display: inline-block;
@@ -143,7 +141,6 @@ img {
   text-decoration: none;
 }
 
-/* 主站 primary-link 的渐变胶囊（渐变降级为平色也更接近主站观感） */
 .lite-btn-primary {
   border-color: #17bebb;
   background: -webkit-linear-gradient(135deg, #1fefff 0%, #17bebb 100%);
@@ -188,8 +185,7 @@ img {
   font-size: 17px;
 }
 
-/* 聚焦反馈：老设备上只有点击、没有 hover，输入框得自己把焦点状态画出来。
-   outline 换成青色描边 + 外发光，与主站的交互色一致。 */
+/* 聚焦反馈：老设备没有 hover，输入框得自己把焦点画出来 */
 .lite-input:focus,
 .lite-textarea:focus {
   outline: none;
@@ -212,9 +208,7 @@ img {
 }
 
 /* ── 静态时间轴（首页） ───────────────────────────────────────────────── */
-/* 主站的时间轴圆点位置靠脚本随滚动计算；老 Kindle 读不到滚动位置，
-   这里改用纯 CSS：左侧一条竖线 + 每个条目一个固定圆点。 */
-
+/* 圆点位置固定 —— 主站是靠脚本随滚动算的 */
 .lite-timeline {
   position: relative;
   padding-left: 26px;
@@ -479,7 +473,6 @@ img {
 }
 
 /* ── 正文排版（主站 article-prose 的老设备等价物） ───────────────────── */
-/* 代码块用换行而不是横向滚动：内层 overflow:auto 的容器在老 Kindle 上手指拖不动。 */
 
 .lite-prose {
   font-size: 18px;
@@ -604,8 +597,7 @@ img {
   margin: 36px 0;
 }
 
-/* 公式：后端把 TeX 原样放在这些元素里，未启用 JS 时读到的是可读的原文。
-   KaTeX 需要的现代 CSS 在这台机器上跑不动，所以这里只做等宽呈现。 */
+/* 公式：后端输出 TeX 原文，这里只做等宽呈现 */
 
 .lite-prose .math-inline {
   font-family: monospace;
@@ -840,9 +832,7 @@ img {
   margin-bottom: 18px;
 }
 
-/* 记住我 ←→ 忘记密码？
-   原来用 -webkit-box + justify，实测两个行内子元素并不会被推到两端；
-   改成 float 两端对齐（配 overflow:hidden 清浮动）更可靠。 */
+/* 记住我 ←→ 忘记密码？用 float 而不是 -webkit-box，后者推不到两端 */
 .lite-form-options {
   overflow: hidden;
   margin-bottom: 24px;
@@ -997,7 +987,7 @@ img {
   line-height: 1.7;
 }
 
-/* 错误提示（主站 .alert-box）。浅底 + 左侧强调边，小面积用色不会留残影 */
+/* 错误提示（主站 .alert-box） */
 .lite-alert {
   margin-bottom: 20px;
   padding: 14px 18px;
@@ -1009,7 +999,7 @@ img {
   font-size: 16px;
 }
 
-/* 操作成功时的提示（主站 alert-box 的 success 态） */
+/* 操作成功时的提示（alert-box 的 success 态） */
 .lite-alert-ok {
   border-color: #b7dcc4;
   border-left-color: #1e7f4f;
@@ -1108,10 +1098,7 @@ img {
   margin-bottom: 16px;
 }
 
-/* ── 小屏适配（老旧手持设备） ────────────────────────────────────────── */
-/* 这类设备的视口多在 480~800px，真正的问题不是配色而是「尺寸与位置」：
-   固定 40px 的页边把正文挤窄、标题比屏幕还宽、横排的元信息挤成一行。
-   这里只改尺寸与位置，展示项一个不动；断点 700px 与主站移动端的收窄时机接近。 */
+/* ── 小屏适配（断点 700px） ─────────────────────────────────────────── */
 
 @media (max-width: 700px) {
 
@@ -1119,7 +1106,6 @@ img {
     font-size: 17px;
   }
 
-  /* 左右留白挪到容器上，页头/页脚才能通栏（同宽屏的 4%） */
   .lite-shell,
   .lite-footer-inner {
     padding: 0 14px;
@@ -1166,7 +1152,7 @@ img {
     font-size: 19px;
   }
 
-  /* 卡片底部：宽屏是「日期左、分类右」，窄屏这样会把分类挤成第二行且右对齐 */
+  /* 卡片：日期与分类改上下排 */
   .lite-card-info {
     display: block;
   }
@@ -1181,7 +1167,7 @@ img {
     margin-right: 8px;
   }
 
-  /* 列表页：搜索框与按钮改上下排，避免输入框只剩一半宽 */
+  /* 列表页：搜索框与按钮改上下排 */
   .lite-search-bar {
     padding: 16px 15px;
   }
@@ -1242,7 +1228,7 @@ img {
     font-size: 20px;
   }
 
-  /* 关于：侧栏与正文改上下排 */
+  /* 关于 */
   .lite-about {
     display: block;
   }
@@ -1258,7 +1244,7 @@ img {
     margin-right: 20px;
   }
 
-  /* 表单与卡片型页面：收窄内边距 */
+  /* 表单与卡片型页面 */
   .lite-form-box,
   .lite-rss-card {
     padding: 22px 16px;
@@ -1269,7 +1255,7 @@ img {
     margin-bottom: 20px;
   }
 
-  /* 按钮铺满一行，窄屏上不至于误触相邻元素 */
+  /* 按钮铺满一行 */
   .lite-form-actions-row .lite-btn,
   .lite-form-actions .lite-btn,
   .lite-rss-actions .lite-btn {
@@ -1278,7 +1264,7 @@ img {
     margin-right: 0;
   }
 
-  /* 分页按钮：窄屏上不铺满，并排居中即可，否则纵向占太多 */
+  /* 分页按钮并排居中，铺满会太占纵向 */
   .lite-pager .lite-btn {
     display: inline-block;
     width: auto;

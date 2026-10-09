@@ -1,10 +1,4 @@
-{{/*
-  公共骨架：#lite 下所有页面都用它。
-  head / foot / card 三个 define 会被各页面模板引用。
-
-  注意：这里的 HTML 会在老 Kindle（WebKit 534）上渲染，
-  卡片一律是直出的 HTML，不依赖任何脚本。
-*/}}
+{{/* 公共骨架：head / foot / card 三个 define，全部是直出 HTML，不依赖脚本。 */}}
 
 {{define "head"}}<!DOCTYPE html>
 <html lang="zh-CN">
@@ -16,9 +10,7 @@
 </head>
 <body>
 
-{{/* 导航项与主站 NavBar 一致：足迹 / 写作（登录后）/ RSS / 关于 / 我的。
-     页头在 .lite-shell 之外 —— 白底与下方青线要像主站导航栏那样通栏，
-     不能被内容容器的左右留白截断。 */}}
+{{/* 导航项与主站一致：足迹 / 写作（登录后）/ RSS / 关于 / 我的 */}}
 <header class="lite-header">
   <div class="lite-header-inner">
     <a class="lite-brand" href="/lite/">Coco の 避风港</a>
@@ -40,10 +32,7 @@
 {{define "foot"}}</main>
 </div>
 
-{{/* 页脚：展示项、措辞、顺序、分隔符均照搬主站 Footer.vue。
-     不带 emoji：老设备没有 emoji 字体，主站那几个图标在那边会变成方框。
-     不要在这里添主站没有的东西。
-     与页头一样放在 .lite-shell 之外 —— 白底要通栏。 */}}
+{{/* 页脚。展示项与主站 Footer.vue 一致，不带 emoji。 */}}
 <footer class="lite-footer">
   <div class="lite-footer-inner">
     <div class="lite-copyright">© 2025-2026 coco_29. All Rights Reserved.</div>
@@ -57,8 +46,7 @@
     {{end}}
     <div class="lite-powered">Powered by Vue & GO</div>
 
-    {{/* 只有这一项主站没有：老设备需要一个回到完整站的出口，
-       点一次会写 cookie，之后不再自动跳转回 /lite。 */}}
+    {{/* 主站没有的一项：回完整站的出口 */}}
     <div class="lite-switch"><a href="/?full=1">切换到完整版</a></div>
   </div>
 </footer>
@@ -67,9 +55,7 @@
 {{end}}
 
 
-{{/* 列表卡片。参数是一条 ListItemView。
-   字段与主站 ArticleTimeline.vue 的 .article 一致：封面 / 标题 / 描述 / 日期 / 分类。
-   主站无封面时会补一张占位图，这里直接不渲染（宁可少，不多）。 */}}
+{{/* 列表卡片，字段同主站 ArticleTimeline 的 .article */}}
 {{define "card"}}
 <article class="lite-card">
   {{if .Cover}}

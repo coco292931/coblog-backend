@@ -32,7 +32,7 @@ func ParsePage(raw string) uint64 {
 	return n
 }
 
-// PrevPage 上一页页码，第 1 页时仍是 1（此时按钮是禁用的，链接不会被点到）。
+// PrevPage 上一页页码，第 1 页时仍是 1（此时按钮是禁用态）。
 func PrevPage(page uint64) uint64 {
 	if page <= 1 {
 		return 1
@@ -40,7 +40,7 @@ func PrevPage(page uint64) uint64 {
 	return page - 1
 }
 
-// BuildPageURL 拼分页链接：保留当前的关键词 / 分类 / 标签 / 排序，只换页码。
+// BuildPageURL 拼分页链接：保留关键词 / 分类 / 标签 / 排序，只换页码。
 func BuildPageURL(base string, page uint64, q, category, tag, sort string) string {
 	values := url.Values{}
 	if q != "" {
@@ -59,8 +59,8 @@ func BuildPageURL(base string, page uint64, q, category, tag, sort string) strin
 	return base + "?" + values.Encode()
 }
 
-// ParseJSONList 解析库里的 JSON 数组字符串（category / tags）。
-// 与前端 parseJsonArray 行为一致：解析失败时按逗号兜底切分，兼容老数据。
+// ParseJSONList 解析库里的 JSON 数组字符串（category / tags），
+// 解析失败时按逗号兜底切分。
 func ParseJSONList(raw string) []string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -89,14 +89,13 @@ func ParseJSONList(raw string) []string {
 }
 
 // FormatDay 日期只到天。零值返回空串，模板据此决定是否输出。
-func FormatDay(t time.Time) string {
-	if t.IsZero() {
+func FormatDay(t time.Time) string {	if t.IsZero() {
 		return ""
 	}
 	return t.Format("2006-01-02")
 }
 
-// LatestTime 取创建与修改中较晚的一个。与主站首页的时间线口径保持一致。
+// LatestTime 取创建与修改中较晚的一个。
 func LatestTime(p models.Post) time.Time {
 	if p.UpdatedAt.After(p.CreatedAt) {
 		return p.UpdatedAt
@@ -104,8 +103,7 @@ func LatestTime(p models.Post) time.Time {
 	return p.CreatedAt
 }
 
-// ThumbURL 给本站图片地址加上 ?thumb=1，交给后端换成压缩图（没有压缩图时自动回退原图）。
-// 幂等：已经带 thumb=1 的地址原样返回。
+// ThumbURL 给本站图片地址加上 ?thumb=1（后端换成压缩图，没有则回退原图）。幂等。
 func ThumbURL(raw string) string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" || !strings.Contains(raw, UploadURLPrefix) {
@@ -126,14 +124,9 @@ var (
 	srcAttrRe = regexp.MustCompile(`(?is)\ssrc\s*=\s*"([^"]*)"`)
 )
 
-// RewriteContentImages 处理正文里的 <img>：
-//
-//   - 本站图（含 /static/uploads/）→ 统一加 ?thumb=1，省流量；
-//   - 以 .webp 结尾的外链 → 降级成文本链接（老 Kindle 不能显示 WebP，
-//     留着只会是一个空白框）；
-//   - 其余外链原样保留。
-//
-// 不要在这里改动 img 的其它属性（宽高、alt），模板侧统一限制显示宽度。
+// RewriteContentImages 处理正文里的 <img>：本站图统一加 ?thumb=1；
+// WebP 外链降级成文本链接（老设备显示不出来）；其余原样保留。
+// 不要在这里改 img 的其它属性，显示宽度由模板限制。
 func RewriteContentImages(content string) string {
 	if content == "" || !strings.Contains(content, "<img") {
 		return content
@@ -237,9 +230,7 @@ func FormatUptime(started, now time.Time) string {
 }
 
 // NavKeyFor 由请求路径推出当前所在的导航项（articles / write / rss / about / me），
-// 供模板给对应项加高亮。语义与主站的 router-link-active 一致：详情页归它的上级栏目。
-//
-// ⚠️ 传入的应当是 URL.Path（不含查询串）—— 否则 /lite/articles?page=2 匹配不上。
+// 供模板给对应项加高亮。传入的应当是 URL.Path（不含查询串）。
 func NavKeyFor(path string) string {
 	switch {
 	case path == "/lite/articles" || strings.HasPrefix(path, "/lite/articles/"):

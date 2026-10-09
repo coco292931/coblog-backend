@@ -1,6 +1,4 @@
-{{/* 写作 / 编辑页。相对主站的降级：正文是纯 Markdown textarea（无实时预览），
-   分类与标签用逗号分隔文本框，封面填 URL —— 这些都需要脚本才能做成主站那样。
-   但内容处理与主站一致：只提交 md_content，由后端的 goldmark 渲染成 content。 */}}
+{{/* 写作 / 编辑页。正文是纯 Markdown（无预览），只提交 md_content。 */}}
 
 {{define "write"}}{{template "head" .}}
 

@@ -14,17 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 写作页：
-//   - 正文是纯 Markdown textarea，没有实时预览（预览要脚本）
-//   - 分类 / 标签是逗号分隔的文本框（主站是 chips 输入）
-//   - 封面填 URL（主站的裁剪上传要脚本）
-//
-// 内容处理与主站一致：只提交 md_content，由后端 goldmark 渲染出 content
-// （CreatePost / UpdatePost 的规则就是「Markdown 为单一信源」）。
+// 写作页。正文是纯 Markdown（无预览），只提交 md_content，
+// 由后端 goldmark 渲染出 content。
 
-// requireWritePerm 取账号并校验发帖权限。
-// 未登录交给 requireAccount 跳登录页；权限不足跳个人中心提示
-// —— 与主站一致，普通用户缺 Perm_PostPost，接口返回 1002。
+// requireWritePerm 取账号并校验发帖权限，未登录跳登录页。
 func requireWritePerm(c *gin.Context) (uint64, bool) {
 	accountID, ok := requireAccount(c)
 	if !ok {
