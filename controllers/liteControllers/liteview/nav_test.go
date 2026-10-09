@@ -20,7 +20,7 @@ func TestNavKeyFor(t *testing.T) {
 		{"/lite/about/friends", "about"},
 		{"/lite/me", "me"},
 		// 这些不属于任何导航项
-		{"/lite/login", ""},		{"/lite/register", ""},
+		{"/lite/login", ""}, {"/lite/register", ""},
 		{"/lite/forgot-password", ""},
 		{"/lite/activate", ""},
 		{"/lite/nope", ""},

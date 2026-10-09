@@ -89,7 +89,8 @@ func ParseJSONList(raw string) []string {
 }
 
 // FormatDay 日期只到天。零值返回空串，模板据此决定是否输出。
-func FormatDay(t time.Time) string {	if t.IsZero() {
+func FormatDay(t time.Time) string {
+	if t.IsZero() {
 		return ""
 	}
 	return t.Format("2006-01-02")
