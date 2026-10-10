@@ -19,6 +19,7 @@ func main() {
 		store := cache.NewStore(cache.Client)
 		mailService.SetStore(store)
 		userService.SetActivationStore(store)
+		userService.SetAuthStore(store)
 	}
 	defer func() {
 		if err := cache.Close(); err != nil {

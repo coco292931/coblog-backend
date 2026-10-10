@@ -2,6 +2,7 @@ package mailService
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -48,6 +49,7 @@ func cleanupCode(t *testing.T, email string, purposes ...CodePurpose) {
 		defer cancel()
 		for _, p := range purposes {
 			_ = s.Delete(ctx, keyCode(p, email))
+			_ = s.Delete(ctx, keyCodeFails(p, email))
 			_ = s.Delete(ctx, keyCooldown(string(p), email))
 		}
 	})
@@ -234,5 +236,73 @@ func TestUnavailableStoreFailsClosed(t *testing.T) {
 	}
 	if Available() {
 		t.Error("不可用时 Available() 应为 false")
+	}
+}
+
+// wrongCode 返回一个与 code 不同的 6 位数字
+func wrongCode(code string, i int) string {
+	for {
+		w := fmt.Sprintf("%06d", i)
+		if w != code {
+			return w
+		}
+		i++
+	}
+}
+
+func TestVerifyCodeLocksAfterMaxFails(t *testing.T) {
+	useRealStore(t)
+	email := uniqueEmail(t)
+	cleanupCode(t, email, PurposeReset)
+
+	code, _, err := IssueCode(PurposeReset, email)
+	if err != nil {
+		t.Fatalf("签发验证码失败: %v", err)
+	}
+	for i := 0; i < maxCodeFails; i++ {
+		if VerifyCode(PurposeReset, email, wrongCode(code, i*7)) {
+			t.Fatal("错误的验证码不应通过")
+		}
+	}
+	if VerifyCode(PurposeReset, email, code) {
+		t.Fatalf("猜错 %d 次后验证码应作废，正确的码也不能再通过", maxCodeFails)
+	}
+}
+
+func TestVerifyCodeAllowsFewFails(t *testing.T) {
+	useRealStore(t)
+	email := uniqueEmail(t)
+	cleanupCode(t, email, PurposeLogin)
+
+	code, _, err := IssueCode(PurposeLogin, email)
+	if err != nil {
+		t.Fatalf("签发验证码失败: %v", err)
+	}
+	for i := 0; i < maxCodeFails-1; i++ {
+		VerifyCode(PurposeLogin, email, wrongCode(code, i*7))
+	}
+	if !VerifyCode(PurposeLogin, email, code) {
+		t.Fatalf("猜错 %d 次（未到上限）时正确的码仍应通过", maxCodeFails-1)
+	}
+}
+
+func TestNewCodeResetsFailCount(t *testing.T) {
+	s := useRealStore(t)
+	email := uniqueEmail(t)
+	cleanupCode(t, email, PurposeRegister)
+
+	code, _, _ := IssueCode(PurposeRegister, email)
+	for i := 0; i < maxCodeFails-1; i++ {
+		VerifyCode(PurposeRegister, email, wrongCode(code, i*7))
+	}
+	// 跳过冷却直接重发
+	_ = s.ReleaseCooldown(context.Background(), keyCooldown(string(PurposeRegister), email))
+	code2, cooldown, err := IssueCode(PurposeRegister, email)
+	if err != nil || cooldown {
+		t.Fatalf("重发失败: cooldown=%v err=%v", cooldown, err)
+	}
+	VerifyCode(PurposeRegister, email, wrongCode(code2, 3))
+	if !VerifyCode(PurposeRegister, email, code2) {
+		t.Fatal("新码应重新计数，上一个码的失败次数不应累计过来")
 	}
 }

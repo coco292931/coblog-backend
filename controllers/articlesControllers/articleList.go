@@ -3,6 +3,7 @@ package articlesControllers
 import (
 	"coblog-backend/common/exception"
 	"coblog-backend/controllers/accountControllers"
+	middleware "coblog-backend/middlewares"
 	"coblog-backend/services/articleService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
@@ -24,8 +25,8 @@ func GetArticleList(c *gin.Context) {
 	}
 	fmt.Println(requestForm.Q)
 
-	accountId, err := accountControllers.GetAccountIDFromContext(c)
-	if err != nil {
+	// 只确认鉴权中间件跑过（LooseAuth 一定会设置 AccountID）；账号本身下面直接取
+	if _, err := accountControllers.GetAccountIDFromContext(c); err != nil {
 		// 这里不应该报错
 		c.Error(exception.SysUknExc)
 		return
@@ -34,7 +35,8 @@ func GetArticleList(c *gin.Context) {
 	// 内容级别（是否包含深度文章）由 userService 统一判定：
 	// 未登录 → def；已登录但不具备深度权限 → def；具备 → deep。
 	// 这段判定原先在列表 / 详情 / RSS 三处各写一遍，改权限规则时很容易漏改。
-	status := userService.ResolveContentStatus(accountId)
+	// 账号已由鉴权中间件读出，直接复用，不再按 ID 查一次库
+	status := userService.ContentStatusFor(middleware.CurrentAccount(c))
 
 	data, err := articleService.GetArticleList(status, requestForm, false)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"coblog-backend/models"
+	"coblog-backend/utils"
 )
 
 // 这些都是纯函数（不碰数据库、不读配置），方便单独测试。
@@ -295,19 +296,15 @@ func ToJSONList(raw string) string {
 	return string(b)
 }
 
-// PasswordRuleText 新密码强度提示。
-// 与主站 constants/account.js 的 PASSWORD_RULE_TEXT 保持一致。
-const PasswordRuleText = "至少 6 位，建议同时包含字母与数字"
+// PasswordRuleText 新密码强度提示，规则本身在 utils（service 层也用它）。
+const PasswordRuleText = utils.PasswordRuleText
 
 // ValidateNewPassword 校验新密码，返回错误文案；通过时返回空串。
-// 逐条对应主站 constants/account.js 的 validateNewPassword，
-// 「找回密码」页与「我的」页共用同一套规则。
+// 逐条对应主站 constants/account.js 的 validateNewPassword：
+// 规则部分与 service 层共用 utils.ValidatePasswordRule，这里只多一步「两次输入一致」。
 func ValidateNewPassword(password, confirm string) string {
-	if password == "" {
-		return "请输入新密码"
-	}
-	if len([]rune(password)) < 6 {
-		return "新密码长度至少需要6位字符"
+	if msg := utils.ValidatePasswordRule(password); msg != "" {
+		return msg
 	}
 	if password != confirm {
 		return "两次输入的密码不一致，请重新输入"

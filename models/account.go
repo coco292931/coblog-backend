@@ -24,6 +24,9 @@ type AccountInfo struct {
 	Deepable    bool   `json:"deepable" gorm:"default:0"`         // 是否允许启用深度
 	IsDeep      bool   `json:"isDeep" gorm:"default:0"`           // 是否已经启用深度
 	RSSToken    string `json:"rssToken"`                          // RSS特征秘钥
+	// TokenVersion 登录 token 的版本号：改密 / 重置密码时 +1，之前签发的 token 全部失效。
+	// 默认 0 与历史 token 的预留位一致，加列后已登录的用户不会被踢下线。
+	TokenVersion uint32 `json:"-" gorm:"column:token_version;not null;default:0"`
 
 	AvatarFile string `json:"avatarFile"` // 头像文件名
 	Sex        string `json:"sex"`        // 性别

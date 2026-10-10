@@ -2,18 +2,34 @@ package middleware
 
 import (
 	"coblog-backend/common/exception"
-	"coblog-backend/common/webtoken"
+	"coblog-backend/models"
+	"coblog-backend/services/userService"
 	"coblog-backend/utils"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
 
-// LooseAuth 鉴权成功时额外放在 context 上的两项
+// 鉴权成功时额外放在 context 上的几项
 const (
-	AuthTokenKey     = "AuthToken"     // string：本次请求使用的登录 token
-	AuthViaCookieKey = "AuthViaCookie" // bool：token 是否取自 cookie
+	AuthTokenKey      = "AuthToken"      // string：本次请求使用的登录 token（仅 LooseAuth）
+	AuthViaCookieKey  = "AuthViaCookie"  // bool：token 是否取自 cookie（仅 LooseAuth）
+	CurrentAccountKey = "CurrentAccount" // *models.AccountInfo：鉴权时从数据库读到的当前账号
 )
+
+// CurrentAccount 取鉴权时已经读出的当前账号；未登录时为 nil。
+//
+// 鉴权本来就要按 ID 查一次用户表（校验 token 版本号、取当前权限组），
+// 同一请求里需要账号信息的地方都从这里拿，不要再按 ID 查一遍。
+// 返回的是共享对象，只读；要改字段请先复制。
+func CurrentAccount(c *gin.Context) *models.AccountInfo {
+	raw, ok := c.Get(CurrentAccountKey)
+	if !ok {
+		return nil
+	}
+	user, _ := raw.(*models.AccountInfo)
+	return user
+}
 
 func Auth(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
@@ -23,12 +39,8 @@ func Auth(c *gin.Context) {
 		fmt.Println("鉴权失败: 未登录")
 		return
 	}
-	if !webtoken.VerifyWt(authHeader) {
-		c.Error(exception.UsrLoginInvalid)
-		c.Abort()
-		return
-	}
-	uid, pgid, err := webtoken.GetWtPayload(authHeader)
+	// 签名、有效期、登出黑名单、改密后的版本号一并校验；权限组取数据库当前值
+	user, err := userService.ValidateSession(authHeader)
 	if err != nil {
 		c.Error(exception.UsrLoginInvalid)
 		c.Abort()
@@ -36,8 +48,9 @@ func Auth(c *gin.Context) {
 	}
 
 	fmt.Println("鉴权成功")
-	c.Set("AccountID", uid)
-	c.Set("PermissionGroupID", pgid)
+	c.Set("AccountID", user.ID)
+	c.Set("PermissionGroupID", user.PermGroupID)
+	c.Set(CurrentAccountKey, user)
 	c.Next()
 }
 
@@ -56,21 +69,21 @@ func LooseAuth(c *gin.Context) {
 		token = utils.AuthTokenFromCookie(c)
 		viaCookie = true
 	}
-	if token == "" || !webtoken.VerifyWt(token) {
+	if token == "" {
+		c.Next()
+		return
+	}
+	user, err := userService.ValidateSession(token)
+	if err != nil {
 		fmt.Println("松鉴权失败: 用户登录无效，已放行")
 		c.Next()
 		return
 	}
 
-	uid, pgid, err := webtoken.GetWtPayload(token)
-	if err != nil {
-		c.Next()
-		return
-	}
-
 	fmt.Println("松鉴权成功")
-	c.Set("AccountID", uid)
-	c.Set("PermissionGroupID", pgid)
+	c.Set("AccountID", user.ID)
+	c.Set("PermissionGroupID", user.PermGroupID)
+	c.Set(CurrentAccountKey, user)
 	// 供 /lite 派生 CSRF token：只有凭据来自 cookie 时才需要防 CSRF
 	// （跨站请求设不了 Authorization 头）
 	c.Set(AuthTokenKey, token)

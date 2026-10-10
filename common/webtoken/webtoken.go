@@ -1,9 +1,9 @@
 package webtoken
 
 import (
-	"bytes"
 	configreader "coblog-backend/configs/configReader"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/binary"
 	"log"
@@ -19,14 +19,15 @@ var readKeyOnce sync.Once
 /* wtoken 格式(48位)
 ** ######## #### ######## #### ########################
 ** 0-------8----12-------20---24----------------------48
-** 用户ID--权限组--过期时间-预留-24字节签名
-** TODO预留位改为token版本号
+** 用户ID--权限组--过期时间-版本-24字节签名
+** 版本：账户的 token_version，改密 / 重置密码时 +1，旧 token 随之失效。
+**       历史 token 这 4 字节是 0，与新列的默认值 0 一致，上线不会把人踢下线。
 ** 签名方式: SHA256(Metadata(即前24位字节)+Key(48字节))取前24字节
 ** 全部占据48字节, 转换到base64刚好64字符
 */
 
 // Generate 生成 token
-func GenerateWt(uid uint64, permGroupID uint32, validSecs uint64) string {
+func GenerateWt(uid uint64, permGroupID uint32, version uint32, validSecs uint64) string {
 
 	readKeyOnce.Do(readSigkey) // 读入签名密钥 (只执行一次)
 
@@ -36,6 +37,7 @@ func GenerateWt(uid uint64, permGroupID uint32, validSecs uint64) string {
 	binary.LittleEndian.PutUint32(metadata[8:12], permGroupID)
 	var expireTime = time.Now().Unix() + int64(validSecs) // 计算过期时间
 	binary.LittleEndian.PutUint64(metadata[12:20], uint64(expireTime))
+	binary.LittleEndian.PutUint32(metadata[20:24], version)
 
 	// 计算签名
 	// append 只接受切片+元素，因此拆分wtSigKey
@@ -51,8 +53,30 @@ func GenerateWt(uid uint64, permGroupID uint32, validSecs uint64) string {
 	return base64.RawURLEncoding.EncodeToString(tokenResult[:])
 }
 
-// TODO:使用redis对token做废除机制
-// Verify 校验 token，返回载荷与是否有效
+// Payload token 里携带的信息
+type Payload struct {
+	UID         uint64
+	PermGroupID uint32 // 签发时的权限组（只是快照，鉴权以数据库当前值为准）
+	Version     uint32 // 签发时账户的 token_version
+	ExpireAt    time.Time
+}
+
+// ParseWt 校验签名与有效期，通过时返回载荷。
+// 吊销（登出黑名单、版本号）不在这里判断，见 userService.ValidateSession。
+func ParseWt(webtoken string) (Payload, bool) {
+	if !VerifyWt(webtoken) {
+		return Payload{}, false
+	}
+	raw, _ := base64.RawURLEncoding.DecodeString(webtoken)
+	return Payload{
+		UID:         binary.LittleEndian.Uint64(raw[0:8]),
+		PermGroupID: binary.LittleEndian.Uint32(raw[8:12]),
+		ExpireAt:    time.Unix(int64(binary.LittleEndian.Uint64(raw[12:20])), 0),
+		Version:     binary.LittleEndian.Uint32(raw[20:24]),
+	}, true
+}
+
+// Verify 校验 token 的签名与有效期
 func VerifyWt(webtoken string) (isValid bool) {
 
 	readKeyOnce.Do(readSigkey)
@@ -67,7 +91,8 @@ func VerifyWt(webtoken string) (isValid bool) {
 	content, sig := raw[:24], raw[24:]
 	// 重算签名
 	hashResult := sha256.Sum256(append(content, wtSigkey[:]...))
-	if !bytes.Equal(hashResult[:24], sig) {
+	// 常量时间比较，避免按字节逐个猜签名
+	if subtle.ConstantTimeCompare(hashResult[:24], sig) != 1 {
 		log.Print("[WARN][wtService] A token is invalid!")
 		return false
 	}

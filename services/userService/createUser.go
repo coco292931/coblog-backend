@@ -21,6 +21,9 @@ func CreateUser(
 
 	// var userID uint64
 	var err error
+	if err = checkPasswordRule(password); err != nil {
+		return nil, err
+	}
 	// userID, err = strconv.ParseUint(studentID, 10, 64)
 	// if err != nil {
 	// 	//返回的学生id有误

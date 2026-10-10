@@ -108,6 +108,37 @@ redis.call('DEL', KEYS[1])
 return v
 `)
 
+// takeIfMatchLimitedScript 带失败次数上限的一次性校验（验证码用）。
+// 猜中：删除记录与失败计数，返回 1；
+// 猜错：失败计数 +1（有效期跟随记录本身），达到上限即作废记录，返回 0。
+// 没有上限的话，6 位数字在 10 分钟有效期内可以被逐个枚举。
+// KEYS[1]=记录键 KEYS[2]=失败计数键 ARGV[1]=提交的值 ARGV[2]=失败上限
+var takeIfMatchLimitedScript = redis.NewScript(`
+local v = redis.call('GET', KEYS[1])
+if not v then return 0 end
+if v == ARGV[1] then
+  redis.call('DEL', KEYS[1], KEYS[2])
+  return 1
+end
+local n = redis.call('INCR', KEYS[2])
+if n == 1 then
+  local ttl = redis.call('PTTL', KEYS[1])
+  if ttl <= 0 then ttl = 600000 end
+  redis.call('PEXPIRE', KEYS[2], ttl)
+end
+if n >= tonumber(ARGV[2]) then
+  redis.call('DEL', KEYS[1], KEYS[2])
+end
+return 0
+`)
+
+// incrWindowScript 固定窗口计数：首次计数时设定窗口长度，返回当前计数
+var incrWindowScript = redis.NewScript(`
+local n = redis.call('INCR', KEYS[1])
+if n == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
+return n
+`)
+
 // Take 原子取出并删除键（一次性消费），未命中或不可用时 hit 为 false
 func (s *Store) Take(ctx context.Context, key string) (value string, hit bool, err error) {
 	if !s.Available() {
@@ -146,7 +177,49 @@ func (s *Store) TakeIfMatch(ctx context.Context, key, expected string) (value st
 	return value, true, nil
 }
 
+// TakeIfMatchLimited 同 TakeIfMatch，但猜错会累计到 failKey，
+// 累计达到 maxFails 次即作废记录。不可用时 hit 为 false。
+func (s *Store) TakeIfMatchLimited(ctx context.Context, key, failKey, expected string, maxFails int) (hit bool, err error) {
+	if !s.Available() {
+		return false, nil
+	}
+	n, err := takeIfMatchLimitedScript.Run(ctx, s.client, []string{key, failKey}, expected, maxFails).Int64()
+	if err != nil {
+		return false, err
+	}
+	return n == 1, nil
+}
+
 // ---- 频率限制 ----
+
+// IncrWindow 固定窗口计数 +1 并返回当前计数；窗口从第一次计数开始，到期自动清零。
+func (s *Store) IncrWindow(ctx context.Context, key string, window time.Duration) (int64, error) {
+	if !s.Available() {
+		return 0, ErrUnavailable
+	}
+	return incrWindowScript.Run(ctx, s.client, []string{key}, window.Milliseconds()).Int64()
+}
+
+// Count 读取计数（IncrWindow 写入的值），不存在时为 0。
+func (s *Store) Count(ctx context.Context, key string) (int64, error) {
+	if !s.Available() {
+		return 0, ErrUnavailable
+	}
+	n, err := s.client.Get(ctx, key).Int64()
+	if errors.Is(err, redis.Nil) {
+		return 0, nil
+	}
+	return n, err
+}
+
+// Exists 报告键是否存在
+func (s *Store) Exists(ctx context.Context, key string) (bool, error) {
+	if !s.Available() {
+		return false, ErrUnavailable
+	}
+	n, err := s.client.Exists(ctx, key).Result()
+	return n > 0, err
+}
 
 // AcquireCooldown 以 SET NX EX 语义抢占冷却标记，返回 true 表示抢到（此前不存在）
 func (s *Store) AcquireCooldown(ctx context.Context, key string, ttl time.Duration) bool {

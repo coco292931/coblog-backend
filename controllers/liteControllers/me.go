@@ -10,6 +10,7 @@ import (
 	"coblog-backend/common/permission"
 	"coblog-backend/controllers/accountControllers"
 	"coblog-backend/controllers/liteControllers/liteview"
+	middleware "coblog-backend/middlewares"
 	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
@@ -29,8 +30,7 @@ import (
 
 // MePage GET /lite/me
 func MePage(c *gin.Context) {
-	accountID, ok := requireAccount(c)
-	if !ok {
+	if _, ok := requireAccount(c); !ok {
 		return
 	}
 
@@ -47,7 +47,7 @@ func MePage(c *gin.Context) {
 		return
 	}
 
-	view := loadMeView(c, accountID)
+	view := loadMeView(c)
 	view.Message, view.OK = utils.TakeFlash(c)
 	liteview.Render(c, http.StatusOK, "me", view)
 }
@@ -72,6 +72,16 @@ func MeChangePassword(c *gin.Context) {
 
 	if err := userService.ChangePwd(accountID, c.PostForm("oldPassword"), newPwd); err != nil {
 		redirectMe(c, errMsg(err), false)
+		return
+	}
+	// 改密让所有旧 token 失效（含当前这个），给当前设备换新的。
+	// 读不到 cookie 原来是不是持久的，按持久写：与 JSON 登录接口写的 cookie 一致
+	if token, validSecs, err := userService.ReissueSession(accountID); err == nil {
+		utils.SetAuthCookie(c, token, int(validSecs))
+	} else {
+		utils.ClearAuthCookie(c)
+		utils.SetFlash(c, "密码已修改，请重新登录", true)
+		c.Redirect(http.StatusFound, "/lite/login")
 		return
 	}
 	// 与 /api/user/pwd/ 的成功文案一致
@@ -102,14 +112,13 @@ func MeResetRSSToken(c *gin.Context) {
 // 文案与 /api/auth/activate/resend 一致。这里用当前登录用户自己的邮箱，
 // 不接受表单传入的邮箱（否则就成了任意用户触发发信口）。
 func MeResendActivation(c *gin.Context) {
-	accountID, ok := requireAccount(c)
-	if !ok {
+	if _, ok := requireAccount(c); !ok {
 		return
 	}
-
-	user, err := userService.GetUserByID(accountID)
-	if err != nil {
-		redirectMe(c, errMsg(err), false)
+	// 鉴权时已读出当前账号，直接复用
+	user := middleware.CurrentAccount(c)
+	if user == nil {
+		redirectMe(c, exception.SysCannotReadDB.Msg, false)
 		return
 	}
 
@@ -166,15 +175,16 @@ func hasPerm(c *gin.Context, needed permission.PermissionID) bool {
 }
 
 // loadMeView 组装个人中心的数据。不设置 Message，由调用方补。
-func loadMeView(c *gin.Context, accountID uint64) liteview.MeView {
+// 账号取自鉴权时已读出的那一份，不再查库。
+func loadMeView(c *gin.Context) liteview.MeView {
 	view := liteview.MeView{
 		BaseView:     newBaseView(c),
 		PasswordRule: liteview.PasswordRuleText,
 	}
 
-	user, err := userService.GetUserByID(accountID)
-	if err != nil {
-		view.FetchErr = errMsg(err)
+	user := middleware.CurrentAccount(c)
+	if user == nil {
+		view.FetchErr = exception.SysCannotReadDB.Msg
 		return view
 	}
 

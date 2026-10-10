@@ -3,6 +3,7 @@ package articlesControllers
 import (
 	"coblog-backend/common/exception"
 	"coblog-backend/controllers/accountControllers"
+	middleware "coblog-backend/middlewares"
 	"coblog-backend/services/articleService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
@@ -12,8 +13,8 @@ import (
 )
 
 func GetArticleContent(c *gin.Context) {
-	accountId, err := accountControllers.GetAccountIDFromContext(c)
-	if err != nil {
+	// 只确认鉴权中间件跑过（LooseAuth 一定会设置 AccountID）；账号本身下面直接取
+	if _, err := accountControllers.GetAccountIDFromContext(c); err != nil {
 		// 这里不应该报错
 		c.Error(exception.SysUknExc)
 		return
@@ -21,7 +22,8 @@ func GetArticleContent(c *gin.Context) {
 
 	// 隐藏文章（hidden）与深度文章（is_deep）的可见性统一由 userService 判定：
 	// 匿名 / 无深度权限 → def，与原先内联在此处的逻辑一致。
-	status := userService.ResolveContentStatus(accountId)
+	// 账号已由鉴权中间件读出，直接复用，不再按 ID 查一次库
+	status := userService.ContentStatusFor(middleware.CurrentAccount(c))
 
 	data, err := articleService.GetArticle(status, c.Param("id"))
 	if err != nil {

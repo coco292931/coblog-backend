@@ -44,6 +44,8 @@ func CreateNormalUser(c *gin.Context) { //用户注册,默认权限组PermGroupI
 		if errors.Is(err, exception.ApiParamError) {
 			fmt.Println("参数错误1:", err)
 			c.Error(exception.ApiParamError)
+		} else if errors.Is(err, exception.UsrPasswordWeak) {
+			c.Error(exception.UsrPasswordWeak)
 		} else if errors.Is(err, exception.UsrAlreadyExisted) {
 			fmt.Println("用户已存在:", err)
 			c.Error(exception.UsrAlreadyExisted)

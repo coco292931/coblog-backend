@@ -1,6 +1,7 @@
 package loginControllers
 
 import (
+	"coblog-backend/services/userService"
 	"coblog-backend/utils"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,16 @@ import (
 //
 // 这里刻意不做鉴权：cookie 已经失效时清一次也无害，加鉴权反而会让
 // 「token 过期了想登出」这种场景卡住。
+//
+// 只吊销这一个 token，同一账号在其他设备上的登录不受影响。
 func Logout(c *gin.Context) {
+	// 吊销本次的 token：头里的与 cookie 里的通常是同一个（登录时一并写入），都处理一遍
+	if token := c.GetHeader("Authorization"); token != "" {
+		userService.RevokeSession(token)
+	}
+	if token := utils.AuthTokenFromCookie(c); token != "" {
+		userService.RevokeSession(token)
+	}
 	utils.ClearAuthCookie(c)
 	utils.JsonSuccessResponse(c, "已退出登录", nil)
 }

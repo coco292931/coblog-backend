@@ -16,6 +16,7 @@ import (
 	configreader "coblog-backend/configs/configReader"
 	"coblog-backend/controllers/accountControllers"
 	"coblog-backend/controllers/liteControllers/liteview"
+	middleware "coblog-backend/middlewares"
 	"coblog-backend/models"
 	"coblog-backend/services/articleService"
 	"coblog-backend/services/siteInfoService"
@@ -209,12 +210,9 @@ func ServeLiteIcon(c *gin.Context) {
 // ────────────────────────────── 辅助 ──────────────────────────────
 
 // currentContentStatus 取当前请求的内容级别。匿名一律为 def。
+// 账号已由 LooseAuth 读出，直接复用，不再按 ID 查一次库。
 func currentContentStatus(c *gin.Context) string {
-	accountID, err := accountControllers.GetAccountIDFromContext(c)
-	if err != nil {
-		return userService.ContentStatusDefault
-	}
-	return userService.ResolveContentStatus(accountID)
+	return userService.ContentStatusFor(middleware.CurrentAccount(c))
 }
 
 // newBaseView 组装各页面共用的头部与页脚数据。

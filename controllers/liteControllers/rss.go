@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"coblog-backend/configs/configReader"
-	"coblog-backend/controllers/accountControllers"
 	"coblog-backend/controllers/liteControllers/liteview"
+	middleware "coblog-backend/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,11 +28,11 @@ func rssSubscribeURL(c *gin.Context) string {
 	base := strings.TrimRight(configreader.GetConfig().FileObject.PublicBaseURL, "/")
 	target := base + "/api/rss"
 
-	accountID, err := accountControllers.GetAccountIDFromContext(c)
-	if err != nil || accountID == 0 {
+	user := middleware.CurrentAccount(c)
+	if user == nil {
 		return target
 	}
-	token := loadMeView(c, accountID).RSSToken
+	token := user.RSSToken
 	if token == "" {
 		return target
 	}

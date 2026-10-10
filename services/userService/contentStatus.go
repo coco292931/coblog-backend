@@ -25,6 +25,7 @@ const (
 //   - 同时满足 → deep
 //
 // 查库失败时降级为 def：宁可少给内容，不可越权。
+// 弃用，已由content Status For 替代
 func ResolveContentStatus(accountID uint64) string {
 	if accountID == 0 {
 		return ContentStatusDefault

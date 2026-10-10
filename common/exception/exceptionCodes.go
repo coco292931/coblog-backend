@@ -14,6 +14,8 @@ var (
 	UsrCodeInvalid    = NewException(1008, "验证码错误或已过期")
 	UsrCodeTooFreq    = NewException(1009, "验证码发送过于频繁，请稍后再试")
 	UsrNotActivated   = NewException(1010, "账户未激活，激活邮件已重新发送")
+	UsrPasswordWeak   = NewException(1011, "新密码长度至少需要6位字符") // 文案与 utils.PasswordTooShortMsg 一致
+	UsrLoginTooFreq   = NewException(1012, "登录失败次数过多，请 15 分钟后再试")
 
 	ApiNoFormFile         = NewException(4001, "无文件字段")
 	ApiFileTooLarge       = NewException(4002, "上传文件过大")

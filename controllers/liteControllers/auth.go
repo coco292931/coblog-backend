@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"coblog-backend/common/exception"
-	"coblog-backend/common/webtoken"
-	configreader "coblog-backend/configs/configReader"
 	"coblog-backend/controllers/liteControllers/liteview"
 	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
@@ -55,9 +53,16 @@ func LoginSubmit(c *gin.Context) {
 		return
 	}
 
+	ip := c.ClientIP()
+	if err := userService.CheckLoginAllowed(ip, account); err != nil {
+		renderFail(errMsg(err))
+		return
+	}
+
 	user, err := userService.GetUserByEmail(account)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			userService.RecordLoginFailure(ip, account)
 			renderFail(exception.UsrNotExisted.Msg)
 			return
 		}
@@ -67,6 +72,7 @@ func LoginSubmit(c *gin.Context) {
 	}
 
 	if err := userService.VerifyPwd(user, password); err != nil {
+		userService.RecordLoginFailure(ip, account)
 		renderFail(exception.UsrPasswordErr.Msg)
 		return
 	}
@@ -82,8 +88,8 @@ func LoginSubmit(c *gin.Context) {
 		}
 	}
 
-	validSecs := configreader.GetConfig().Account.ValidSecs
-	token := webtoken.GenerateWt(user.ID, user.PermGroupID, validSecs)
+	userService.ClearLoginFailures(account)
+	token, validSecs := userService.IssueSession(user)
 
 	// 未勾「记住我」写会话 cookie，勾了才写持久的 ——
 	// 对应主站把 token 存 sessionStorage 还是 localStorage 的差别。
@@ -102,6 +108,8 @@ func LoginSubmit(c *gin.Context) {
 
 // Logout POST /lite/logout。JSON 侧的登出是 /api/auth/logout，
 func Logout(c *gin.Context) {
+	// 只吊销这一个 token，其他设备上的登录不受影响
+	userService.RevokeSession(sessionToken(c))
 	utils.ClearAuthCookie(c)
 	c.Redirect(http.StatusFound, "/lite/")
 }

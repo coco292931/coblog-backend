@@ -28,6 +28,13 @@ func ResetPwdByEmail(c *gin.Context) {
 		return
 	}
 
+	// 先校验密码规则再验码：验证码一经校验通过即作废，
+	// 规则不过的话用户只能重新收一次码
+	if msg := utils.ValidatePasswordRule(form.NewPassword); msg != "" {
+		c.Error(exception.UsrPasswordWeak)
+		return
+	}
+
 	// 校验验证码
 	if !mailService.VerifyCode(mailService.PurposeReset, form.Email, form.VerificationCode) {
 		c.Error(exception.UsrCodeInvalid)

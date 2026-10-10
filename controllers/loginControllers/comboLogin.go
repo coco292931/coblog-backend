@@ -2,8 +2,6 @@ package loginControllers
 
 import (
 	"coblog-backend/common/exception"
-	"coblog-backend/common/webtoken"
-	configreader "coblog-backend/configs/configReader"
 	"coblog-backend/models"
 	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
@@ -29,7 +27,14 @@ func AuthByCombo(c *gin.Context) {
 		c.Error(exception.ApiParamError)
 		return
 	}
-	fmt.Println("登录信息:", postForm)
+	// 不打印密码
+	fmt.Println("登录账号:", postForm.Account)
+
+	ip := c.ClientIP()
+	if err := userService.CheckLoginAllowed(ip, postForm.Account); err != nil {
+		c.Error(err)
+		return
+	}
 
 	var user interface{}
 	var userErr error
@@ -48,6 +53,7 @@ func AuthByCombo(c *gin.Context) {
 	//}
 
 	if errors.Is(userErr, gorm.ErrRecordNotFound) {
+		userService.RecordLoginFailure(ip, postForm.Account)
 		c.Error(exception.UsrNotExisted)
 		return
 	}
@@ -66,6 +72,7 @@ func AuthByCombo(c *gin.Context) {
 		var apiErr *exception.Exception
 		if errors.As(err, &apiErr) {
 			fmt.Println("密码错误0:", err)
+			userService.RecordLoginFailure(ip, postForm.Account)
 			c.Error(exception.UsrPasswordErr)
 		} else {
 			fmt.Println("密码错误1:", err)
@@ -86,9 +93,9 @@ func AuthByCombo(c *gin.Context) {
 		}
 	}
 
-	//TODO:解决秘钥签名错误的问题
-	validSecs := configreader.GetConfig().Account.ValidSecs
-	token := webtoken.GenerateWt(accountInfo.ID, accountInfo.PermGroupID, validSecs)
+	userService.ClearLoginFailures(postForm.Account)
+
+	token, validSecs := userService.IssueSession(accountInfo)
 	// 一并种一份 cookie：后端直出的 /lite 走浏览器导航、带不了 Authorization 头，
 	// 只能靠 cookie 识别身份（深度文章的可见性依赖它）。
 	utils.SetAuthCookie(c, token, int(validSecs))

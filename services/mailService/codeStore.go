@@ -24,6 +24,7 @@ const (
 	codeTTL        = 10 * time.Minute // 验证码有效期，由 Redis TTL 控制
 	resendCooldown = 60 * time.Second // 同一邮箱+用途的最短重发间隔
 	codeLength     = 6                // 验证码位数
+	maxCodeFails   = 5                // 同一个验证码最多猜错几次，到达即作废
 	opTimeout      = 2 * time.Second  // 单次 Redis 操作超时
 )
 
@@ -98,6 +99,8 @@ func IssueCode(p CodePurpose, email string) (code string, cooldown bool, err err
 		_ = store.ReleaseCooldown(ctx, cooldownKey)
 		return "", false, exception.SysUknExc
 	}
+	// 新码重新计数：上一个码留下的失败次数不该算到这个码头上
+	_ = store.Delete(ctx, keyCodeFails(p, email))
 
 	return code, false, nil
 }
@@ -111,10 +114,16 @@ func VerifyCode(p CodePurpose, email, code string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), opTimeout)
 	defer cancel()
 
-	// Lua 保证「比对 + 删除」原子完成：正确才消费，
-	// 错误时不消耗记录，避免暴力枚举直接把记录打掉
-	_, hit, err := store.TakeIfMatch(ctx, keyCode(p, email), strings.TrimSpace(code))
+	// Lua 保证「比对 + 删除 + 计数」原子完成：正确才消费；
+	// 猜错累计 maxCodeFails 次即作废，否则 6 位数字在有效期内可以被逐个枚举
+	hit, err := store.TakeIfMatchLimited(ctx, keyCode(p, email), keyCodeFails(p, email),
+		strings.TrimSpace(code), maxCodeFails)
 	return err == nil && hit
+}
+
+// keyCodeFails 验证码猜错次数键，与验证码同生命周期
+func keyCodeFails(p CodePurpose, email string) string {
+	return cache.Key("coblog", "codefail", string(p), normalizeEmail(email))
 }
 
 // DiscardCode 丢弃指定邮箱+用途的验证码并释放重发冷却。
@@ -129,5 +138,6 @@ func DiscardCode(p CodePurpose, email string) {
 	defer cancel()
 
 	_ = store.Delete(ctx, keyCode(p, email))
+	_ = store.Delete(ctx, keyCodeFails(p, email))
 	_ = store.ReleaseCooldown(ctx, keyCooldown(string(p), email))
 }

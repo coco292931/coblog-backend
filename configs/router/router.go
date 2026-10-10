@@ -35,6 +35,14 @@ func SayHello(c *gin.Context) {
 func InitEngine() *gin.Engine {
 	ginEngine := gin.Default()
 
+	// 真实客户端 IP（登录限流用）：生产经 Cloudflare 隧道进来，取 CF-Connecting-IP。
+	// 不信任任何代理头（X-Forwarded-For 等）：没有 CF 头时（本地开发）退回直连地址。
+	// 注意：源站若能绕过 Cloudflare 直连，这个头可以伪造 —— 账号维度的限流不受影响。
+	ginEngine.TrustedPlatform = gin.PlatformCloudflare
+	if err := ginEngine.SetTrustedProxies(nil); err != nil {
+		panic(err)
+	}
+
 	// CORS配置 - 必须在所有路由之前配置
 	corsConfig := cors.Config{
 		// 白名单按解析后的 hostname 精确比对，见 utils.IsAllowedOrigin

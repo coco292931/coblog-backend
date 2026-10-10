@@ -2,8 +2,6 @@ package loginControllers
 
 import (
 	"coblog-backend/common/exception"
-	"coblog-backend/common/webtoken"
-	configreader "coblog-backend/configs/configReader"
 	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
 	"coblog-backend/utils"
@@ -61,8 +59,7 @@ func AuthByEmail(c *gin.Context) {
 		}
 	}
 
-	validSecs := configreader.GetConfig().Account.ValidSecs
-	token := webtoken.GenerateWt(user.ID, user.PermGroupID, validSecs)
+	token, validSecs := userService.IssueSession(user)
 	// 同 AuthByCombo：一并种 cookie，供 /lite 这类直出页面识别身份
 	utils.SetAuthCookie(c, token, int(validSecs))
 

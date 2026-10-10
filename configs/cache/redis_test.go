@@ -285,3 +285,81 @@ func TestKeyJoinsWithColon(t *testing.T) {
 }
 
 var _ = json.Marshal
+
+func TestIncrWindowAndCount(t *testing.T) {
+	c := newTestClient(t)
+	defer c.Close()
+
+	ctx := context.Background()
+	store := NewStore(c)
+	key := testKey(t, "incr")
+	defer c.Del(ctx, key)
+
+	if n, err := store.Count(ctx, key); err != nil || n != 0 {
+		t.Fatalf("不存在的计数应为 0，实际 n=%d err=%v", n, err)
+	}
+	for i := int64(1); i <= 3; i++ {
+		n, err := store.IncrWindow(ctx, key, time.Minute)
+		if err != nil || n != i {
+			t.Fatalf("第 %d 次计数应返回 %d，实际 n=%d err=%v", i, i, n, err)
+		}
+	}
+	if n, _ := store.Count(ctx, key); n != 3 {
+		t.Errorf("Count 应为 3，实际 %d", n)
+	}
+	// 窗口从第一次计数开始，后续计数不应续期
+	if ttl := c.PTTL(ctx, key).Val(); ttl <= 0 || ttl > time.Minute {
+		t.Errorf("计数键应带窗口有效期，实际 %v", ttl)
+	}
+}
+
+func TestIncrWindowExpires(t *testing.T) {
+	c := newTestClient(t)
+	defer c.Close()
+
+	ctx := context.Background()
+	store := NewStore(c)
+	key := testKey(t, "incr-exp")
+	defer c.Del(ctx, key)
+
+	_, _ = store.IncrWindow(ctx, key, 50*time.Millisecond)
+	time.Sleep(150 * time.Millisecond)
+	if n, _ := store.Count(ctx, key); n != 0 {
+		t.Errorf("窗口到期后计数应清零，实际 %d", n)
+	}
+}
+
+func TestExists(t *testing.T) {
+	c := newTestClient(t)
+	defer c.Close()
+
+	ctx := context.Background()
+	store := NewStore(c)
+	key := testKey(t, "exists")
+	defer c.Del(ctx, key)
+
+	if ok, err := store.Exists(ctx, key); err != nil || ok {
+		t.Fatalf("不存在的键应返回 false，实际 ok=%v err=%v", ok, err)
+	}
+	_ = store.Set(ctx, key, "1", time.Minute)
+	if ok, _ := store.Exists(ctx, key); !ok {
+		t.Error("写入后应存在")
+	}
+}
+
+func TestUnavailableCountersReturnErr(t *testing.T) {
+	s := NewStore(nil)
+	ctx := context.Background()
+	if _, err := s.IncrWindow(ctx, "k", time.Second); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("不可用时 IncrWindow 应返回 ErrUnavailable，实际 %v", err)
+	}
+	if _, err := s.Count(ctx, "k"); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("不可用时 Count 应返回 ErrUnavailable，实际 %v", err)
+	}
+	if _, err := s.Exists(ctx, "k"); !errors.Is(err, ErrUnavailable) {
+		t.Errorf("不可用时 Exists 应返回 ErrUnavailable，实际 %v", err)
+	}
+	if hit, err := s.TakeIfMatchLimited(ctx, "k", "f", "v", 5); hit || err != nil {
+		t.Errorf("不可用时 TakeIfMatchLimited 应 hit=false err=nil，实际 hit=%v err=%v", hit, err)
+	}
+}
