@@ -17,13 +17,16 @@ var (
 	UsrPasswordWeak   = NewException(1011, "新密码长度至少需要6位字符") // 文案与 utils.PasswordTooShortMsg 一致
 	UsrLoginTooFreq   = NewException(1012, "登录失败次数过多，请 15 分钟后再试")
 
-	ApiNoFormFile         = NewException(4001, "无文件字段")
-	ApiFileTooLarge       = NewException(4002, "上传文件过大")
-	ApiFileNotSupported   = NewException(4003, "拒绝上传此类型文件类型")
-	ApiParamError         = NewException(4004, "参数错误")
-	ApiFileCannotOpen     = NewException(4005, "无法打开上传的文件")
-	ApiFileNotSaved       = NewException(4006, "无法保存上传的文件")
-	ApiImageTooManyPixels = NewException(4007, "图片像素过多，无法处理")
+	ApiNoFormFile             = NewException(4001, "无文件字段")
+	ApiFileTooLarge           = NewException(4002, "上传文件过大")
+	ApiFileNotSupported       = NewException(4003, "拒绝上传此类型文件类型")
+	ApiParamError             = NewException(4004, "参数错误")
+	ApiFileCannotOpen         = NewException(4005, "无法打开上传的文件")
+	ApiFileNotSaved           = NewException(4006, "无法保存上传的文件")
+	ApiImageTooManyPixels     = NewException(4007, "图片像素过多，无法处理")
+	ApiArticleTitleRequired   = NewException(4008, "文章标题不能为空")
+	ApiArticleContentRequired = NewException(4009, "文章正文不能为空")
+	ApiArticleIDInvalid       = NewException(4010, "文章 ID 无效")
 
 	SysUknExc              = NewException(5000, "未知错误")
 	SysCannotLoadFromDB    = NewException(5001, "内部异常: 加载数据库时出错")

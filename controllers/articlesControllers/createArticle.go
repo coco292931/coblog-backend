@@ -38,11 +38,11 @@ func CreateArticle(c *gin.Context) {
 
 	// 基本校验：标题必填，且 content / md_content 至少有一个
 	if strings.TrimSpace(req.Title) == "" {
-		c.Error(exception.ApiParamError)
+		c.Error(exception.ApiArticleTitleRequired)
 		return
 	}
 	if strings.TrimSpace(req.Content) == "" && strings.TrimSpace(req.MdContent) == "" {
-		c.Error(exception.ApiParamError)
+		c.Error(exception.ApiArticleContentRequired)
 		return
 	}
 

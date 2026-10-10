@@ -3,6 +3,7 @@ package articlesControllers
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"coblog-backend/common/exception"
@@ -38,15 +39,22 @@ func UpdateArticle(c *gin.Context) {
 	}
 
 	if strings.TrimSpace(req.Title) == "" {
-		c.Error(exception.ApiParamError)
+		c.Error(exception.ApiArticleTitleRequired)
 		return
 	}
 	if strings.TrimSpace(req.Content) == "" && strings.TrimSpace(req.MdContent) == "" {
-		c.Error(exception.ApiParamError)
+		c.Error(exception.ApiArticleContentRequired)
 		return
 	}
 
-	post, err := articleService.UpdatePost(c.Param("id"), articleService.UpdatePostInput{
+	// 路径里的 id 必须是合法的文章 ID；格式不对属于参数错误，
+	id := strings.TrimSpace(c.Param("id"))
+	if _, err := strconv.ParseUint(id, 10, 64); err != nil {
+		c.Error(exception.ApiArticleIDInvalid)
+		return
+	}
+
+	post, err := articleService.UpdatePost(id, articleService.UpdatePostInput{
 		Title:      req.Title,
 		Subtitle:   req.Subtitle,
 		Summary:    req.Summary,

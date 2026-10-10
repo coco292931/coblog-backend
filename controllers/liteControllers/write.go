@@ -256,6 +256,17 @@ func renderWriteParseError(c *gin.Context, err error) {
 	renderWrite(c, view)
 }
 
+// writeParamError 校验写作表单的必填项，返回给用户看的错误文案；空串表示校验通过。
+func writeParamError(view *liteview.WriteView) string {
+	if view.Title == "" {
+		return exception.ApiArticleTitleRequired.Msg
+	}
+	if strings.TrimSpace(view.MdBody) == "" {
+		return exception.ApiArticleContentRequired.Msg
+	}
+	return ""
+}
+
 // renderWrite 补上封面预览后渲染写作页
 func renderWrite(c *gin.Context, view liteview.WriteView) {
 	view.CoverPreview = liteview.ThumbURL(view.Cover)
@@ -298,8 +309,8 @@ func WriteSubmit(c *gin.Context) {
 
 	// 校验与后端接口一致：标题非空，且正文非空
 	// （主站允许 content / md_content 二选一，这里只有 Markdown 一种输入）
-	if view.Title == "" || strings.TrimSpace(view.MdBody) == "" {
-		view.Error = exception.ApiParamError.Msg
+	if msg := writeParamError(&view); msg != "" {
+		view.Error = msg
 		if notice != "" {
 			// 图片已经存好、地址已经填回表单，提示用户不用重新选
 			view.Notice = notice
