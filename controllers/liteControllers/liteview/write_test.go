@@ -63,9 +63,6 @@ func TestWriteTemplateRenders(t *testing.T) {
 	if strings.Contains(out, "<script>alert(1)</script>") {
 		t.Error("标题未转义")
 	}
-	if strings.Contains(out, "<script") {
-		t.Error("write 页面出现了 script 标签")
-	}
 }
 
 // 正文里的 Markdown 原文要原样落进 textarea（只是 HTML 转义，不做别的处理）
@@ -152,7 +149,7 @@ func TestWriteTemplateHidesUploadWithoutPerm(t *testing.T) {
 		t.Fatalf("write 模板渲染失败: %v", err)
 	}
 	out := buf.String()
-	for _, bad := range []string{`type="file"`, `<script`} {
+	for _, bad := range []string{`type="file"`, `/lite/write.js`} {
 		if strings.Contains(out, bad) {
 			t.Errorf("无上传权限时不应出现 %q", bad)
 		}
@@ -190,21 +187,25 @@ func TestConfirmDeleteTemplateRenders(t *testing.T) {
 	if !strings.Contains(out, "旧文章 &lt;b&gt;x&lt;/b&gt;") {
 		t.Error("标题未转义")
 	}
-	if strings.Contains(out, "<script") {
-		t.Error("confirm-delete 页面出现了 script 标签")
-	}
 }
 
-// write.js 必须是 ES5：老 Kindle 遇到任何一个 ES6 写法，整段脚本在解析阶段就失败。
-// 黑名单对照 kindle-web-dev.md 第七节；先剥掉注释和字符串，避免误报。
+// write.js 必须是 ES5，规则见 assertES5。
 func TestWriteJSIsES5(t *testing.T) {
-	src := string(writeJS)
-	if src == "" {
+	if len(writeJS) == 0 {
 		t.Fatal("write.js 应当被内嵌进二进制，实际为空")
 	}
+	assertES5(t, "write.js", string(writeJS))
+}
+
+// assertES5 老 Kindle 遇到任何一个 ES6 写法，整段脚本在解析阶段就失败。
+// 黑名单对照 kindle-web-dev.md 第七节；先剥掉注释、字符串和正则字面量，避免误报。
+func assertES5(t *testing.T, name, src string) {
+	t.Helper()
 	code := regexp.MustCompile(`(?s)/\*.*?\*/`).ReplaceAllString(src, "")
 	code = regexp.MustCompile(`(?m)//.*$`).ReplaceAllString(code, "")
-	code = regexp.MustCompile(`'(?:[^'\\n]|\.)*'`).ReplaceAllString(code, "''")
+	code = regexp.MustCompile(`'(?:[^'\\\n]|\\.)*'`).ReplaceAllString(code, "''")
+	// 正则字面量：跟在 ( , = : ! & | ? return 之后的 /.../flags
+	code = regexp.MustCompile(`((?:[(,=:!&|?]|\breturn)\s*)/(?:[^/\\\n]|\\.)+/[gimy]*`).ReplaceAllString(code, "$1/x/")
 
 	banned := []struct{ re, why string }{
 		{"`", "模板字符串"},
@@ -228,7 +229,7 @@ func TestWriteJSIsES5(t *testing.T) {
 	for _, b := range banned {
 		if loc := regexp.MustCompile(b.re).FindStringIndex(code); loc != nil {
 			line := 1 + strings.Count(code[:loc[0]], "\n")
-			t.Errorf("write.js 约第 %d 行用了 %s —— 老 Kindle 不支持", line, b.why)
+			t.Errorf("%s 约第 %d 行用了 %s —— 老 Kindle 不支持", name, line, b.why)
 		}
 	}
 }

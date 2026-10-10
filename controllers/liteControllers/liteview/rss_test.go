@@ -30,9 +30,6 @@ func TestRSSTemplateRenders(t *testing.T) {
 		}
 	}
 
-	if strings.Contains(out, "<script") {
-		t.Error("rss 页面出现了 script 标签")
-	}
 	// 剪贴板 API 在老设备上不存在，主站那个「复制」按钮就不做
 	if strings.Contains(out, "复制</button>") {
 		t.Error("rss 页面不应有复制按钮")

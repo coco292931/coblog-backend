@@ -15,7 +15,7 @@
      · 圆角、阴影、渐变都可用，但必须带 -webkit- 前缀，且标准写法也要写一遍；
      · 颜色照写，交互色对齐主站（链接 / 按钮 / 高亮）；
      · transition / animation 写了会被丢弃，界面不能依赖它们；
-     · 背景与卡片一律纯白。
+     · 背景与卡片默认纯白；夜间模式的配色在 lite-dark.css（服务端拼在本文件之后下发）。
 
    类名与主站的对应关系见各段注释。样式本身是自由的（用户已说明后续再优化），
    但**展示项不能增减**。
@@ -887,6 +887,33 @@ img {
 .lite-switch {
   margin-top: 22px;
   font-size: 22px;
+}
+
+/* 夜间模式开关。没有脚本时点了也没用，所以默认隐藏；
+   html.lite-js 由 layout.html <head> 里的脚本加上，有它才显示。 */
+.lite-theme-toggle {
+  display: none;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #0e9a9a;
+  /* 按钮默认不继承字体，写成与正文同一套字体栈 */
+  font-family: Bookerly, Georgia, serif;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.lite-theme-sep {
+  display: none;
+}
+
+html.lite-js .lite-theme-toggle {
+  display: inline-block;
+}
+
+html.lite-js .lite-theme-sep {
+  display: inline;
 }
 
 /* ── 表单页（登录等，主站 .login-box / .form） ───────────────────────── */

@@ -1,4 +1,6 @@
-{{/* 公共骨架：head / foot / card 三个 define，全部是直出 HTML，不依赖脚本。 */}}
+{{/* 公共骨架：head / foot / card 三个 define。
+   内容全部直出，不靠脚本填；脚本只做增强（目前是夜间模式），且必须是 ES5，
+   老 Kindle 遇到 ES6 写法整段不执行（lite_test.go 会检查页面里的每段脚本）。 */}}
 
 {{define "head"}}<!DOCTYPE html>
 <html lang="zh-CN">
@@ -8,7 +10,26 @@
 <title>Coco の 避风港</title>
 <link rel="stylesheet" href="/lite/lite.css">
 <link rel="icon" type="image/x-icon" href="/lite/icon.ico">
-
+{{/* 夜间模式：必须在 <head> 里同步执行，赶在页面绘制之前加上 class，否则会先闪一下白底。
+   与主站共用 localStorage 的 coblog-theme（同一个域名，值为 dark / light），两边的选择互通；
+   没选过时跟随系统（老 Kindle 不支持 prefers-color-scheme，一律浅色）。
+   lite-js 标记「脚本能跑」，页脚的切换按钮靠它才显示。 */}}
+<script>
+(function () {
+  var d = document.documentElement;
+  var t = null;
+  d.className += ' lite-js';
+  try {
+    t = window.localStorage.getItem('coblog-theme');
+  } catch (e) {}
+  if (t !== 'dark' && t !== 'light') {
+    t = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  if (t === 'dark') {
+    d.className += ' lite-dark';
+  }
+})();
+</script>
 </head>
 <body>
 
@@ -53,9 +74,42 @@
     <div class="lite-powered">Powered by Vue & GO</div>
 
     {{/* 主站没有的一项：回完整站的出口 */}}
-    <div class="lite-switch"><a href="/?full=1">切换到完整版</a></div>
+    <div class="lite-switch">
+      <a href="/?full=1">切换到完整版</a><span class="lite-sep lite-theme-sep">|</span><button type="button" class="lite-theme-toggle" id="theme-toggle">切换到暗色</button>
+    </div>
   </div>
 </footer>
+{{/* 夜间模式开关：切 class 即时生效，并写回 coblog-theme（主站的主题也会跟着变）。
+   只在用户点了之后才写，不像主站那样一进来就把系统主题固化下来。 */}}
+<script>
+(function () {
+  var b = document.getElementById('theme-toggle');
+  if (!b) {
+    return;
+  }
+  var d = document.documentElement;
+  function isDark() {
+    return /(^|\s)lite-dark(\s|$)/.test(d.className);
+  }
+  function label() {
+    b.innerHTML = '';
+    b.appendChild(document.createTextNode(isDark() ? '切换到亮色' : '切换到暗色'));
+  }
+  b.onclick = function () {
+    var dark = !isDark();
+    if (dark) {
+      d.className += ' lite-dark';
+    } else {
+      d.className = d.className.replace(/(^|\s)lite-dark(?=\s|$)/g, '');
+    }
+    try {
+      window.localStorage.setItem('coblog-theme', dark ? 'dark' : 'light');
+    } catch (e) {}
+    label();
+  };
+  label();
+})();
+</script>
 </body>
 </html>
 {{end}}

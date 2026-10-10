@@ -2,6 +2,7 @@ package liteview
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"regexp"
 	"strings"
@@ -504,7 +505,6 @@ func TestTemplatesHaveNoLiteralEscapes(t *testing.T) {
 	}
 }
 
-// TestTemplatesHaveNoScript 是老 Kindle 的硬要求：内容写在 HTML 里，别指望脚本填。
 // 图标必须走 /lite 自己的地址，且内嵌的确实是 ico。
 // 前端构建后图标文件名带哈希，/src/assets/... 只在 Vite 开发服务器上存在，
 // 引用它们在生产环境都会退回默认的 Vue 图标。
@@ -516,20 +516,152 @@ func TestLiteIconIsSelfServed(t *testing.T) {
 	}
 }
 
-func TestTemplatesHaveNoScript(t *testing.T) {
+// 页面里允许有脚本，但每一段都必须是 ES5（老 Kindle 遇到 ES6 整段不执行）。
+// 内容仍然必须直出：脚本只做增强，不负责把内容填进页面。
+func TestTemplateScriptsAreES5(t *testing.T) {
 	pages := map[string]any{
 		"home":    HomeView{BaseView: testBase(), Articles: []ListItemView{sampleItem()}},
 		"list":    ListView{BaseView: testBase(), Articles: []ListItemView{sampleItem()}, Page: 1, TotalPages: 1},
 		"article": ArticleView{BaseView: testBase(), Title: "t", Content: template.HTML("<p>x</p>")},
 		"about":   AboutView{BaseView: testBase(), Tab: "us"},
 		"error":   ErrorView{BaseView: testBase(), Code: 404},
+		"write":   WriteView{BaseView: testBase(), CanUpload: true, MaxUploads: 5},
+		"me":      MeView{BaseView: testBase(), Username: "u"},
 	}
-
+	scriptRe := regexp.MustCompile(`(?s)<script>(.*?)</script>`)
 	for name, data := range pages {
 		html := renderToString(t, name, data)
-		mustNotContain(t, html, "<script", name+" 页面不应含脚本：老 Kindle 上脚本是奢侈品，内容必须直出")
-		mustNotContain(t, html, "onclick=", name+" 页面不应依赖内联事件")
+		for i, m := range scriptRe.FindAllStringSubmatch(html, -1) {
+			assertES5(t, fmt.Sprintf("%s 页第 %d 段内联脚本", name, i+1), m[1])
+		}
+		mustNotContain(t, html, "onclick=", name+" 页面不应依赖内联事件属性")
 	}
+}
+
+// 夜间模式：<head> 里的脚本要在样式表之后、<body> 之前（赶在绘制前加 class，不闪白），
+// localStorage 的键与主站 useTheme.js 一致，页脚有切换按钮。
+func TestDarkModeWiring(t *testing.T) {
+	html := renderToString(t, "home", HomeView{BaseView: testBase()})
+	css := strings.Index(html, `href="/lite/lite.css"`)
+	script := strings.Index(html, "<script>")
+	body := strings.Index(html, "<body>")
+	if css < 0 || script < 0 || body < 0 || !(css < script && script < body) {
+		t.Error("夜间模式脚本应在样式表之后、<body> 之前")
+	}
+	mustContain(t, html, "'coblog-theme'", "主题键要与主站 useTheme.js 的 STORAGE_KEY 一致")
+	mustContain(t, html, "lite-dark", "夜间模式靠 html.lite-dark 生效")
+	mustContain(t, html, `id="theme-toggle"`, "页脚应有夜间模式开关")
+	if !bytes.HasPrefix(liteCSSBundle, liteCSS) || !bytes.HasSuffix(liteCSSBundle, liteDarkCSS) {
+		t.Error("下发的样式表应是 lite.css + lite-dark.css")
+	}
+}
+
+// lite.css 里每一条带颜色的顶层规则，lite-dark.css 里都要有对应的 html.lite-dark 规则，
+// 且覆盖同样的属性。漏一条，夜间模式下那一处就是一块白底或一行看不清的深色字。
+// 反过来，lite-dark.css 里的每条规则在 lite.css 里也必须存在（防类名改了、夜间规则成了死代码）。
+// @media 块里只改尺寸，不在核对范围内；以后往里加颜色，这条测试会报错提醒。
+func TestDarkCSSCoversEveryColorRule(t *testing.T) {
+	lightCSS := stripCSSComments(string(liteCSS))
+	colored := cssColorRules(t, lightCSS, "", true)
+	all := cssColorRules(t, lightCSS, "", false)
+	dark := cssColorRules(t, stripCSSComments(string(liteDarkCSS)), "html.lite-dark ", false)
+
+	for sel, props := range colored {
+		got, ok := dark[sel]
+		if !ok {
+			t.Errorf("lite-dark.css 缺少 %s 的夜间配色（需覆盖 %v）", sel, keys(props))
+			continue
+		}
+		for p := range props {
+			if !got[p] {
+				t.Errorf("lite-dark.css 的 %s 缺少 %s", sel, p)
+			}
+		}
+	}
+	for sel := range dark {
+		if _, ok := all[sel]; !ok {
+			t.Errorf("lite-dark.css 的 %s 在 lite.css 里没有对应规则（类名改过？）", sel)
+		}
+	}
+}
+
+func keys(m map[string]bool) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
+}
+
+// cssColorRules 取出「选择器 → 颜色相关属性集合」。
+// prefix 非空时只收带该前缀的选择器，并去掉前缀；onlyColored 为 true 时
+// 只收值里真的带颜色的声明（border: 0、background: none 这类不算）。
+func cssColorRules(t *testing.T, css, prefix string, onlyColored bool) map[string]map[string]bool {
+	t.Helper()
+	colorProp := regexp.MustCompile(`^(color|background(-color)?|border(-(top|right|bottom|left))?(-color)?|(-webkit-)?box-shadow|outline)$`)
+	colorVal := regexp.MustCompile(`#[0-9a-fA-F]{3,6}\b|rgba?\(|gradient`)
+	ruleRe := regexp.MustCompile(`([^{}]+)\{([^{}]*)\}`)
+	mediaRe := regexp.MustCompile(`@media[^{]*\{`)
+
+	// 去掉 @media 块；块里设了颜色就报错（见上面的说明）
+	for {
+		loc := mediaRe.FindStringIndex(css)
+		if loc == nil {
+			break
+		}
+		depth, j := 1, loc[1]
+		for ; j < len(css) && depth > 0; j++ {
+			switch css[j] {
+			case '{':
+				depth++
+			case '}':
+				depth--
+			}
+		}
+		for _, m := range ruleRe.FindAllStringSubmatch(css[loc[1]:j-1], -1) {
+			for _, d := range strings.Split(m[2], ";") {
+				kv := strings.SplitN(d, ":", 2)
+				if len(kv) == 2 && colorProp.MatchString(strings.TrimSpace(kv[0])) && colorVal.MatchString(kv[1]) {
+					t.Errorf("@media 里的 %s 设置了颜色，夜间模式覆盖不到它", strings.TrimSpace(m[1]))
+				}
+			}
+		}
+		css = css[:loc[0]] + css[j:]
+	}
+
+	out := map[string]map[string]bool{}
+	for _, m := range ruleRe.FindAllStringSubmatch(css, -1) {
+		props := map[string]bool{}
+		for _, d := range strings.Split(m[2], ";") {
+			kv := strings.SplitN(d, ":", 2)
+			if len(kv) != 2 {
+				continue
+			}
+			p := strings.TrimSpace(kv[0])
+			if colorProp.MatchString(p) && (!onlyColored || colorVal.MatchString(kv[1])) {
+				props[p] = true
+			}
+		}
+		if len(props) == 0 {
+			continue
+		}
+		for _, sel := range strings.Split(m[1], ",") {
+			sel = strings.Join(strings.Fields(sel), " ")
+			if prefix != "" {
+				if !strings.HasPrefix(sel, prefix) {
+					continue
+				}
+				sel = strings.TrimPrefix(sel, prefix)
+			}
+			if out[sel] == nil {
+				out[sel] = map[string]bool{}
+			}
+			for p := range props {
+				out[sel][p] = true
+			}
+		}
+	}
+	return out
 }
 
 // ────────────────────────────── 纯函数 ──────────────────────────────
@@ -804,7 +936,7 @@ func stripCSSComments(css string) string {
 // TestLiteCSSAvoidsUnsupportedSyntax 把「发布前过一遍」那份清单固化成断言：
 // 老 Kindle 的 CSS 引擎不认识这些写法，写了不报错、只静默降级，很难在真机上发现。
 func TestLiteCSSAvoidsUnsupportedSyntax(t *testing.T) {
-	css := stripCSSComments(string(liteCSS))
+	css := stripCSSComments(string(liteCSSBundle))
 	if len(css) == 0 {
 		t.Fatal("lite.css 应当被内嵌进二进制，实际为空")
 	}

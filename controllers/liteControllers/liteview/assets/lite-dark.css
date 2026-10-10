@@ -1,0 +1,497 @@
+/* ==========================================================================
+   /lite 夜间模式
+   --------------------------------------------------------------------------
+   配色沿用主站 base.css 的深色主题：页面底 #1a1a1a、卡片 #242424、
+   正文 rgba(235,235,235,0.64)、标题 rgba(255,255,255,0.87)、
+   交互青 #16b0b0、品牌青 #1fefef、分隔线 rgba(84,84,84,0.48)。
+
+   为什么是「逐条覆盖」而不是改变量：老 Kindle 不认 CSS 变量，颜色只能写死。
+   所以 lite.css 里每一条带颜色相关属性（color / background / border / box-shadow
+   / outline）的顶层规则，这里都有一条加了 html.lite-dark 前缀的对应规则，
+   连 border: 0、box-shadow: none 这类「去掉颜色」的声明也照抄 ——
+   前缀给所有规则加的特异性相同，lite.css 里规则之间原有的覆盖关系才能原样保留。
+   lite.css 新增或改了带颜色的规则，这里要同步（lite_test.go 会逐条核对）。
+
+   html.lite-dark 由 layout.html <head> 里的内联脚本加上，见那里的说明。
+   本文件由服务端拼接在 lite.css 之后一起下发（见 render.go）。
+   ========================================================================== */
+
+/* 让原生控件（复选框、文件框、滚动条）也用深色；老引擎不认，忽略即可 */
+html.lite-dark {
+  color-scheme: dark;
+}
+
+html.lite-dark body {
+  background: #1a1a1a;
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark a {
+  color: #16b0b0;
+}
+
+html.lite-dark img {
+  border: 0;
+}
+
+html.lite-dark .lite-sep {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-header {
+  background: #181818;
+  border-bottom: 2px solid #16b0b0;
+}
+
+html.lite-dark .lite-brand {
+  color: #1fefef;
+}
+
+html.lite-dark .lite-lite {
+  color: #1fefef;
+}
+
+html.lite-dark .lite-nav a {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-nav a.is-active {
+  color: #1fefef;
+}
+
+html.lite-dark .lite-nav a.is-active:after {
+  background: #16b0b0;
+}
+
+html.lite-dark .lite-btn {
+  border: 1px solid #16b0b0;
+  background: #242424;
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-btn-primary {
+  border-color: #16b0b0;
+  background: -webkit-linear-gradient(135deg, #29d6d6 0%, #0e9a9a 100%);
+  background: linear-gradient(135deg, #29d6d6 0%, #0e9a9a 100%);
+  color: #ffffff;
+  -webkit-box-shadow: 0 4px 12px rgba(22, 176, 176, 0.24);
+  box-shadow: 0 4px 12px rgba(22, 176, 176, 0.24);
+}
+
+html.lite-dark .lite-btn-disabled {
+  border-color: rgba(84, 84, 84, 0.65);
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-empty {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-label {
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-input {
+  border: 2px solid rgba(84, 84, 84, 0.65);
+  background: #2a2a2a;
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-input:focus,
+html.lite-dark .lite-textarea:focus {
+  outline: none;
+  border-color: #16b0b0;
+  -webkit-box-shadow: 0 0 0 4px rgba(22, 176, 176, 0.14);
+  box-shadow: 0 0 0 4px rgba(22, 176, 176, 0.14);
+}
+
+html.lite-dark .lite-hero {
+  border-bottom: 3px solid #16b0b0;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-timeline:before {
+  background: rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-tl-item:before {
+  background: #16b0b0;
+  border: 2px solid #1a1a1a;
+}
+
+html.lite-dark .lite-card {
+  background: #242424;
+  border: 1px solid rgba(84, 84, 84, 0.48);
+  -webkit-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+html.lite-dark .lite-card-cover {
+  background-color: #2a2a2a;
+}
+
+html.lite-dark .lite-card-title a {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-card-summary {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-date {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-tag {
+  border: 1px solid rgba(22, 176, 176, 0.36);
+  background: #2a2a2a;
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-search-bar {
+  border: 1px solid rgba(84, 84, 84, 0.65);
+  background: #2a2a2a;
+}
+
+html.lite-dark .lite-stats-bar {
+  border-bottom: 1px solid rgba(84, 84, 84, 0.48);
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-filter-text {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-sort-label {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-sort-option {
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-sort-option.is-active {
+  background: #16b0b0;
+  color: #ffffff;
+}
+
+html.lite-dark .lite-pager {
+  border-top: 1px solid rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-pager-info {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-article-title {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-article-subtitle {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-article-time {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-reading-time {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-cover {
+  border: 1px solid rgba(84, 84, 84, 0.48);
+  background-color: #2a2a2a;
+}
+
+html.lite-dark .lite-prose h2 {
+  border-bottom: 1px solid rgba(84, 84, 84, 0.48);
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-prose h3 {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-prose h4 {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-prose blockquote {
+  border-left: 6px solid #16b0b0;
+  background: #2a2a2a;
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-prose img {
+  border: 1px solid rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-prose code {
+  background: #2d2d2d;
+}
+
+html.lite-dark .lite-prose pre {
+  background: #2d2d2d;
+  border: 1px solid rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-prose pre code {
+  background: none;
+}
+
+html.lite-dark .lite-prose th,
+html.lite-dark .lite-prose td {
+  border: 1px solid rgba(84, 84, 84, 0.65);
+}
+
+html.lite-dark .lite-prose th {
+  background: #2a2a2a;
+}
+
+html.lite-dark .lite-prose hr {
+  border: 0;
+  border-top: 1px solid rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-prose .math-inline {
+  background: #2a2a2a;
+}
+
+html.lite-dark .lite-prose .math-block {
+  background: #2a2a2a;
+  border: 1px solid rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-license {
+  background: #2a2a2a;
+  border: 1px solid rgba(84, 84, 84, 0.48);
+  border-left: 4px solid #16b0b0;
+}
+
+html.lite-dark .lite-license-title {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-license-text {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-license-link {
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-article-stats {
+  border: 1px solid rgba(84, 84, 84, 0.48);
+  background: #242424;
+}
+
+html.lite-dark .lite-stats-title {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-stat-label {
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-about-head {
+  border-bottom: 1px solid rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-about-name {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-about-link {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-about-link.is-active {
+  color: #1fefef;
+}
+
+html.lite-dark .lite-about-link.is-active:after {
+  background: #16b0b0;
+}
+
+html.lite-dark .lite-notfound-code {
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-notfound-msg {
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-notfound-tips {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-notfound-path {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-footer {
+  background: #222222;
+  border-top: 1px solid rgba(84, 84, 84, 0.65);
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-uptime {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-powered {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-theme-toggle {
+  border: 0;
+  background: none;
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-form-box {
+  border: 1px solid rgba(84, 84, 84, 0.65);
+}
+
+html.lite-dark .lite-form-switch {
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-form-tip {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-textarea {
+  border: 2px solid rgba(84, 84, 84, 0.65);
+  background: #2a2a2a;
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-required {
+  color: #ff6b5b;
+}
+
+html.lite-dark .lite-write-cover {
+  border: 1px solid rgba(84, 84, 84, 0.48);
+  background-color: #2a2a2a;
+}
+
+html.lite-dark .lite-editor {
+  border: 2px solid rgba(84, 84, 84, 0.65);
+}
+
+html.lite-dark .lite-editor-toolbar {
+  border-bottom: 1px solid rgba(84, 84, 84, 0.48);
+  background: #2a2a2a;
+}
+
+html.lite-dark .lite-editor .lite-textarea {
+  border: 0;
+}
+
+html.lite-dark .lite-editor .lite-textarea:focus {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+html.lite-dark .lite-editor-status {
+  border-top: 1px solid rgba(84, 84, 84, 0.48);
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-upload-status {
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-upload-status.is-error {
+  color: #ff6b5b;
+}
+
+html.lite-dark .lite-danger-zone {
+  border: 1px solid rgba(255, 107, 91, 0.42);
+}
+
+html.lite-dark .lite-danger-title {
+  color: #ff6b5b;
+}
+
+html.lite-dark .lite-danger-desc {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-btn-danger {
+  border-color: #ff6b5b;
+  color: #ff6b5b;
+}
+
+html.lite-dark .lite-write-actions {
+  border-top: 1px solid rgba(84, 84, 84, 0.48);
+}
+
+html.lite-dark .lite-rss-card {
+  border: 2px solid rgba(84, 84, 84, 0.65);
+  background: #242424;
+}
+
+html.lite-dark .lite-rss-badge {
+  border: 2px solid #16b0b0;
+  color: #16b0b0;
+}
+
+html.lite-dark .lite-rss-title {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-rss-intro {
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-rss-url {
+  border: 2px dashed rgba(84, 84, 84, 0.65);
+  background: #2a2a2a;
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-rss-note {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-alert {
+  border: 1px solid rgba(255, 107, 91, 0.42);
+  border-left: 4px solid #ff6b5b;
+  background: rgba(255, 107, 91, 0.14);
+}
+
+html.lite-dark .lite-alert-ok {
+  border-color: rgba(115, 209, 61, 0.42);
+  border-left-color: #73d13d;
+  background: rgba(115, 209, 61, 0.12);
+}
+
+html.lite-dark .lite-me-activation {
+  border: 1px solid rgba(84, 84, 84, 0.48);
+  border-left: 4px solid #16b0b0;
+  background: #2a2a2a;
+}
+
+html.lite-dark .lite-me-badge {
+  background: #16b0b0;
+  color: #ffffff;
+}
+
+html.lite-dark .lite-me-hint {
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-me-username {
+  border-bottom: 2px solid rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-me-label {
+  color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-me-section {
+  border-top: 1px solid rgba(84, 84, 84, 0.48);
+}

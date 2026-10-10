@@ -24,6 +24,16 @@ var templatesFS embed.FS
 //go:embed assets/lite.css
 var liteCSS []byte
 
+// 夜间模式的颜色覆盖，见文件头说明。
+//
+//go:embed assets/lite-dark.css
+var liteDarkCSS []byte
+
+// liteCSSBundle 实际下发的样式表：lite.css 后面拼上 lite-dark.css。
+// 拼成一个文件是为了少一次请求 —— 老 Kindle 每个请求要 0.3~0.9 秒。
+// 夜间规则都带 html.lite-dark 前缀，没开夜间模式时一条也不生效。
+var liteCSSBundle = bytes.Join([][]byte{liteCSS, liteDarkCSS}, []byte("\n"))
+
 // 写作页的增强脚本。必须是 ES5（老 Kindle 遇到 ES6 语法整段不执行），见 write_test.go。
 //
 //go:embed assets/write.js
@@ -60,7 +70,7 @@ func Render(c *gin.Context, status int, name string, data any) {
 // 样式表同样来自内嵌资源。走 CDN / 反向代理时建议给这个地址加长缓存，
 // 但不要依赖文件系统上的 static 目录。
 func ServeCSS(c *gin.Context) {
-	c.Data(http.StatusOK, "text/css; charset=utf-8", liteCSS)
+	c.Data(http.StatusOK, "text/css; charset=utf-8", liteCSSBundle)
 }
 
 // ServeWriteJS 提供 /lite/write.js。
