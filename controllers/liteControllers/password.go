@@ -21,13 +21,18 @@ import (
 
 // ForgotPasswordPage GET /lite/forgot-password
 func ForgotPasswordPage(c *gin.Context) {
-	liteview.Render(c, http.StatusOK, "forgotPassword", liteview.ForgotPasswordView{
+	view := liteview.ForgotPasswordView{
 		BaseView:     newBaseView(c),
 		PasswordRule: liteview.PasswordRuleText,
-		Email:        c.Query("email"),
-		Error:        c.Query("err"),
-		Notice:       c.Query("msg"),
-	})
+		// 邮箱只用来回填输入框，从查询串取无妨
+		Email: c.Query("email"),
+	}
+	if msg, ok := utils.TakeFlash(c); ok {
+		view.Notice = msg
+	} else {
+		view.Error = msg
+	}
+	liteview.Render(c, http.StatusOK, "forgotPassword", view)
 }
 
 // ForgotPasswordSubmit POST /lite/forgot-password
@@ -99,16 +104,12 @@ func resetPasswordByCode(c *gin.Context, email string) {
 }
 
 // backToForgot 回到表单页并捎上结果提示与已填的邮箱（PRG，避免刷新重复提交）。
+// 提示走一次性 cookie，邮箱留在查询串里回填。
 func backToForgot(c *gin.Context, email, msg string, ok bool) {
-	values := url.Values{}
+	utils.SetFlash(c, msg, ok)
+	target := "/lite/forgot-password"
 	if email != "" {
-		values.Set("email", email)
+		target += "?" + url.Values{"email": {email}}.Encode()
 	}
-	if msg != "" {
-		values.Set("msg", msg)
-	}
-	if ok {
-		values.Set("ok", "1")
-	}
-	c.Redirect(http.StatusFound, "/lite/forgot-password?"+values.Encode())
+	c.Redirect(http.StatusFound, target)
 }

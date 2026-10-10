@@ -261,6 +261,17 @@ func TestSafeRedirect(t *testing.T) {
 		"/\\evil":               "",
 		"javascript:alert(1)":   "",
 		"lite/me":               "",
+		"/lite":                 "/lite",
+		"/lite?x=1":             "/lite?x=1",
+		// 浏览器会删掉 Location 里的 tab / 换行，下面几个到浏览器那里都会变成 //evil.com
+		"/\t/evil.com": "",
+		"/\n/evil.com": "",
+		"/\r/evil.com": "",
+		// 只允许回跳到 /lite 下
+		"/api/user/info/": "",
+		"/lite.evil.com":  "",
+		"/litex":          "",
+		"/lite//evil.com": "/lite//evil.com", // 路径里的双斜杠仍是站内路径
 	}
 	for raw, want := range cases {
 		if got := SafeRedirect(raw); got != want {
@@ -892,5 +903,42 @@ func TestLiteCSSFontStacksHaveFallback(t *testing.T) {
 		if !strings.Contains(stack, "serif") && !strings.Contains(stack, "sans-serif") && !strings.Contains(stack, "monospace") {
 			t.Errorf("字体栈 %q 缺少通用族兜底", stack)
 		}
+	}
+}
+
+// 登录态下所有 POST 表单都要带 CSRF 隐藏字段，否则提交会被 Guard 拒绝
+func TestPostFormsCarryCSRF(t *testing.T) {
+	base := testBase()
+	base.LoggedIn = true
+	base.CSRF = "tok-abc"
+	pages := map[string]any{
+		"me":             MeView{BaseView: base, Username: "u"},
+		"write":          WriteView{BaseView: base, IsEdit: true, ID: 7, CanUpload: true},
+		"confirm-delete": ConfirmDeleteView{BaseView: base, ID: 7, Title: "t"},
+		"login":          LoginView{BaseView: base},
+		"register":       RegisterView{BaseView: base},
+		"forgotPassword": ForgotPasswordView{BaseView: base},
+	}
+	for name, data := range pages {
+		html := renderToString(t, name, data)
+		forms := strings.Count(html, `method="post"`)
+		fields := strings.Count(html, `<input type="hidden" name="_csrf" value="tok-abc">`)
+		if forms == 0 || forms != fields {
+			t.Errorf("%s：%d 个 POST 表单，%d 个 CSRF 字段，应一一对应", name, forms, fields)
+		}
+	}
+}
+
+func TestNoCSRFFieldWhenLoggedOut(t *testing.T) {
+	html := renderToString(t, "login", LoginView{BaseView: testBase()})
+	if strings.Contains(html, `name="_csrf"`) {
+		t.Error("未登录时不应输出 CSRF 字段")
+	}
+}
+
+// write.js 上传时必须带上 CSRF 头，否则 /lite/upload 一律 403
+func TestWriteJSSendsCSRFHeader(t *testing.T) {
+	if !strings.Contains(string(writeJS), "X-CSRF-Token") {
+		t.Error("write.js 上传时应设置 X-CSRF-Token 头")
 	}
 }

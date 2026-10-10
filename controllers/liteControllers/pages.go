@@ -229,6 +229,7 @@ func newBaseView(c *gin.Context) liteview.BaseView {
 		NavKey:      liteview.NavKeyFor(c.Request.URL.Path),
 		LoggedIn:    accountID != 0,
 		Stats:       buildStats(),
+		CSRF:        csrfTokenFor(c),
 	}
 }
 

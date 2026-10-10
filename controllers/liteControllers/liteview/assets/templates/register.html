@@ -18,6 +18,7 @@
   {{end}}
 
   <form method="post" action="/lite/register">
+    {{template "csrf" .}}
     <div class="lite-form-group">
       <label class="lite-label" for="username">用户名</label>
       <input class="lite-input" type="text" id="username" name="username" value="{{.Username}}" required>

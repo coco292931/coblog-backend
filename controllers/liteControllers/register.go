@@ -3,7 +3,6 @@ package liteControllers
 import (
 	"log"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"coblog-backend/common/exception"
@@ -19,12 +18,16 @@ import (
 
 // RegisterPage GET /lite/register
 func RegisterPage(c *gin.Context) {
-	liteview.Render(c, http.StatusOK, "register", liteview.RegisterView{
+	view := liteview.RegisterView{
 		BaseView:     newBaseView(c),
 		PasswordRule: liteview.PasswordRuleText,
-		Error:        c.Query("err"),
-		Notice:       c.Query("msg"),
-	})
+	}
+	if msg, ok := utils.TakeFlash(c); ok {
+		view.Notice = msg
+	} else {
+		view.Error = msg
+	}
+	liteview.Render(c, http.StatusOK, "register", view)
 }
 
 // RegisterSubmit POST /lite/register
@@ -79,8 +82,9 @@ func RegisterSubmit(c *gin.Context) {
 		msg = "注册成功，激活邮件已在近期发送，请前往邮箱查收"
 	}
 
-	// PRG：成功后重定向回去，避免刷新时重复注册
-	c.Redirect(http.StatusFound, "/lite/register?msg="+url.QueryEscape(msg))
+	// PRG：成功后重定向回去，避免刷新时重复注册（提示走一次性 cookie）
+	utils.SetFlash(c, msg, true)
+	c.Redirect(http.StatusFound, "/lite/register")
 }
 
 // ActivatePage GET /lite/activate?token=xxx

@@ -93,6 +93,14 @@ func GetWtPayload(webtoken string) (uid uint64, permGroupID uint32, err error) {
 		nil
 }
 
+// CSRFKey 由签名密钥派生出的 CSRF 专用密钥。
+// 做一次域分离，不和 token 签名直接共用同一把钥匙。
+func CSRFKey() []byte {
+	readKeyOnce.Do(readSigkey)
+	sum := sha256.Sum256(append([]byte("coblog-lite-csrf\x00"), wtSigkey[:]...))
+	return sum[:]
+}
+
 func readSigkey() {
 	sigkeytmp, err := base64.StdEncoding.DecodeString(configreader.GetConfig().WebtokenSigkey)
 	if err != nil {

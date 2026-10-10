@@ -12,6 +12,7 @@
   {{end}}
 
   <form method="post" action="/lite/login">
+    {{template "csrf" .}}
     <div class="lite-form-group">
       <label class="lite-label" for="account">邮箱</label>
       <input class="lite-input" type="email" id="account" name="account" value="{{.Account}}" required>

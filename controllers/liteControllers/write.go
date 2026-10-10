@@ -13,6 +13,7 @@ import (
 	"coblog-backend/controllers/liteControllers/liteview"
 	"coblog-backend/models"
 	"coblog-backend/services/articleService"
+	"coblog-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -104,12 +105,23 @@ func nonEmptyFiles(fs []*multipart.FileHeader) []*multipart.FileHeader {
 	return out
 }
 
+// uploadBody 单张上传的请求体上限：图片 10 MiB，再留 1 MiB 给 multipart 的边界与字段
+const uploadBody = int64(10240000 + 1<<20)
+
+// uploadParseErrMsg 上传请求体读不出来时给脚本的文案
+func uploadParseErrMsg(err error) string {
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		return exception.ApiFileTooLarge.Msg
+	}
+	return exception.ApiNoFormFile.Msg
+}
+
 // UploadImage POST /lite/upload：写作页脚本用的图片上传，返回 JSON。
 //
 // 主站的 /api/upload/image 只认 Authorization 头，/lite 是 cookie 登录，所以单开一个。
-// 防 CSRF 两道：登录 cookie 是 SameSite=Lax（跨站 POST 不带）；
-// 再要求 X-Requested-With 头 —— 跨站的普通表单设不了自定义头，
-// 跨站脚本要设就得过 CORS 预检，而 /lite 不在 CORS 放行范围里。
+// CSRF 由 Guard 校验（脚本用 X-CSRF-Token 头带 token）。
+// X-Requested-With 只是确认调用方是 write.js，不承担安全职责。
 func UploadImage(c *gin.Context) {
 	if c.GetHeader("X-Requested-With") != "XMLHttpRequest" {
 		uploadJSON(c, http.StatusBadRequest, exception.ApiParamError.Msg, nil)
@@ -125,15 +137,10 @@ func UploadImage(c *gin.Context) {
 		return
 	}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 10240000+1<<20)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, uploadBody)
 	fh, err := c.FormFile("file")
 	if err != nil {
-		var tooLarge *http.MaxBytesError
-		if errors.As(err, &tooLarge) {
-			uploadJSON(c, http.StatusOK, exception.ApiFileTooLarge.Msg, nil)
-			return
-		}
-		uploadJSON(c, http.StatusOK, exception.ApiNoFormFile.Msg, nil)
+		uploadJSON(c, http.StatusOK, uploadParseErrMsg(err), nil)
 		return
 	}
 	url, err := fileController.SaveImageFile(fh)
@@ -213,6 +220,42 @@ func WriteEditPage(c *gin.Context) {
 	renderWrite(c, view)
 }
 
+// writeViewFromForm 用提交上来的字段回填写作页（表单须已解析）
+func writeViewFromForm(c *gin.Context) liteview.WriteView {
+	view := writeView(c)
+	if idStr := strings.TrimSpace(c.Param("id")); idStr != "" {
+		view.IsEdit = true
+		view.ID, _ = strconv.ParseUint(idStr, 10, 64)
+	}
+	view.Title = strings.TrimSpace(c.PostForm("title"))
+	view.Subtitle = strings.TrimSpace(c.PostForm("subtitle"))
+	view.Summary = strings.TrimSpace(c.PostForm("summary"))
+	view.Cover = strings.TrimSpace(c.PostForm("cover_image"))
+	view.Category = strings.TrimSpace(c.PostForm("category"))
+	view.Tags = strings.TrimSpace(c.PostForm("tags"))
+	view.MdBody = c.PostForm("md_content")
+	view.IsDeep = c.PostForm("is_deep") != ""
+	view.Hidden = c.PostForm("hidden") != ""
+	view.NoStats = c.PostForm("no_stats") != ""
+	return view
+}
+
+// renderWriteParseError 表单没能读出来（超限或格式不对），只能给一张空表单
+func renderWriteParseError(c *gin.Context, err error) {
+	view := writeView(c)
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		view.Error = exception.ApiFileTooLarge.Msg + "（一次提交的图片合计不能超过 60 MB）"
+	} else {
+		view.Error = exception.ApiParamError.Msg
+	}
+	if idStr := strings.TrimSpace(c.Param("id")); idStr != "" {
+		view.IsEdit = true
+		view.ID, _ = strconv.ParseUint(idStr, 10, 64)
+	}
+	renderWrite(c, view)
+}
+
 // renderWrite 补上封面预览后渲染写作页
 func renderWrite(c *gin.Context, view liteview.WriteView) {
 	view.CoverPreview = liteview.ThumbURL(view.Cover)
@@ -227,50 +270,24 @@ func WriteSubmit(c *gin.Context) {
 	if _, ok := requireWritePerm(c); !ok {
 		return
 	}
+	// Guard 校验 CSRF 时可能已经解析过（那时已限好大小），这里的解析就是空操作
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxWriteBody)
 	// 先显式解析：超限时 PostForm 会静默返回空值，用户只会看到「参数错误」。
 	// 不是 multipart（旧页面缓存的普通表单）不算错。
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil && !errors.Is(err, http.ErrNotMultipart) {
-		var tooLarge *http.MaxBytesError
-		view := writeView(c)
-		if errors.As(err, &tooLarge) {
-			view.Error = exception.ApiFileTooLarge.Msg + "（一次提交的图片合计不能超过 60 MB）"
-		} else {
-			view.Error = exception.ApiParamError.Msg
-		}
-		// 表单没能读出来，只能给一张空表单
-		view.IsEdit = c.Param("id") != ""
-		if view.IsEdit {
-			view.ID, _ = strconv.ParseUint(c.Param("id"), 10, 64)
-		}
-		renderWrite(c, view)
+		renderWriteParseError(c, err)
 		return
 	}
 
 	idStr := strings.TrimSpace(c.Param("id"))
 	isEdit := idStr != ""
-
-	view := writeView(c)
-	view.IsEdit = isEdit
-	view.Title = strings.TrimSpace(c.PostForm("title"))
-	view.Subtitle = strings.TrimSpace(c.PostForm("subtitle"))
-	view.Summary = strings.TrimSpace(c.PostForm("summary"))
-	view.Cover = strings.TrimSpace(c.PostForm("cover_image"))
-	view.Category = strings.TrimSpace(c.PostForm("category"))
-	view.Tags = strings.TrimSpace(c.PostForm("tags"))
-	view.MdBody = c.PostForm("md_content")
-	view.IsDeep = c.PostForm("is_deep") != ""
-	view.Hidden = c.PostForm("hidden") != ""
-	view.NoStats = c.PostForm("no_stats") != ""
-
 	if isEdit {
-		id, err := strconv.ParseUint(idStr, 10, 64)
-		if err != nil {
+		if _, err := strconv.ParseUint(idStr, 10, 64); err != nil {
 			renderError(c, http.StatusNotFound)
 			return
 		}
-		view.ID = id
 	}
+	view := writeViewFromForm(c)
 
 	notice, err := handleUploads(c, &view)
 	if err != nil {
@@ -352,10 +369,13 @@ func WriteDeleteConfirm(c *gin.Context) {
 	if !ok {
 		return
 	}
+	// 一次性提示：删除提交 CSRF 校验失败时会带回来
+	msg, _ := utils.TakeFlash(c)
 	liteview.Render(c, http.StatusOK, "confirm-delete", liteview.ConfirmDeleteView{
 		BaseView: newBaseView(c),
 		ID:       post.ID,
 		Title:    post.Title,
+		Error:    msg,
 	})
 }
 

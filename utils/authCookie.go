@@ -30,8 +30,9 @@ func SetAuthCookie(c *gin.Context, token string, maxAgeSecs int) {
 		Path:  "/",
 		// 不给 JS 读：token 是长周期凭证，少一条被 XSS 取走的路
 		HttpOnly: true,
-		// Lax：站内导航会带上，跨站 POST 不带，构成最基本的 CSRF 防护。
-		// 老设备若不认识这个属性会直接忽略，忽略后行为仍等同「同站发送」。
+		// Lax：站内导航会带上，跨站 POST 不带。
+		// 只是第一层：老设备（WebKit 534 的 Kindle）不认识这个属性，会照旧跨站发送；
+		// 且同一注册域下的子域也算「同站」。/lite 的写操作另由 CSRF token 兜底（liteControllers.Guard）。
 		SameSite: http.SameSiteLaxMode,
 		Secure:   requestIsHTTPS(c),
 	}

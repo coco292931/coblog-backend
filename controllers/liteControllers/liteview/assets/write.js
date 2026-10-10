@@ -37,6 +37,12 @@
     fd.append('file', file);
     xhr.open('POST', UPLOAD_URL, true);
     xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    // CSRF token 取自写作表单里的隐藏字段（见 layout.html 的 "csrf"）
+    var form = $('write-form');
+    var csrf = form && form.elements ? form.elements['_csrf'] : null;
+    if (csrf && csrf.value) {
+      xhr.setRequestHeader('X-CSRF-Token', csrf.value);
+    }
     xhr.onreadystatechange = function () {
       if (xhr.readyState !== 4) {
         return;

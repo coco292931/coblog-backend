@@ -12,6 +12,7 @@ import (
 	"coblog-backend/controllers/liteControllers/liteview"
 	"coblog-backend/services/mailService"
 	"coblog-backend/services/userService"
+	"coblog-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,16 +36,19 @@ func MePage(c *gin.Context) {
 
 	// 已登录但权限组读不了个人信息（典型是未激活账户）→ 主站的 permDenied 分支
 	if !hasPerm(c, permission.Perm_GetProfile) {
+		// 提示也要在这里读掉，否则会残留到下一个读 flash 的页面
+		msg, ok := utils.TakeFlash(c)
 		liteview.Render(c, http.StatusOK, "me", liteview.MeView{
 			BaseView: newBaseView(c),
 			Denied:   true,
+			Message:  msg,
+			OK:       ok,
 		})
 		return
 	}
 
 	view := loadMeView(c, accountID)
-	view.Message = c.Query("msg")
-	view.OK = c.Query("ok") != ""
+	view.Message, view.OK = utils.TakeFlash(c)
 	liteview.Render(c, http.StatusOK, "me", view)
 }
 
@@ -137,10 +141,11 @@ func MeResendActivation(c *gin.Context) {
 // ────────────────────────────── 辅助 ──────────────────────────────
 
 // requireAccount 取当前登录账号；未登录时按主站的登录守卫跳到登录页并带上回跳地址。
+// 回跳地址取对应的 GET 页面：POST 时登录态过期，登录后不该以 GET 打到只有 POST 的地址。
 func requireAccount(c *gin.Context) (uint64, bool) {
 	accountID, err := accountControllers.GetAccountIDFromContext(c)
 	if err != nil || accountID == 0 {
-		c.Redirect(http.StatusFound, "/lite/login?redirect="+url.QueryEscape(c.Request.URL.RequestURI()))
+		c.Redirect(http.StatusFound, "/lite/login?redirect="+url.QueryEscape(getPathFor(c)))
 		return 0, false
 	}
 	return accountID, true
@@ -183,21 +188,11 @@ func loadMeView(c *gin.Context, accountID uint64) liteview.MeView {
 }
 
 // redirectMe 回到个人中心并捎一条结果提示。
-// 用 PRG（POST → 302 → GET）而不是直接渲染，避免刷新时重复提交。
+// 用 PRG（POST → 302 → GET）而不是直接渲染，避免刷新时重复提交；
+// 提示放一次性 cookie 而不是查询串，见 utils.FlashCookieName。
 func redirectMe(c *gin.Context, msg string, ok bool) {
-	values := url.Values{}
-	if msg != "" {
-		values.Set("msg", msg)
-	}
-	if ok {
-		values.Set("ok", "1")
-	}
-
-	target := "/lite/me"
-	if len(values) > 0 {
-		target += "?" + values.Encode()
-	}
-	c.Redirect(http.StatusFound, target)
+	utils.SetFlash(c, msg, ok)
+	c.Redirect(http.StatusFound, "/lite/me")
 }
 
 // errMsg 把 service 层返回的错误转成给用户看的文案（就是业务错误的原文）。

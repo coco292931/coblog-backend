@@ -17,6 +17,7 @@
   </p>
 
   <form method="post" action="/lite/write/{{.ID}}/delete">
+    {{template "csrf" .}}
     <div class="lite-form-group">
       <label class="lite-label" for="confirmTitle">文章标题</label>
       <input class="lite-input" type="text" id="confirmTitle" name="confirmTitle" required>

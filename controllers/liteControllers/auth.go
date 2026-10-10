@@ -23,8 +23,11 @@ import (
 
 // LoginPage GET /lite/login
 func LoginPage(c *gin.Context) {
+	// 一次性提示：已登录状态下提交登录表单、CSRF 校验失败时会带回来
+	msg, _ := utils.TakeFlash(c)
 	liteview.Render(c, http.StatusOK, "login", liteview.LoginView{
 		BaseView: newBaseView(c),
+		Error:    msg,
 		Redirect: liteview.SafeRedirect(c.Query("redirect")),
 	})
 }

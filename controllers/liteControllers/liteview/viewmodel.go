@@ -12,6 +12,8 @@ type BaseView struct {
 	NavKey   string
 	LoggedIn bool // 决定导航栏是否显示「写作」
 	Stats    *StatsView
+	// CSRF 登录态下 POST 表单必须带的 token（模板 "csrf" 输出成隐藏字段）；未登录为空
+	CSRF string
 }
 
 // StatsView 页脚统计，对应主站 Footer 里需要计算的三项。

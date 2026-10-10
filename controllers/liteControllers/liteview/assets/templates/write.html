@@ -20,6 +20,7 @@
   {{end}}
 
   <form id="write-form" class="lite-write-form" method="post" enctype="multipart/form-data" action="{{if .IsEdit}}/lite/write/{{.ID}}{{else}}/lite/write{{end}}">
+    {{template "csrf" .}}
 
     <div class="lite-form-group">
       <label class="lite-label" for="title">标题 <span class="lite-required">*</span></label>

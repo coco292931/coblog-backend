@@ -18,6 +18,7 @@ import (
 	"coblog-backend/controllers/registerControllers"
 	"coblog-backend/controllers/rssController"
 	"coblog-backend/controllers/siteInfoController"
+	"coblog-backend/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -36,43 +37,8 @@ func InitEngine() *gin.Engine {
 
 	// CORS配置 - 必须在所有路由之前配置
 	corsConfig := cors.Config{
-		AllowOriginFunc: func(origin string) bool {
-			// 开发环境：允许 localhost 的所有端口
-			if strings.HasPrefix(origin, "http://localhost") ||
-				strings.HasPrefix(origin, "https://localhost") {
-				return true
-			}
-			// 开发环境：允许 127.0.0.1 的所有端口
-			if strings.HasPrefix(origin, "http://127.0.0.1") ||
-				strings.HasPrefix(origin, "https://127.0.0.1") {
-				return true
-			}
-			// 开发环境：允许局域网 192.168.*.* 的所有端口
-			if strings.HasPrefix(origin, "http://192.168.") ||
-				strings.HasPrefix(origin, "https://192.168.") {
-				return true
-			}
-
-			// 生产环境：允许你的域名 coco-29.wang 及其所有子域名
-			if origin == "http://coco-29.wang" ||
-				origin == "https://coco-29.wang" ||
-				strings.HasSuffix(origin, ".coco-29.wang") { // && strings.HasPrefix(origin, "https://") { 强制使用HTTPS
-				return true
-			}
-
-			// 可选：添加其他允许的域名
-			allowedOrigins := []string{
-				// "https://blog.example.com",
-			}
-			for _, allowed := range allowedOrigins {
-				if origin == allowed {
-					return true
-				}
-			}
-
-			// 其他来源拒绝
-			return false
-		},
+		// 白名单按解析后的 hostname 精确比对，见 utils.IsAllowedOrigin
+		AllowOriginFunc: utils.IsAllowedOrigin,
 		AllowMethods: []string{
 			"GET",
 			"POST",
@@ -215,7 +181,7 @@ func InitEngine() *gin.Engine {
 	ginEngine.GET("/lite/write.js", liteControllers.ServeLiteWriteJS)
 	ginEngine.GET("/lite/icon.ico", liteControllers.ServeLiteIcon)
 
-	lite := ginEngine.Group("/lite", middleware.LooseAuth)
+	lite := ginEngine.Group("/lite", middleware.LooseAuth, liteControllers.Guard)
 	{
 		lite.GET("/", liteControllers.HomePage)
 		lite.GET("/articles", liteControllers.ArticleListPage)

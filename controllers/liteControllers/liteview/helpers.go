@@ -315,16 +315,32 @@ func ValidateNewPassword(password, confirm string) string {
 	return ""
 }
 
-// SafeRedirect 只接受站内相对路径作为回跳地址。
+// SafeRedirect 只接受 /lite 下的站内相对路径作为回跳地址。
 //
 // 不校验的话，?redirect=https://evil.com 会把这个登录页变成开放重定向的跳板；
 // 「//evil.com」这种协议相对写法也要一并挡掉。
+// 控制字符必须拒绝：浏览器解析 Location 时会删掉 tab / 换行，
+// 「/\t/evil.com」到了浏览器那里就成了「//evil.com」。
 func SafeRedirect(raw string) string {
 	raw = strings.TrimSpace(raw)
-	if raw == "" || !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") {
+	if raw == "" || strings.ContainsAny(raw, "\\") {
 		return ""
 	}
-	if strings.Contains(raw, "\\") {
+	for _, r := range raw {
+		if r < 0x20 || r == 0x7f {
+			return ""
+		}
+	}
+	if !strings.HasPrefix(raw, "/lite") || strings.HasPrefix(raw, "//") {
+		return ""
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme != "" || u.Host != "" || u.User != nil {
+		return ""
+	}
+	// 「/lite」后面只能是路径分隔、查询串或结束，挡掉 /lite.evil 这类
+	rest := strings.TrimPrefix(u.Path, "/lite")
+	if rest != "" && !strings.HasPrefix(rest, "/") {
 		return ""
 	}
 	return raw
