@@ -78,7 +78,7 @@
   <div class="lite-me-section">
     <div class="lite-me-section-title">重置 RSS Token</div>
     <p class="lite-me-hint">重置后旧的 RSS 订阅地址会立即失效，需要在阅读器中重新订阅。</p>
-    <form method="post" action="/lite/me/rss">
+    <form method="post" action="/lite/me/rss" data-confirm="确定要重置 RSS Token 吗？旧订阅地址将立即失效。">
       {{template "csrf" .}}
       <button class="lite-btn" type="submit">确认重置</button>
     </form>

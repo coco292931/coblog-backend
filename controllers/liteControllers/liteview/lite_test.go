@@ -399,6 +399,7 @@ func TestMeTemplate(t *testing.T) {
 	}
 	mustContain(t, html, "确认修改", "按钮文案与主站一致")
 	mustContain(t, html, "确认重置", "按钮文案与主站一致")
+	mustContain(t, html, `data-confirm="确定要重置 RSS Token 吗？旧订阅地址将立即失效。"`, "重置 RSS Token 需要二次确认，文案与主站一致")
 	mustContain(t, html, "退出登录", "登出入口")
 	mustContain(t, html, PasswordRuleText, "新密码提示与主站一致")
 	mustContain(t, html, `method="post"`, "这些操作必须走 POST")

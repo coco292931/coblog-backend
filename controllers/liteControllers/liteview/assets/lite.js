@@ -236,9 +236,23 @@
   // 写作页的预览渲染完也要调它（见 write.js）
   window.liteEnhanceProse = enhanceProse;
 
+  // ── 提交前二次确认 ────────────────────────────────────────────────
+  // 表单带 data-confirm 时，提交前弹一次确认（同主站 me 页的重置 RSS Token）。
+  // 老 Kindle 没有自定义弹层，用系统 confirm 最稳；点取消就不提交。
+
+  function setupConfirmForms() {
+    var forms = document.querySelectorAll('form[data-confirm]');
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].onsubmit = function () {
+        return window.confirm(this.getAttribute('data-confirm'));
+      };
+    }
+  }
+
   safely(setupThemeToggle);
   safely(setupUptime);
   safely(setupCopyButtons);
+  safely(setupConfirmForms);
   safely(function () {
     var list = document.querySelectorAll('.lite-prose');
     for (var i = 0; i < list.length; i++) {
