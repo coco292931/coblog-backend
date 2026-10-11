@@ -149,7 +149,8 @@ func TestWriteTemplateHidesUploadWithoutPerm(t *testing.T) {
 		t.Fatalf("write 模板渲染失败: %v", err)
 	}
 	out := buf.String()
-	for _, bad := range []string{`type="file"`, `/lite/write.js`} {
+	// write.js 照常加载（预览要用），只是不出现文件框
+	for _, bad := range []string{`type="file"`} {
 		if strings.Contains(out, bad) {
 			t.Errorf("无上传权限时不应出现 %q", bad)
 		}
@@ -187,6 +188,26 @@ func TestConfirmDeleteTemplateRenders(t *testing.T) {
 	if !strings.Contains(out, "旧文章 &lt;b&gt;x&lt;/b&gt;") {
 		t.Error("标题未转义")
 	}
+}
+
+// 编辑 / 预览切换：页签与预览区都在，write.js 不论有没有上传权限都加载
+func TestWriteTemplatePreview(t *testing.T) {
+	out := renderToString(t, "write", WriteView{})
+	for _, want := range []string{
+		`id="tab-edit"`, `id="tab-preview"`,
+		`id="md-preview" class="lite-prose lite-md-preview" style="display: none"`,
+		`<script src="/lite/write.js"></script>`,
+	} {
+		mustContain(t, out, want, "写作页应有编辑 / 预览切换")
+	}
+}
+
+// lite.js（全站增强脚本）同样必须是 ES5。
+func TestLiteJSIsES5(t *testing.T) {
+	if len(liteJS) == 0 {
+		t.Fatal("lite.js 应当被内嵌进二进制，实际为空")
+	}
+	assertES5(t, "lite.js", string(liteJS))
 }
 
 // write.js 必须是 ES5，规则见 assertES5。

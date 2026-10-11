@@ -1,4 +1,6 @@
-{{/* RSS 订阅页。没有主站那个「复制」按钮，地址改为可长按选中的文本。 */}}
+{{/* RSS 订阅页，展示项与措辞照搬主站 rss/index.vue。
+   「复制」按钮默认隐藏，lite.js 确认能复制（剪贴板 API 或 execCommand）才显示；
+   老 Kindle 上通常两者都没有，地址仍是可长按选中的文本。 */}}
 
 {{define "rss"}}{{template "head" .}}
 
@@ -7,7 +9,10 @@
   <h1 class="lite-rss-title">RSS 订阅</h1>
   <p class="lite-rss-intro">复制下面的订阅地址，或在新标签页打开。</p>
 
-  <div class="lite-rss-url">{{.URL}}</div>
+  <div class="lite-rss-url">
+    <div id="rss-url-text">{{.URL}}</div>
+    <button type="button" class="lite-btn lite-rss-copy" data-copy-target="rss-url-text" style="display: none">复制</button>
+  </div>
 
   <div class="lite-rss-actions">
     <a class="lite-btn lite-btn-primary" href="{{.URL}}">打开 RSS</a>

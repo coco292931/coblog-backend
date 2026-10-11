@@ -495,3 +495,38 @@ html.lite-dark .lite-me-label {
 html.lite-dark .lite-me-section {
   border-top: 1px solid rgba(84, 84, 84, 0.48);
 }
+
+/* 代码块工具条（lite.js 插入） */
+html.lite-dark .lite-code-toolbar {
+  border: 1px solid rgba(84, 84, 84, 0.48);
+  border-bottom: 0;
+  background: #2a2a2a;
+}
+
+html.lite-dark .lite-code-lang {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-code-copy {
+  border: 1px solid rgba(84, 84, 84, 0.65);
+  background: #242424;
+  color: #16b0b0;
+}
+
+/* 写作页编辑 / 预览切换 */
+html.lite-dark .lite-editor-tabs {
+  border-bottom: 1px solid rgba(84, 84, 84, 0.48);
+  background: #2a2a2a;
+}
+
+html.lite-dark .lite-editor-tab {
+  color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-editor-tab.is-active {
+  color: #1fefef;
+}
+
+html.lite-dark .lite-editor-tab.is-active:after {
+  background: #16b0b0;
+}

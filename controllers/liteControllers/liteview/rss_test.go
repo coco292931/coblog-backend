@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// RSS 页的展示项与措辞照搬主站 rss/index.vue，只少了那个「复制」按钮。
+// RSS 页的展示项与措辞照搬主站 rss/index.vue。
 func TestRSSTemplateRenders(t *testing.T) {
 	const target = "https://api.coco-29.wang/api/rss?token=abc123"
 
@@ -30,8 +30,13 @@ func TestRSSTemplateRenders(t *testing.T) {
 		}
 	}
 
-	// 剪贴板 API 在老设备上不存在，主站那个「复制」按钮就不做
-	if strings.Contains(out, "复制</button>") {
-		t.Error("rss 页面不应有复制按钮")
+	// 「复制」按钮默认隐藏，lite.js 确认能复制才显示（老 Kindle 上通常没有剪贴板）
+	for _, want := range []string{
+		`id="rss-url-text"`,
+		`data-copy-target="rss-url-text" style="display: none">复制</button>`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("rss 页面缺少 %q", want)
+		}
 	}
 }

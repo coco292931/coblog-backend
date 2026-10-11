@@ -4,6 +4,8 @@
  * 等任何一个 ES6 写法，整段脚本在解析阶段就失败（write_test.go 有护栏）。
  * 也不用 fetch / Promise / NodeList.forEach / Function.bind / Element.closest。
  *
+ * 负责：图片即时上传、正文字数、编辑 / 预览切换（预览调 /lite/preview）。
+ *
  * 脚本只做增强：不加载或执行失败时，表单本身照样能提交，
  * 选中的图片会随表单一起上传（见 write.go 的 handleUploads）。
  */
@@ -184,7 +186,112 @@
     el.appendChild(document.createTextNode(ta.value.replace(/\s/g, '').length + ' 字'));
   }
 
+  // ── 预览：切到「预览」时把正文交给 /lite/preview 渲染 ──────────────────
+  // 与主站一样用发布时同一套 goldmark，预览看到的就是发布后的样子。
+  // 只在切过去时请求一次，不像主站那样边打字边渲染：老设备每个请求 0.3~0.9 秒。
+
+  var PREVIEW_URL = '/lite/preview';
+  var previewSeq = 0;
+
+  function csrfToken() {
+    var form = $('write-form');
+    var el = form && form.elements ? form.elements['_csrf'] : null;
+    return el && el.value ? el.value : '';
+  }
+
+  function showPreviewText(box, text) {
+    box.innerHTML = '';
+    var p = document.createElement('p');
+    p.className = 'lite-form-tip';
+    p.appendChild(document.createTextNode(text));
+    box.appendChild(p);
+  }
+
+  function renderPreview() {
+    var ta = $('md_content');
+    var box = $('md-preview');
+    if (!ta || !box) {
+      return;
+    }
+    if (ta.value.replace(/\s/g, '') === '') {
+      showPreviewText(box, '还没有内容');
+      return;
+    }
+    // 连点时只认最后一次的结果
+    var seq = ++previewSeq;
+    showPreviewText(box, '正在渲染预览…');
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', PREVIEW_URL, true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    var token = csrfToken();
+    if (token) {
+      xhr.setRequestHeader('X-CSRF-Token', token);
+    }
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState !== 4 || seq !== previewSeq) {
+        return;
+      }
+      var res = null;
+      try {
+        res = JSON.parse(xhr.responseText);
+      } catch (e) {
+        res = null;
+      }
+      if (res && res.ok && res.data && typeof res.data.html === 'string') {
+        // 后端渲染不输出原始 HTML（goldmark 默认转义），与详情页同源同规则
+        box.innerHTML = res.data.html;
+        if (window.liteEnhanceProse) {
+          window.liteEnhanceProse(box);
+        }
+      } else {
+        showPreviewText(box, res && res.msg ? res.msg : '预览失败（' + xhr.status + '），请稍后重试');
+      }
+    };
+    xhr.send('md=' + encodeURIComponent(ta.value));
+  }
+
+  function setTab(preview) {
+    var ta = $('md_content');
+    var box = $('md-preview');
+    var edit = $('tab-edit');
+    var prev = $('tab-preview');
+    if (!ta || !box || !edit || !prev) {
+      return;
+    }
+    edit.className = 'lite-editor-tab' + (preview ? '' : ' is-active');
+    prev.className = 'lite-editor-tab' + (preview ? ' is-active' : '');
+    ta.style.display = preview ? 'none' : '';
+    box.style.display = preview ? '' : 'none';
+    if (preview) {
+      renderPreview();
+    }
+  }
+
   // ── 挂事件 ──────────────────────────────────────────────────────
+
+  try {
+    var tabEdit = $('tab-edit');
+    var tabPreview = $('tab-preview');
+    if (tabEdit && tabPreview) {
+      tabEdit.onclick = function () {
+        setTab(false);
+      };
+      tabPreview.onclick = function () {
+        setTab(true);
+      };
+      // 提交前切回编辑：正文框是 required，藏着时浏览器校验失败也没法把焦点移过去
+      var form = $('write-form');
+      var submits = form ? form.getElementsByTagName('button') : [];
+      for (var i = 0; i < submits.length; i++) {
+        if (submits[i].type === 'submit') {
+          submits[i].onclick = function () {
+            setTab(false);
+          };
+        }
+      }
+    }
+  } catch (e) {}
 
   try {
     var cover = $('cover_file');

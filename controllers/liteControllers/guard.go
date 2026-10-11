@@ -90,6 +90,8 @@ func bodyLimit(c *gin.Context) int64 {
 	switch c.FullPath() {
 	case "/lite/upload":
 		return uploadBody
+	case "/lite/preview":
+		return previewBody
 	case "/lite/write", "/lite/write/:id":
 		return maxWriteBody
 	}
@@ -106,7 +108,9 @@ func isWriteForm(c *gin.Context) bool {
 func bodyParseFail(c *gin.Context, err error) {
 	switch {
 	case c.FullPath() == "/lite/upload":
-		uploadJSON(c, http.StatusOK, uploadParseErrMsg(err), nil)
+		xhrJSON(c, http.StatusOK, uploadParseErrMsg(err), nil)
+	case c.FullPath() == "/lite/preview":
+		xhrJSON(c, http.StatusOK, previewTooLargeMsg, nil)
 	case isWriteForm(c):
 		renderWriteParseError(c, err)
 	default:
@@ -117,8 +121,8 @@ func bodyParseFail(c *gin.Context, err error) {
 // csrfFail CSRF 校验失败。文章表单原样回填，其余回到对应页面并提示。
 func csrfFail(c *gin.Context) {
 	switch {
-	case c.FullPath() == "/lite/upload":
-		uploadJSON(c, http.StatusForbidden, csrfExpiredMsg, nil)
+	case c.FullPath() == "/lite/upload" || c.FullPath() == "/lite/preview":
+		xhrJSON(c, http.StatusForbidden, csrfExpiredMsg, nil)
 	case isWriteForm(c):
 		// 正文可能很长，丢了代价大：用提交上来的内容重渲染，新页面带的是新 token
 		view := writeViewFromForm(c)

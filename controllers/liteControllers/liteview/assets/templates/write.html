@@ -1,5 +1,5 @@
 {{/* 写作 / 编辑页，字段顺序与文案对齐主站 pages/write/index.vue。
-   正文只有 Markdown 一种（无预览），只提交 md_content。
+   正文只有 Markdown 一种，只提交 md_content；「预览」由 write.js 调 /lite/preview 渲染。
    图片：有脚本时 write.js 选完即传（插到光标处）；没脚本时随表单一起提交。见 write.go。 */}}
 
 {{define "write"}}{{template "head" .}}
@@ -72,6 +72,10 @@
     </label>
 
     <div class="lite-editor">
+      {{/* 编辑 / 预览切换（同主站编辑器的视图切换）。预览要调接口，没有脚本时不显示 */}}
+      <div class="lite-editor-tabs">
+        <button type="button" class="lite-editor-tab is-active" id="tab-edit">编辑</button><button type="button" class="lite-editor-tab" id="tab-preview">预览</button>
+      </div>
       {{if .CanUpload}}
       <div class="lite-editor-toolbar">
         <label class="lite-label" for="images">插入图片（一次最多 {{.MaxUploads}} 张）</label>
@@ -82,6 +86,7 @@
       </div>
       {{end}}
       <textarea class="lite-textarea" id="md_content" name="md_content" placeholder="在这里用 Markdown 写作…" aria-label="正文（Markdown）" required>{{.MdBody}}</textarea>
+      <div id="md-preview" class="lite-prose lite-md-preview" style="display: none" aria-live="polite"></div>
       <div class="lite-editor-status"><span id="char-count"></span></div>
     </div>
 
@@ -103,6 +108,6 @@
   </form>
 </div>
 
-{{if .CanUpload}}<script src="/lite/write.js"></script>{{end}}
+<script src="/lite/write.js"></script>
 
 {{template "foot" .}}{{end}}

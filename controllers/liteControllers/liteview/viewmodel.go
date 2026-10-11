@@ -20,7 +20,9 @@ type BaseView struct {
 type StatsView struct {
 	TotalWords  string // 站点总字数，已按主站的 formatNumber 缩写（如 34.6k）
 	ReadingTime string // 阅读时长，已按主站的 readingTime 格式化（如 0:38）
-	Uptime      string // 已避风 X天X时X分X秒（服务端渲染那一刻的快照）
+	Uptime      string // 已避风 X天X时X分X秒（服务端渲染那一刻的快照，有脚本时由 lite.js 接着走）
+	StartUnix   int64  // 开港时间（Unix 秒），lite.js 据此每秒刷新避风时长
+	NowUnix     int64  // 渲染时刻（Unix 秒），lite.js 用它识别设备时钟明显不准的情况
 }
 
 // ListItemView 对应主站 ArticleTimeline 的一个 .article。
@@ -109,7 +111,7 @@ type LoginView struct {
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
-// WriteView 写作 / 编辑页。正文是纯 Markdown textarea（无预览），
+// WriteView 写作 / 编辑页。正文是纯 Markdown textarea（预览由 write.js 调 /lite/preview），
 // 分类与标签是逗号分隔的文本框，封面填 URL 或随表单上传。
 type WriteView struct {
 	BaseView
@@ -144,7 +146,7 @@ type ConfirmDeleteView struct {
 	Error string
 }
 
-// RSSView RSS 订阅页。没有主站那个「复制」按钮（剪贴板需要脚本）。
+// RSSView RSS 订阅页。「复制」按钮由 lite.js 确认能复制后才显示。
 type RSSView struct {
 	BaseView
 	URL string

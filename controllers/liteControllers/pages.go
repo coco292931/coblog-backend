@@ -191,6 +191,11 @@ func NotFoundPage(c *gin.Context) {
 	renderError(c, http.StatusNotFound)
 }
 
+// ServeLiteJS GET /lite/lite.js
+func ServeLiteJS(c *gin.Context) {
+	liteview.ServeLiteJS(c)
+}
+
 // ServeLiteWriteJS GET /lite/write.js
 func ServeLiteWriteJS(c *gin.Context) {
 	liteview.ServeWriteJS(c)
@@ -238,10 +243,13 @@ func buildStats() *liteview.StatsView {
 	if err != nil {
 		return nil
 	}
+	now := time.Now()
 	return &liteview.StatsView{
 		TotalWords:  liteview.FormatCompactNumber(info.Words),
 		ReadingTime: liteview.FormatSiteReadingTime(info.Words),
-		Uptime:      liteview.FormatUptime(info.StartedTime, time.Now()),
+		Uptime:      liteview.FormatUptime(info.StartedTime, now),
+		StartUnix:   info.StartedTime.Unix(),
+		NowUnix:     now.Unix(),
 	}
 }
 

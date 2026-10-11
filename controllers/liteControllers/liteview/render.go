@@ -39,6 +39,11 @@ var liteCSSBundle = bytes.Join([][]byte{liteCSS, liteDarkCSS}, []byte("\n"))
 //go:embed assets/write.js
 var writeJS []byte
 
+// 全站增强脚本（夜间模式开关、避风时长走字、复制按钮）。同样必须是 ES5。
+//
+//go:embed assets/lite.js
+var liteJS []byte
+
 // 站点图标。复制自前端 src/assets/icon.ico。
 //
 //go:embed assets/icon.ico
@@ -71,6 +76,11 @@ func Render(c *gin.Context, status int, name string, data any) {
 // 但不要依赖文件系统上的 static 目录。
 func ServeCSS(c *gin.Context) {
 	c.Data(http.StatusOK, "text/css; charset=utf-8", liteCSSBundle)
+}
+
+// ServeLiteJS 提供 /lite/lite.js。
+func ServeLiteJS(c *gin.Context) {
+	c.Data(http.StatusOK, "application/javascript; charset=utf-8", liteJS)
 }
 
 // ServeWriteJS 提供 /lite/write.js。

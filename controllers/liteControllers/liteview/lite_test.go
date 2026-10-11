@@ -551,9 +551,20 @@ func TestDarkModeWiring(t *testing.T) {
 	mustContain(t, html, "'coblog-theme'", "主题键要与主站 useTheme.js 的 STORAGE_KEY 一致")
 	mustContain(t, html, "lite-dark", "夜间模式靠 html.lite-dark 生效")
 	mustContain(t, html, `id="theme-toggle"`, "页脚应有夜间模式开关")
+	mustContain(t, html, `<script src="/lite/lite.js"></script>`, "每页都要加载全站增强脚本")
 	if !bytes.HasPrefix(liteCSSBundle, liteCSS) || !bytes.HasSuffix(liteCSSBundle, liteDarkCSS) {
 		t.Error("下发的样式表应是 lite.css + lite-dark.css")
 	}
+}
+
+// 避风时长：服务端给出快照，同时把开港时间与渲染时刻交给 lite.js 接着走字
+func TestFooterUptimeTicks(t *testing.T) {
+	base := testBase()
+	base.Stats.StartUnix = 1766188800
+	base.Stats.NowUnix = 1791000000
+	html := renderToString(t, "home", HomeView{BaseView: base})
+	mustContain(t, html, `id="lite-uptime" data-start="1766188800" data-now="1791000000">已避风 292天5时30分12秒</div>`,
+		"避风时长要带上开港时间与渲染时刻")
 }
 
 // lite.css 里每一条带颜色的顶层规则，lite-dark.css 里都要有对应的 html.lite-dark 规则，

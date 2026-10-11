@@ -13,13 +13,14 @@ import (
 	"coblog-backend/controllers/liteControllers/liteview"
 	"coblog-backend/models"
 	"coblog-backend/services/articleService"
+	"coblog-backend/services/markdownService"
 	"coblog-backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-// 写作页。正文是纯 Markdown（无预览），只提交 md_content，
-// 由后端 goldmark 渲染出 content。
+// 写作页。正文是纯 Markdown，只提交 md_content，由后端 goldmark 渲染出 content；
+// 写作时的「预览」由 write.js 调 /lite/preview（PreviewMarkdown）。
 //
 // 图片上传分两层：
 //   - 有脚本（write.js，纯 ES5）：选完文件立即走 XHR 传到 /lite/upload，
@@ -124,36 +125,80 @@ func uploadParseErrMsg(err error) string {
 // X-Requested-With 只是确认调用方是 write.js，不承担安全职责。
 func UploadImage(c *gin.Context) {
 	if c.GetHeader("X-Requested-With") != "XMLHttpRequest" {
-		uploadJSON(c, http.StatusBadRequest, exception.ApiParamError.Msg, nil)
+		xhrJSON(c, http.StatusBadRequest, exception.ApiParamError.Msg, nil)
 		return
 	}
 	accountID, _ := c.Get("AccountID")
 	if id, _ := accountID.(uint64); id == 0 {
-		uploadJSON(c, http.StatusUnauthorized, "登录已失效，请重新登录", nil)
+		xhrJSON(c, http.StatusUnauthorized, "登录已失效，请重新登录", nil)
 		return
 	}
 	if !hasPerm(c, permission.Perm_PostPost) || !hasPerm(c, permission.Perm_UploadFile) {
-		uploadJSON(c, http.StatusForbidden, exception.UsrNotPermitted.Msg, nil)
+		xhrJSON(c, http.StatusForbidden, exception.UsrNotPermitted.Msg, nil)
 		return
 	}
 
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, uploadBody)
 	fh, err := c.FormFile("file")
 	if err != nil {
-		uploadJSON(c, http.StatusOK, uploadParseErrMsg(err), nil)
+		xhrJSON(c, http.StatusOK, uploadParseErrMsg(err), nil)
 		return
 	}
 	url, err := fileController.SaveImageFile(fh)
 	if err != nil {
-		uploadJSON(c, http.StatusOK, errMsg(err), nil)
+		xhrJSON(c, http.StatusOK, errMsg(err), nil)
 		return
 	}
-	uploadJSON(c, http.StatusOK, "", gin.H{"url": url, "thumb_url": liteview.ThumbURL(url)})
+	xhrJSON(c, http.StatusOK, "", gin.H{"url": url, "thumb_url": liteview.ThumbURL(url)})
 }
 
-// uploadJSON 统一的返回格式：{ ok, msg, data }。
+// previewBody 预览的请求体上限：与文章表单里留给文字字段的份额一致
+const previewBody = int64(2 << 20)
+
+// previewTooLargeMsg 预览的正文超过上限
+const previewTooLargeMsg = "正文太长，无法预览"
+
+// PreviewMarkdown POST /lite/preview：写作页「预览」用，返回渲染后的 HTML（JSON）。
+//
+// 主站的 /api/markdown/render 只认 Authorization 头，/lite 是 cookie 登录，所以单开一个。
+// 用的是发布时同一套 goldmark（不输出原始 HTML），再做与详情页相同的图片改写，
+// 预览看到的就是发布后的样子。CSRF 由 Guard 校验（脚本用 X-CSRF-Token 头带 token）。
+func PreviewMarkdown(c *gin.Context) {
+	if c.GetHeader("X-Requested-With") != "XMLHttpRequest" {
+		xhrJSON(c, http.StatusBadRequest, exception.ApiParamError.Msg, nil)
+		return
+	}
+	accountID, _ := c.Get("AccountID")
+	if id, _ := accountID.(uint64); id == 0 {
+		xhrJSON(c, http.StatusUnauthorized, "登录已失效，请重新登录", nil)
+		return
+	}
+	if !hasPerm(c, permission.Perm_PostPost) {
+		xhrJSON(c, http.StatusForbidden, exception.UsrNotPermitted.Msg, nil)
+		return
+	}
+
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, previewBody)
+	if err := c.Request.ParseForm(); err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			xhrJSON(c, http.StatusOK, previewTooLargeMsg, nil)
+			return
+		}
+		xhrJSON(c, http.StatusOK, exception.ApiParamError.Msg, nil)
+		return
+	}
+	html, err := markdownService.ParseMarkdownToHTML(c.Request.PostForm.Get("md"))
+	if err != nil {
+		xhrJSON(c, http.StatusOK, "预览渲染失败，请稍后重试", nil)
+		return
+	}
+	xhrJSON(c, http.StatusOK, "", gin.H{"html": liteview.RewriteContentImages(html)})
+}
+
+// xhrJSON 统一的返回格式：{ ok, msg, data }。
 // 失败也尽量回 200，老设备的 XHR 拿非 2xx 时 responseText 不一定可靠。
-func uploadJSON(c *gin.Context, status int, msg string, data gin.H) {
+func xhrJSON(c *gin.Context, status int, msg string, data gin.H) {
 	c.JSON(status, gin.H{"ok": data != nil, "msg": msg, "data": data})
 }
 
