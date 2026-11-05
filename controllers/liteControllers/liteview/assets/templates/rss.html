@@ -11,11 +11,15 @@
 
   <div class="lite-rss-url">
     <div id="rss-url-text">{{.URL}}</div>
-    <button type="button" class="lite-btn lite-rss-copy" data-copy-target="rss-url-text" style="display: none">复制</button>
+    {{/* 按钮靠右，与地址框右缘对齐；lite.js 确认能复制才把它显示出来 */}}
+    <div class="lite-rss-copy-row">
+      <button type="button" class="lite-btn lite-rss-copy" data-copy-target="rss-url-text" style="display: none">复制</button>
+    </div>
   </div>
 
   <div class="lite-rss-actions">
-    <a class="lite-btn lite-btn-primary" href="{{.URL}}">打开 RSS</a>
+    {{/* 与主站一致：新标签页打开，原页面留在订阅说明上 */}}
+    <a class="lite-btn lite-btn-primary" href="{{.URL}}" target="_blank" rel="noopener noreferrer">打开 RSS</a>
     <a class="lite-btn" href="/lite/me">查看 Token</a>
   </div>
 

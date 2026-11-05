@@ -47,12 +47,21 @@ html.lite-dark .lite-brand {
   color: #1fefef;
 }
 
+html.lite-dark .lite-brand:hover {
+  color: #1fefef;
+}
+
 html.lite-dark .lite-lite {
   color: #1fefef;
 }
 
 html.lite-dark .lite-nav a {
   color: rgba(235, 235, 235, 0.64);
+}
+
+html.lite-dark .lite-nav a:hover {
+  background: rgba(22, 176, 176, 0.14);
+  color: #1fefef;
 }
 
 html.lite-dark .lite-nav a.is-active {
@@ -126,12 +135,22 @@ html.lite-dark .lite-card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* 深底上不能再用浅色的阴影，换成青色辉光 */
+html.lite-dark .lite-card:hover {
+  -webkit-box-shadow: 0 4px 16px rgba(22, 176, 176, 0.24);
+  box-shadow: 0 4px 16px rgba(22, 176, 176, 0.24);
+}
+
 html.lite-dark .lite-card-cover {
   background-color: #2a2a2a;
 }
 
 html.lite-dark .lite-card-title a {
   color: rgba(255, 255, 255, 0.87);
+}
+
+html.lite-dark .lite-card-title a:hover {
+  color: #1fefef;
 }
 
 html.lite-dark .lite-card-summary {
@@ -146,6 +165,10 @@ html.lite-dark .lite-tag {
   border: 1px solid rgba(22, 176, 176, 0.36);
   background: #2a2a2a;
   color: #16b0b0;
+}
+
+html.lite-dark .lite-tag:hover {
+  background: rgba(22, 176, 176, 0.14);
 }
 
 html.lite-dark .lite-search-bar {
@@ -170,6 +193,10 @@ html.lite-dark .lite-sort-option {
   color: #16b0b0;
 }
 
+html.lite-dark .lite-sort-option:hover {
+  background: rgba(22, 176, 176, 0.14);
+}
+
 html.lite-dark .lite-sort-option.is-active {
   background: #16b0b0;
   color: #ffffff;
@@ -191,8 +218,15 @@ html.lite-dark .lite-article-subtitle {
   color: rgba(235, 235, 235, 0.64);
 }
 
-html.lite-dark .lite-article-time {
+html.lite-dark .lite-article-meta {
+  border-top: 1px solid rgba(84, 84, 84, 0.48);
   color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-article-edit {
+  border: 1px solid #16b0b0;
+  background: #242424;
+  color: #16b0b0;
 }
 
 html.lite-dark .lite-reading-time {
@@ -490,6 +524,21 @@ html.lite-dark .lite-me-username {
 
 html.lite-dark .lite-me-label {
   color: rgba(235, 235, 235, 0.72);
+}
+
+html.lite-dark .lite-me-ok {
+  color: #73d13d;
+}
+
+html.lite-dark .lite-me-off {
+  color: #ff6b5b;
+}
+
+html.lite-dark .lite-me-token {
+  font-family: monospace;
+  font-size: 20px;
+  color: #1fefef;
+  word-break: break-all;
 }
 
 html.lite-dark .lite-me-section {

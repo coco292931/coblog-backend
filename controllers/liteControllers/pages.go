@@ -155,12 +155,15 @@ func ArticlePage(c *gin.Context) {
 
 	liteview.Render(c, http.StatusOK, "article", liteview.ArticleView{
 		BaseView:   newBaseView(c),
+		ID:         post.ID,
 		Title:      post.Title,
 		Subtitle:   post.Subtitle,
 		Cover:      liteview.ThumbURL(post.CoverImage),
 		Content:    template.HTML(liteview.RewriteContentImages(post.Content)),
 		CreateTime: liteview.FormatDateTime(post.CreatedAt),
 		UpdateTime: liteview.FormatDateTime(post.UpdatedAt),
+		CreateUnix: liteview.TimeUnix(post.CreatedAt),
+		UpdateUnix: liteview.TimeUnix(post.UpdatedAt),
 		Categories: liteview.ParseJSONList(post.Category),
 		ReadingMin: liteview.ReadingMinutes(post.Words),
 		Author:     liteArticleAuthor,

@@ -98,6 +98,34 @@
     window.setInterval(tick, 1000);
   }
 
+  // ── 本地时区 ──────────────────────────────────────────────────────
+  // 文章页的时间由服务端按 +8 预渲染（脚本不跑时也是北京时间）。
+  // 设备报告了真实时区时再换成本地时间：getTimezoneOffset() 为 0 的多半是
+  // 没设时区的机器（老 Kindle 的时钟本就常漂），换过去等于又退回 UTC。
+
+  function pad2(n) {
+    return n < 10 ? '0' + n : '' + n;
+  }
+
+  function setupLocalTimes() {
+    var nodes = document.querySelectorAll('.lite-time-value');
+    if (!nodes.length) {
+      return;
+    }
+    if (!new Date().getTimezoneOffset()) {
+      return;
+    }
+    for (var i = 0; i < nodes.length; i++) {
+      var sec = parseInt(nodes[i].getAttribute('data-time'), 10);
+      if (!sec) {
+        continue;
+      }
+      var d = new Date(sec * 1000);
+      setText(nodes[i], d.getFullYear() + '/' + pad2(d.getMonth() + 1) + '/' + pad2(d.getDate()) +
+        ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()));
+    }
+  }
+
   // ── 复制 ──────────────────────────────────────────────────────────
   // 优先用异步剪贴板 API（只在 https 下有），否则退回 execCommand('copy')。
   // 两条路都不通时，把要复制的内容选中，让用户自己长按复制。
@@ -251,6 +279,7 @@
 
   safely(setupThemeToggle);
   safely(setupUptime);
+  safely(setupLocalTimes);
   safely(setupCopyButtons);
   safely(setupConfirmForms);
   safely(function () {

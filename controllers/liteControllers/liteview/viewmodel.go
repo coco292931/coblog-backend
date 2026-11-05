@@ -76,12 +76,17 @@ type ListView struct {
 // 阅读时长（分钟）、正文、版权声明、文章统计。
 type ArticleView struct {
 	BaseView
+	ID         uint64
 	Title      string
 	Subtitle   string
 	Cover      string
 	Content    template.HTML // 后端已渲染好的富文本，直接输出（与主站 v-html 行为一致）
-	CreateTime string        // 与主站的 formatDateTime 一致：2026/01/02 15:04
+	CreateTime string        // 与主站的 formatDateTime 一致：2026/01/02 15:04（已换算到 +8）
 	UpdateTime string
+	// CreateUnix / UpdateUnix 同一个时刻的 Unix 秒（无效时间为 0），
+	// 模板渲染成 data-time，lite.js 据此把时间换回设备所在时区。
+	CreateUnix int64
+	UpdateUnix int64
 	Categories []string
 	ReadingMin int // 主站 article 页的 readingTime
 

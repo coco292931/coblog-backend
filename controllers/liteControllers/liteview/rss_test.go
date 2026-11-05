@@ -39,4 +39,22 @@ func TestRSSTemplateRenders(t *testing.T) {
 			t.Errorf("rss 页面缺少 %q", want)
 		}
 	}
+
+	// 与主站一致：新标签页打开，不把订阅说明页顶掉
+	for _, want := range []string{
+		`href="` + target + `" target="_blank" rel="noopener noreferrer">打开 RSS</a>`,
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("rss 页面缺少 %q", want)
+		}
+	}
+
+	// 「复制」按钮靠右，不能贴左边缘
+	if !strings.Contains(out, `<div class="lite-rss-copy-row">`) {
+		t.Error("复制按钮应包在 .lite-rss-copy-row 里（靠右对齐）")
+	}
+	css := string(liteCSS)
+	if !strings.Contains(cssBlock(t, css, ".lite-rss-copy-row .lite-btn"), "float: right") {
+		t.Error("复制按钮应靠右")
+	}
 }

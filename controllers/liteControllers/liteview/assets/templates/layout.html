@@ -86,9 +86,12 @@
 {{end}}
 
 
-{{/* 列表卡片，字段同主站 ArticleTimeline 的 .article */}}
+{{/* 列表卡片，字段同主站 ArticleTimeline 的 .article。
+   整卡可点：主站是给 .article 挂 @click，这里换成一层铺满卡片的空链接（纯 CSS，不依赖脚本）；
+   分类链接的 z-index 更高，仍然单独可点（对应主站的 @click.stop）。 */}}
 {{define "card"}}
 <article class="lite-card">
+  <a class="lite-card-hit" href="/lite/articles/{{.ID}}" aria-label="{{.Title}}"></a>
   {{if .Cover}}
   {{/* 背景图而不是 <img>：老引擎不认 object-fit，见 lite.css 的 .lite-card-cover */}}
   <a class="lite-card-cover" href="/lite/articles/{{.ID}}" style="background-image: url('{{.Cover}}')" aria-label="{{.Title}}"></a>

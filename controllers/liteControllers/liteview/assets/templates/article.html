@@ -13,9 +13,13 @@
     <div class="lite-article-title">{{.Title}}</div>
     {{if .Subtitle}}<div class="lite-article-subtitle">{{.Subtitle}}</div>{{end}}
 
-    <div class="lite-article-time">
-      <span class="lite-time-item">创建：{{.CreateTime}}</span>
-      <span class="lite-time-item">修改：{{.UpdateTime}}</span>
+    {{/* 元信息行：时间靠左、编辑靠右。主站把编辑放在封面标题区右上角，
+       这里没有那层浮层，就跟着时间走 —— 独占一行会把头部撑得又空又长。 */}}
+    <div class="lite-article-meta">
+      {{if and .LoggedIn .ID}}<a class="lite-article-edit" href="/lite/write/{{.ID}}">编辑</a>{{end}}
+      {{/* 服务端按 +8 预渲染；data-time 给 lite.js 换成设备本地时区（脚本不跑也读得懂） */}}
+      <span class="lite-time-item">创建：<span class="lite-time-value"{{if .CreateUnix}} data-time="{{.CreateUnix}}"{{end}}>{{.CreateTime}}</span></span>
+      <span class="lite-time-item">修改：<span class="lite-time-value"{{if .UpdateUnix}} data-time="{{.UpdateUnix}}"{{end}}>{{.UpdateTime}}</span></span>
     </div>
 
     <div class="lite-article-info">

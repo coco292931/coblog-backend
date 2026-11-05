@@ -89,12 +89,29 @@ func ParseJSONList(raw string) []string {
 	return out
 }
 
-// FormatDay 日期只到天。零值返回空串，模板据此决定是否输出。
+// liteDisplayZone 页面默认展示的时区：固定 +8。
+//
+// 库里存的是 UTC（容器的 Local 就是 UTC），主站把时间丢给浏览器换成本地时区；
+// /lite 是服务端直出，得先换成 +8 —— 设备上脚本整段不执行时，看到的也得是北京时间。
+// 生产镜像是 FROM scratch，没有 tzdata，time.LoadLocation("Asia/Shanghai") 会失败，
+// 所以用 FixedZone。设备报告的时区可用时，lite.js 会再按 data-time 换成本地时间。
+var liteDisplayZone = time.FixedZone("CST", 8*60*60)
+
+// FormatDay 日期只到天（按 +8 的日历，和详情页的时间对得上）。零值返回空串，模板据此决定是否输出。
 func FormatDay(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}
-	return t.Format("2006-01-02")
+	return t.In(liteDisplayZone).Format("2006-01-02")
+}
+
+// TimeUnix 展示用的 Unix 秒，交给 lite.js 换成本地时区。
+// 零值与早于 2000 年的时间返回 0，模板据此不输出 data-time。
+func TimeUnix(t time.Time) int64 {
+	if t.IsZero() || t.Year() < 2000 {
+		return 0
+	}
+	return t.Unix()
 }
 
 // LatestTime 取创建与修改中较晚的一个。
@@ -216,12 +233,13 @@ func ReadingMinutes(words uint64) int {
 }
 
 // FormatDateTime 对应主站 article 页的 formatDateTime：
-// zh-CN 的 "2006/01/02 15:04"；早于 2000 年的（含零值）返回空串。
+// zh-CN 的 "2006/01/02 15:04"，换算到 +8（见 liteDisplayZone）；
+// 早于 2000 年的（含零值）返回空串。
 func FormatDateTime(t time.Time) string {
 	if t.IsZero() || t.Year() < 2000 {
 		return ""
 	}
-	return t.Format("2006/01/02 15:04")
+	return t.In(liteDisplayZone).Format("2006/01/02 15:04")
 }
 
 // FormatUptime 对应主站 Footer 的 uptimeDisplay：

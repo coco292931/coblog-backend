@@ -111,6 +111,11 @@ img {
   color: #0e9a9a;
 }
 
+/* 同主站 .brand-link:hover */
+.lite-brand:hover {
+  color: #17bebb;
+}
+
 .lite-nav {
   display: block;
   float: right;
@@ -119,13 +124,25 @@ img {
 .lite-nav a {
   position: relative;
   display: inline-block;
-  margin-right: 22px;
+  /* 左右各留 8px：hover 时垫的那层淡青底（同主站）才不会贴着文字。
+     间距原本是 margin-right: 22px，这里换成 padding 8 + margin 6，视觉间距不变。 */
+  margin-right: 6px;
+  padding: 0 8px;
   min-height: 48px;
   line-height: 48px;
   color: #0e9a9a;
   font-family: "Amazon Ember", sans-serif;
   font-size: 19px;
   font-weight: bold;
+  -webkit-border-radius: 8px;
+  border-radius: 8px;
+}
+
+/* 悬停反馈照主站 .navbar-item:hover。老 Kindle 上没有 hover，写了不生效也无害；
+   过渡一律不写（不解析，墨水屏上还会留残影）。 */
+.lite-nav a:hover {
+  background: rgba(23, 190, 187, 0.12);
+  color: #17bebb;
 }
 
 /* 末项不留右边距，导航才能贴齐右侧留白 */
@@ -274,6 +291,7 @@ img {
 /* ── 列表卡片（主站 ArticleTimeline 的 .article） ─────────────────────── */
 
 .lite-card {
+  position: relative;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   -webkit-border-radius: 14px;
@@ -282,6 +300,24 @@ img {
   box-shadow: 0 2px 8px rgba(14, 154, 154, 0.10);
   margin-bottom: 24px;
   overflow: hidden;
+}
+
+/* 整卡可点：铺满卡片的一层空链接。绝对定位老引擎就支持，不依赖脚本；
+   样式没加载时标题链接仍在，功能不会丢。 */
+.lite-card-hit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* 悬停反馈照主站 .article:hover（主站另有 translateY，这里不加：
+   时间轴圆点是相对卡片外层定位的，位移后会和卡片错开）。 */
+.lite-card:hover {
+  -webkit-box-shadow: 0 4px 16px rgba(23, 190, 187, 0.22);
+  box-shadow: 0 4px 16px rgba(23, 190, 187, 0.22);
 }
 
 /* 封面：固定 3:2 的比例容器，图片按比例铺满、超出部分裁掉。
@@ -317,6 +353,10 @@ img {
   text-decoration: none;
 }
 
+.lite-card-title a:hover {
+  color: #0e9a9a;
+}
+
 .lite-card-summary {
   margin-bottom: 16px;
   font-size: 24px;
@@ -344,6 +384,9 @@ img {
 
 .lite-tag {
   display: inline-block;
+  /* 抬到 .lite-card-hit 之上：整卡可点之后，分类链接仍然单独可点 */
+  position: relative;
+  z-index: 2;
   margin: 0 0 6px 10px;
   padding: 4px 16px;
   border: 1px solid rgba(23, 190, 187, 0.38);
@@ -355,6 +398,10 @@ img {
   font-size: 20px;
   line-height: 28px;
   text-decoration: none;
+}
+
+.lite-tag:hover {
+  background: rgba(23, 190, 187, 0.12);
 }
 
 /* ── 列表页：搜索区（主站 .search-bar-container） ─────────────────────── */
@@ -440,6 +487,11 @@ img {
   color: #0e7a7a;
 }
 
+/* 写在 .is-active 之前：悬停当前选项时不能把它的实心底色盖掉 */
+.lite-sort-option:hover {
+  background: rgba(23, 190, 187, 0.12);
+}
+
 .lite-sort-option.is-active {
   background: #0e9a9a;
   color: #ffffff;
@@ -488,11 +540,33 @@ img {
   color: #555555;
 }
 
-.lite-article-time {
+/* 元信息行：时间靠左、编辑入口靠右，上面用一条细分隔线跟标题区分开。
+   编辑入口跟着这一行走 —— 单独占一行会让头部多出一整行的空白。 */
+.lite-article-meta {
+  overflow: hidden;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
   font-family: "Amazon Ember", sans-serif;
   font-size: 24px;
+  line-height: 48px;
   color: #999999;
-  margin-bottom: 12px;
+}
+
+/* 编辑入口（主站 .manage-btn）：贴在元信息行右侧；48px 高，老设备上也点得中 */
+.lite-article-edit {
+  float: right;
+  min-height: 48px;
+  line-height: 46px;
+  padding: 0 24px;
+  border: 1px solid #17bebb;
+  -webkit-border-radius: 999px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0e9a9a;
+  font-size: 20px;
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .lite-time-item {
@@ -503,6 +577,7 @@ img {
 /* 分类靠左、阅读时长靠右，做法同 .lite-card-info。 */
 .lite-article-info {
   overflow: hidden;
+  margin-top: 8px;
   font-family: "Amazon Ember", sans-serif;
   font-size: 24px;
   line-height: 38px;
@@ -1308,8 +1383,15 @@ html.lite-js .lite-editor-tabs {
   word-break: break-all;
 }
 
-.lite-rss-copy {
+/* 复制按钮靠右，与地址框右缘对齐（地址本身仍左对齐）。
+   用 overflow 包住 float，容器高度才不会塌。 */
+.lite-rss-copy-row {
+  overflow: hidden;
   margin-top: 14px;
+}
+
+.lite-rss-copy-row .lite-btn {
+  float: right;
 }
 
 .lite-rss-actions {
@@ -1425,9 +1507,24 @@ html.lite-js .lite-editor-tabs {
   color: #4a4a4a;
 }
 
+/* 状态色照主站 .status-enabled / .status-disabled，取的是同一套绿 / 红里更深的一档：
+   墨水屏只有灰度，主站那个 #52c41a 会淡成一片。 */
+.lite-me-value {
+  font-weight: bold;
+}
+
+.lite-me-ok {
+  color: #1e7f4f;
+}
+
+.lite-me-off {
+  color: #c0392b;
+}
+
 .lite-me-token {
   font-family: monospace;
   font-size: 20px;
+  color: #0e9a9a;
   word-break: break-all;
 }
 
@@ -1471,7 +1568,8 @@ html.lite-js .lite-editor-tabs {
   }
 
   .lite-nav a {
-    margin-right: 16px;
+    /* 8px 内边距已在 .lite-nav a 里，这里补足到原来的 16px 视觉间距 */
+    margin-right: 0;
     font-size: 18px;
   }
 
@@ -1567,9 +1665,14 @@ html.lite-js .lite-editor-tabs {
     font-size: 24px;
   }
 
-  .lite-article-time,
+  .lite-article-meta,
   .lite-article-info {
     font-size: 19px;
+  }
+
+  .lite-article-edit {
+    padding: 0 18px;
+    font-size: 18px;
   }
 
   /* 分类与阅读时长改上下排 */
@@ -1765,6 +1868,7 @@ html.lite-js .lite-editor-tabs {
   }
 
   .lite-nav a {
-    margin-right: 20px;
+    /* 同上：补足到原来的 20px 视觉间距 */
+    margin-right: 4px;
   }
 }

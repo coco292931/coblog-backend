@@ -92,6 +92,31 @@ func TestCardShowsOnlyMainSiteItems(t *testing.T) {
 	mustNotContain(t, html, "深度", "列表卡片不应有深度标记（主站没有）")
 }
 
+// 整卡可点：主站给 .article 挂 @click 进详情，这里换成一层铺满卡片的链接，
+// 不依赖脚本（老 Kindle 上脚本一旦整段不执行，卡片就只剩标题能点）。
+func TestCardIsClickableAsAWhole(t *testing.T) {
+	html := renderToString(t, "home", HomeView{
+		BaseView: testBase(),
+		Articles: []ListItemView{sampleItem()},
+	})
+	mustContain(t, html, `<a class="lite-card-hit" href="/lite/articles/7"`, "整卡应有一层指向详情的链接")
+	// 整卡 + 封面 + 标题，都指向同一篇
+	if n := strings.Count(html, `href="/lite/articles/7"`); n != 3 {
+		t.Errorf(`href="/lite/articles/7" 应有 3 处（整卡 / 封面 / 标题），实际 %d 处`, n)
+	}
+
+	css := string(liteCSS)
+	if !strings.Contains(cssBlock(t, css, ".lite-card"), "position: relative") {
+		t.Error(".lite-card 要 position: relative，整卡链接才能铺满它")
+	}
+	if !strings.Contains(cssBlock(t, css, ".lite-card-hit"), "z-index: 1") {
+		t.Error(".lite-card-hit 要铺在内容之上")
+	}
+	if !strings.Contains(cssBlock(t, css, ".lite-tag"), "z-index: 2") {
+		t.Error(".lite-tag 的层级要高于 .lite-card-hit，否则分类点不到")
+	}
+}
+
 func TestListTemplateMatchesMainSiteItems(t *testing.T) {
 	html := renderToString(t, "list", ListView{
 		BaseView:   testBase(),
@@ -189,8 +214,11 @@ func TestArticleTemplateMatchesMainSiteItems(t *testing.T) {
 
 	mustContain(t, html, "<h2>小节</h2>", "正文 HTML 必须原样输出、不能被转义")
 	mustContain(t, html, "副标题", "主站详情页有副标题")
-	mustContain(t, html, "创建：2026/01/02 15:04", "创建时间用主站的措辞与格式")
-	mustContain(t, html, "修改：2026/01/05 09:30", "修改时间用主站的措辞与格式")
+	// 时间值包在 .lite-time-value 里，lite.js 才能单独换成本地时区
+	mustContain(t, html, `创建：<span class="lite-time-value"`, "创建时间用主站的措辞")
+	mustContain(t, html, `修改：<span class="lite-time-value"`, "修改时间用主站的措辞")
+	mustContain(t, html, "2026/01/02 15:04", "创建时间用主站的格式")
+	mustContain(t, html, "2026/01/05 09:30", "修改时间用主站的格式")
 	mustContain(t, html, "3 min", "阅读时长用主站的写法")
 	mustContain(t, html, "版权声明", "主站有版权声明块")
 	mustContain(t, html, "本文作者：coco_29", "版权作者与主站一致")
@@ -220,6 +248,32 @@ func TestArticleTemplateUncategorizedFallback(t *testing.T) {
 		Content:  template.HTML("<p>x</p>"),
 	})
 	mustContain(t, html, "未分类", "无分类时与主站一样显示「未分类」")
+}
+
+// 编辑入口：主站只对登录用户显示 .manage-btn，这里同理；
+// 真正的权限由写作页（requireWritePerm）兜底拒绝。
+func TestArticleTemplateShowsEditLinkOnlyWhenLoggedIn(t *testing.T) {
+	html := renderToString(t, "article", ArticleView{
+		BaseView: testBase(),
+		ID:       7,
+		Title:    "第一篇",
+		Content:  template.HTML("<p>x</p>"),
+	})
+	mustNotContain(t, html, "/lite/write/7", "未登录时不应出现编辑入口")
+
+	base := testBase()
+	base.LoggedIn = true
+	html = renderToString(t, "article", ArticleView{
+		BaseView: base,
+		ID:       7,
+		Title:    "第一篇",
+		Content:  template.HTML("<p>x</p>"),
+	})
+	mustContain(t, html, `class="lite-article-edit" href="/lite/write/7"`, "登录后应能进编辑页")
+	mustContain(t, html, ">编辑<", "按钮文案与主站一致")
+	// 编辑入口跟在元信息行里，不再单独占一行
+	mustContain(t, html, `<div class="lite-article-meta">`, "时间与编辑同属一行元信息")
+	mustNotContain(t, html, "lite-article-manage", "编辑入口不应再独占一行")
 }
 
 func TestLoginTemplate(t *testing.T) {
@@ -404,6 +458,33 @@ func TestMeTemplate(t *testing.T) {
 	mustContain(t, html, PasswordRuleText, "新密码提示与主站一致")
 	mustContain(t, html, `method="post"`, "这些操作必须走 POST")
 	mustNotContain(t, html, "账户待激活", "已激活时不显示激活提示")
+}
+
+// 状态值要带醒目颜色：主站用 .status-enabled / .status-disabled 区分「已… / 未…」，
+// 这里用同一套语义（深一档的绿 / 红，墨水屏上更清楚）。
+func TestMeTemplateColorsStatusValues(t *testing.T) {
+	html := renderToString(t, "me", MeView{
+		BaseView:  testBase(),
+		Username:  "u",
+		Activated: true,
+		Deepable:  false,
+		IsDeep:    true,
+		RSSToken:  "tok-abc",
+	})
+	mustContain(t, html, `class="lite-me-value lite-me-ok">已激活`, "已激活应是「已…」色")
+	mustContain(t, html, `class="lite-me-value lite-me-off">未开通`, "未开通应是「未…」色")
+	mustContain(t, html, `class="lite-me-value lite-me-ok">已启用`, "已启用应是「已…」色")
+
+	css := string(liteCSS)
+	if !strings.Contains(cssBlock(t, css, ".lite-me-ok"), "color") {
+		t.Error(".lite-me-ok 缺少颜色")
+	}
+	if !strings.Contains(cssBlock(t, css, ".lite-me-off"), "color") {
+		t.Error(".lite-me-off 缺少颜色")
+	}
+	if !strings.Contains(cssBlock(t, css, ".lite-me-token"), "color") {
+		t.Error(".lite-me-token 应像主站 .rss-token 一样用青色")
+	}
 }
 
 func TestMeTemplateActivationPrompt(t *testing.T) {
@@ -895,9 +976,34 @@ func TestFormatDateTime(t *testing.T) {
 	if got := FormatDateTime(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)); got != "" {
 		t.Errorf("早于 2000 年的日期应返回空串，实际 %q", got)
 	}
-	got := FormatDateTime(time.Date(2026, 1, 2, 15, 4, 0, 0, time.UTC))
+	// 库里存的是 UTC，页面要出北京时间（+8）：07:04 UTC → 15:04
+	got := FormatDateTime(time.Date(2026, 1, 2, 7, 4, 0, 0, time.UTC))
 	if got != "2026/01/02 15:04" {
 		t.Errorf("FormatDateTime = %q, 期望 2026/01/02 15:04", got)
+	}
+	// 已经带 +8 的时间不能再加一次
+	inCST := time.Date(2026, 1, 2, 15, 4, 0, 0, liteDisplayZone)
+	if got := FormatDateTime(inCST); got != "2026/01/02 15:04" {
+		t.Errorf("+8 的时间应原样输出，实际 %q", got)
+	}
+}
+
+// 时间的 Unix 秒交给 lite.js 换本地时区；无效时间必须是 0（模板据此不输出 data-time，
+// 否则 0001-01-01 会被换成公元 1 年的某个时刻）。
+func TestTimeUnix(t *testing.T) {
+	if got := TimeUnix(time.Time{}); got != 0 {
+		t.Errorf("零值应返回 0，实际 %d", got)
+	}
+	if got := TimeUnix(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)); got != 0 {
+		t.Errorf("早于 2000 年的时间应返回 0，实际 %d", got)
+	}
+	moment := time.Date(2026, 1, 2, 7, 4, 0, 0, time.UTC)
+	if got := TimeUnix(moment); got != moment.Unix() {
+		t.Errorf("TimeUnix = %d, 期望 %d", got, moment.Unix())
+	}
+	// 同一时刻换个时区表达，Unix 秒必须一样
+	if got := TimeUnix(moment.In(liteDisplayZone)); got != moment.Unix() {
+		t.Errorf("换时区不该改变 Unix 秒，实际 %d", got)
 	}
 }
 
