@@ -6,7 +6,7 @@
   <div class="lite-form-title">登录</div>
 
   {{if or .NeedLogin .Redirect}}
-  <p class="lite-me-hint">请先登录{{if .Redirect}}，登录后会自动回到刚才的页面{{end}}。</p>
+  <p class="lite-me-hint">请先登录{{if .Redirect}}{{end}}。</p>
   {{end}}
 
   {{if .Error}}

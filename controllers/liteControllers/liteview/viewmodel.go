@@ -37,9 +37,6 @@ type ListItemView struct {
 }
 
 // HomeView 首页。对应主站首页：一句话 + 文章时间线。
-//
-// 主站是无限滚动，滚到底显示「— 没有更多了 —」；/lite 没有脚本，
-// 所以只取第一页：还有更多时给一个「查看更多」入口，否则直接给结尾提示。
 type HomeView struct {
 	BaseView
 	Articles []ListItemView
@@ -86,7 +83,7 @@ type ArticleView struct {
 	Subtitle   string
 	Cover      string
 	Content    template.HTML // 后端已渲染好的富文本，直接输出（与主站 v-html 行为一致）
-	CreateTime string        // 与主站的 formatDateTime 一致：2026/01/02 15:04（已换算到 +8）
+	CreateTime string
 	UpdateTime string
 	// CreateUnix / UpdateUnix 同一个时刻的 Unix 秒（无效时间为 0），
 	// 模板渲染成 data-time，lite.js 据此把时间换回设备所在时区。
@@ -152,9 +149,6 @@ type WriteView struct {
 }
 
 // NoPermView 没有发帖权限时的拦截页。
-//
-// 之前是把「用户无此权限」当一次性提示跳回 /lite/me，但那个页面写的是
-// 「无法查看个人信息」，与「想写文章」的上下文对不上。
 type NoPermView struct {
 	BaseView
 	// Activated 账户是否已激活：未激活时引导去「我的」重发激活邮件
@@ -212,8 +206,6 @@ type ActivateView struct {
 
 // MeView 个人中心。展示项与操作照搬主站 pages/me/index.vue：
 // 用户名、邮箱、激活状态、深度权限/状态、RSS Token、修改密码、重置 RSS Token、退出登录。
-//
-// 主站把两个安全操作做成折叠面板（需要脚本），这里直接展开。
 type MeView struct {
 	BaseView
 

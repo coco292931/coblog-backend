@@ -95,7 +95,6 @@ img {
   font-family: "Amazon Ember", sans-serif;
   font-size: 28px;
   font-weight: bold;
-  /* 亮色主题下品牌名用青色（同主站 --color-brand） */
   color: #17bebb;
   text-decoration: none;
   letter-spacing: 0.5px;
@@ -112,7 +111,7 @@ img {
   color: #0e9a9a;
 }
 
-/* 悬停时换成深青（同主站 --color-cyan-hover） */
+/* 同主站 --color-cyan-hover */
 .lite-brand:hover {
   color: #0e9a9a;
 }
