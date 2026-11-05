@@ -10,6 +10,11 @@
   <div class="lite-tl-item">{{template "card" .}}</div>
   {{end}}
 </div>
+{{if .HasMore}}
+<div class="lite-pager"><a class="lite-btn" href="{{.MoreURL}}">查看更多</a></div>
+{{else}}
+<div class="lite-empty">— 没有更多了 —</div>
+{{end}}
 {{end}}
 
 {{template "foot" .}}{{end}}

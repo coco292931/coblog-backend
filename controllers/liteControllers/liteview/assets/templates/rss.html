@@ -10,11 +10,12 @@
   <p class="lite-rss-intro">复制下面的订阅地址，或在新标签页打开。</p>
 
   <div class="lite-rss-url">
-    <div id="rss-url-text">{{.URL}}</div>
-    {{/* 按钮靠右，与地址框右缘对齐；lite.js 确认能复制才把它显示出来 */}}
+    {{/* 复制按钮浮在地址框右上角，与地址同一行；lite.js 确认能复制才把它显示出来。
+       绑定靠 data-copy-target → #rss-url-text，改结构时不要动这两个属性。 */}}
     <div class="lite-rss-copy-row">
       <button type="button" class="lite-btn lite-rss-copy" data-copy-target="rss-url-text" style="display: none">复制</button>
     </div>
+    <div id="rss-url-text">{{.URL}}</div>
   </div>
 
   <div class="lite-rss-actions">

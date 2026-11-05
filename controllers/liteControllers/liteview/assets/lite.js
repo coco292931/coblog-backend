@@ -8,6 +8,7 @@
  *   - 夜间模式开关（<head> 里的内联脚本负责在绘制前加 class，这里只管切换）
  *   - 页脚避风时长每秒走字（同主站 Footer.vue）
  *   - 复制：RSS 地址、正文代码块（同主站 rss 页与 utils/prose.js）
+ *   - 显示密码（登录 / 注册 / 找回密码）
  */
 (function () {
   'use strict';
@@ -277,11 +278,33 @@
     }
   }
 
+  // ── 显示密码 ──────────────────────────────────────────────────────
+  // 勾选后把 data-password-toggle 里列出的 input 的 type 在 password / text
+  // 之间切换（一个开关可以带多个 id，逗号分隔）。
+  // 没有脚本时这些复选框被 .lite-show-password 藏起来，不留点了没反应的控件。
+
+  function setupPasswordToggles() {
+    var boxes = document.querySelectorAll('[data-password-toggle]');
+    for (var i = 0; i < boxes.length; i++) {
+      boxes[i].onchange = function () {
+        var ids = (this.getAttribute('data-password-toggle') || '').split(',');
+        var type = this.checked ? 'text' : 'password';
+        for (var j = 0; j < ids.length; j++) {
+          var input = $(ids[j]);
+          if (input) {
+            input.type = type;
+          }
+        }
+      };
+    }
+  }
+
   safely(setupThemeToggle);
   safely(setupUptime);
   safely(setupLocalTimes);
   safely(setupCopyButtons);
   safely(setupConfirmForms);
+  safely(setupPasswordToggles);
   safely(function () {
     var list = document.querySelectorAll('.lite-prose');
     for (var i = 0; i < list.length; i++) {

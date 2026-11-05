@@ -1,13 +1,13 @@
-{{/* 激活结果页 */}}
+{{/* 激活结果页：徽标按成败上色，操作区次要按钮在左、主按钮在右 */}}
 
 {{define "activate"}}{{template "head" .}}
 
-<div class="lite-form-box">
-  <div class="lite-me-badge">{{if .Success}}已激活{{else}}激活失败{{end}}</div>
-  <div class="lite-form-title">{{.Title}}</div>
-  <p class="lite-me-hint">{{.Message}}</p>
+<div class="lite-form-box lite-activate">
+  <div class="lite-activate-badge {{if .Success}}is-ok{{else}}is-error{{end}}">{{if .Success}}已激活{{else}}激活失败{{end}}</div>
+  <div class="lite-activate-title">{{.Title}}</div>
+  <p class="lite-activate-msg">{{.Message}}</p>
 
-  <div class="lite-form-actions">
+  <div class="lite-activate-actions">
     {{if .Success}}
     <a class="lite-btn lite-btn-primary" href="/lite/login">去登录</a>
     {{else}}

@@ -135,6 +135,8 @@
       upload(file, function (err, data) {
         if (err) {
           failed.push((file.name || '图片') + '：' + err);
+        } else if (bodyType() === 'html') {
+          snippets.push('<img src="' + data.url + '" alt="' + (file.name || '') + '" />');
         } else {
           snippets.push('![' + (file.name || '') + '](' + data.url + ')');
         }
@@ -199,6 +201,13 @@
     return el && el.value ? el.value : '';
   }
 
+  // 正文字段格式：md（Markdown）| html（HTML 原文），与表单里的选择框一致
+  function bodyType() {
+    var form = $('write-form');
+    var el = form && form.elements ? form.elements['body_type'] : null;
+    return el && el.value === 'html' ? 'html' : 'md';
+  }
+
   function showPreviewText(box, text) {
     box.innerHTML = '';
     var p = document.createElement('p');
@@ -248,7 +257,7 @@
         showPreviewText(box, res && res.msg ? res.msg : '预览失败（' + xhr.status + '），请稍后重试');
       }
     };
-    xhr.send('md=' + encodeURIComponent(ta.value));
+    xhr.send('md=' + encodeURIComponent(ta.value) + '&body_type=' + encodeURIComponent(bodyType()));
   }
 
   function setTab(preview) {
@@ -311,6 +320,19 @@
       ta.onkeyup = updateCount;
       ta.oninput = updateCount;
       updateCount();
+    }
+    // 切换正文格式：提示语跟着换；正在看预览就按新格式重渲染
+    var typeSel = $('body_type');
+    if (typeSel && ta) {
+      typeSel.onchange = function () {
+        ta.placeholder = bodyType() === 'html'
+          ? '在这里编辑 HTML 原文…'
+          : '在这里用 Markdown 写作…';
+        var box = $('md-preview');
+        if (box && box.style.display !== 'none') {
+          renderPreview();
+        }
+      };
     }
     // 手改封面 URL 时预览跟着变（站内图换成压缩图，与服务端 ThumbURL 一致）
     var coverURL = $('cover_image');

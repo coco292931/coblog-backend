@@ -328,6 +328,10 @@ html.lite-dark .lite-stat-label {
   color: rgba(235, 235, 235, 0.72);
 }
 
+html.lite-dark .lite-stat-sep {
+  color: rgba(235, 235, 235, 0.38);
+}
+
 html.lite-dark .lite-about-head {
   border-bottom: 1px solid rgba(84, 84, 84, 0.48);
 }
@@ -578,4 +582,21 @@ html.lite-dark .lite-editor-tab.is-active {
 
 html.lite-dark .lite-editor-tab.is-active:after {
   background: #16b0b0;
+}
+
+/* 激活结果页：失败红、成功青绿，与浅色下的观感一致 */
+html.lite-dark .lite-activate-badge.is-ok {
+  border: 1px solid #16b0b0;
+  background: rgba(22, 176, 176, 0.14);
+  color: #1fefef;
+}
+
+html.lite-dark .lite-activate-badge.is-error {
+  border: 1px solid #ff6b5b;
+  background: rgba(255, 107, 91, 0.14);
+  color: #ff6b5b;
+}
+
+html.lite-dark .lite-activate-msg {
+  color: rgba(235, 235, 235, 0.72);
 }

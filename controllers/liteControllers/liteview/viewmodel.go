@@ -37,9 +37,14 @@ type ListItemView struct {
 }
 
 // HomeView 首页。对应主站首页：一句话 + 文章时间线。
+//
+// 主站是无限滚动，滚到底显示「— 没有更多了 —」；/lite 没有脚本，
+// 所以只取第一页：还有更多时给一个「查看更多」入口，否则直接给结尾提示。
 type HomeView struct {
 	BaseView
 	Articles []ListItemView
+	HasMore  bool
+	MoreURL  string
 }
 
 // ListView 文章列表页，对应主站 pages/search/index.vue 的展示项。
@@ -116,7 +121,8 @@ type LoginView struct {
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
 }
 
-// WriteView 写作 / 编辑页。正文是纯 Markdown textarea（预览由 write.js 调 /lite/preview），
+// WriteView 写作 / 编辑页。正文 textarea 的内容按 BodyType 解释：
+// Markdown（默认，发布时由 goldmark 渲染）或 HTML 原文（老文章没有 Markdown 源时用）。
 // 分类与标签是逗号分隔的文本框，封面填 URL 或随表单上传。
 type WriteView struct {
 	BaseView
@@ -129,7 +135,8 @@ type WriteView struct {
 	Cover    string
 	Category string // 逗号分隔（回填与提交都用它）
 	Tags     string
-	MdBody   string // Markdown 正文
+	MdBody   string // 正文（BodyType=md 时是 Markdown，=html 时是 HTML 原文）
+	BodyType string // "md" | "html"
 	IsDeep   bool
 	Hidden   bool
 	NoStats  bool

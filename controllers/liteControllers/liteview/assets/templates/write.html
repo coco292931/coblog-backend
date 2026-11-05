@@ -1,5 +1,6 @@
 {{/* 写作 / 编辑页，字段顺序与文案对齐主站 pages/write/index.vue。
-   正文只有 Markdown 一种，只提交 md_content；「预览」由 write.js 调 /lite/preview 渲染。
+   正文有两种格式（同主站的 Markdown / HTML 双模式）：默认 Markdown，只提交 md_content；
+   老文章没有 Markdown 源时用 HTML 原文回填，按 content 保存。「预览」由 write.js 调 /lite/preview 渲染。
    图片：有脚本时 write.js 选完即传（插到光标处）；没脚本时随表单一起提交。见 write.go。 */}}
 
 {{define "write"}}{{template "head" .}}
@@ -71,6 +72,15 @@
       <span>不计入站点统计（不影响页脚的总字数与文章数）</span>
     </label>
 
+    <div class="lite-form-group">
+      <label class="lite-label" for="body_type">正文格式</label>
+      <select class="lite-input" id="body_type" name="body_type">
+        <option value="md"{{if ne .BodyType "html"}} selected{{end}}>Markdown（发布时自动渲染）</option>
+        <option value="html"{{if eq .BodyType "html"}} selected{{end}}>HTML 原文（老文章）</option>
+      </select>
+      <div class="lite-form-tip">老文章只有 HTML 原文，会自动用 HTML 模式回填；改用 Markdown 模式保存会覆盖原来的 HTML。</div>
+    </div>
+
     <div class="lite-editor">
       {{/* 编辑 / 预览切换（同主站编辑器的视图切换）。预览要调接口，没有脚本时不显示 */}}
       <div class="lite-editor-tabs">
@@ -85,7 +95,7 @@
         <div id="upload-status" class="lite-upload-status" aria-live="polite"></div>
       </div>
       {{end}}
-      <textarea class="lite-textarea" id="md_content" name="md_content" placeholder="在这里用 Markdown 写作…" aria-label="正文（Markdown）" required>{{.MdBody}}</textarea>
+      <textarea class="lite-textarea" id="md_content" name="md_content" placeholder="{{if eq .BodyType "html"}}在这里编辑 HTML 原文…{{else}}在这里用 Markdown 写作…{{end}}" aria-label="正文" required>{{.MdBody}}</textarea>
       <div id="md-preview" class="lite-prose lite-md-preview" style="display: none" aria-live="polite"></div>
       <div class="lite-editor-status"><span id="char-count"></span></div>
     </div>

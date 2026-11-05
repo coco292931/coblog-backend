@@ -499,7 +499,10 @@ func TestMeTemplateDenied(t *testing.T) {
 	html := renderToString(t, "me", MeView{BaseView: testBase(), Denied: true})
 	mustContain(t, html, "权限不足", "照搬主站 permDenied 分支")
 	mustContain(t, html, "无法查看个人信息", "标题照搬主站")
-	mustContain(t, html, "去激活账户", "按钮照搬主站")
+	// 未激活账户读不到个人信息，只能在这里重发激活邮件（/lite/activate 无 token 是死路）
+	mustContain(t, html, `action="/lite/me/resend-activation"`, "权限不足时也要能重发激活邮件")
+	mustContain(t, html, "重新发送激活邮件", "重发按钮文案与主站一致")
+	mustNotContain(t, html, `href="/lite/activate"`, "无 token 的激活链接走不通，不应再给出")
 }
 
 func TestValidateNewPassword(t *testing.T) {

@@ -55,10 +55,11 @@ func HomePage(c *gin.Context) {
 		return
 	}
 
-	liteview.Render(c, http.StatusOK, "home", liteview.HomeView{
-		BaseView: newBaseView(c),
-		Articles: toListItems(list.Articles),
-	})
+	view := liteview.HomeView{BaseView: newBaseView(c), Articles: toListItems(list.Articles)}
+	// 首页只取第一页（与主站首页同样 10 条），还有更多时给「查看更多」
+	view.HasMore = list.Total > int64(len(list.Articles))
+	view.MoreURL = liteListPath
+	liteview.Render(c, http.StatusOK, "home", view)
 }
 
 // ArticleListPage GET /lite/articles

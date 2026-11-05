@@ -109,8 +109,10 @@ func InitEngine() *gin.Engine {
 		auth.POST("/pwd/reset", loginControllers.ResetPwdByEmail)
 		// 邮件激活账户
 		auth.GET("/activate", loginControllers.ActivateAccount)
-		// 重发激活邮件
-		auth.POST("/activate/resend", loginControllers.ResendActivationEmail)
+		// 重发激活邮件。
+		// LooseAuth 让不带 email 的调用可以用当前登录账号发信：
+		// 未激活账户读不到 /api/user/info（1002），前端拿不到自己的邮箱。
+		auth.POST("/activate/resend", middleware.LooseAuth, loginControllers.ResendActivationEmail)
 
 		// 登出：清掉 HttpOnly 的登录 cookie（那是前端删不掉的部分），
 		// 否则登出后 /lite 仍然认为用户处于登录态。

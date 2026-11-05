@@ -13,8 +13,12 @@
     <span class="lite-alert-text">{{.Message}}</span>
   </div>
   {{end}}
+  <p class="lite-me-hint">没有收到激活邮件？可以直接在这里重新发送。</p>
+  <form method="post" action="/lite/me/resend-activation">
+    {{template "csrf" .}}
+    <button class="lite-btn lite-btn-primary" type="submit">重新发送激活邮件</button>
+  </form>
   <div class="lite-form-actions">
-    <a class="lite-btn lite-btn-primary" href="/lite/activate">去激活账户</a>
     <a class="lite-btn" href="/lite/">返回首页</a>
   </div>
   <form method="post" action="/lite/logout" class="lite-logout-form">

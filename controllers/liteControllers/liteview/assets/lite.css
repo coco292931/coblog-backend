@@ -95,7 +95,8 @@ img {
   font-family: "Amazon Ember", sans-serif;
   font-size: 28px;
   font-weight: bold;
-  color: #2c3e50;
+  /* 亮色主题下品牌名用青色（同主站 --color-brand） */
+  color: #17bebb;
   text-decoration: none;
   letter-spacing: 0.5px;
   /* 与导航项同高，两者在同一行时垂直对齐 */
@@ -111,9 +112,9 @@ img {
   color: #0e9a9a;
 }
 
-/* 同主站 .brand-link:hover */
+/* 悬停时换成深青（同主站 --color-cyan-hover） */
 .lite-brand:hover {
-  color: #17bebb;
+  color: #0e9a9a;
 }
 
 .lite-nav {
@@ -842,23 +843,26 @@ img {
 /* ── 文章详情：文章统计（主站 .article-info） ─────────────────────────── */
 .lite-article-stats {
   margin-top: 28px;
-  padding: 22px 24px;
+  padding: 18px 24px;
   border: 1px solid #e0e0e0;
   background: #ffffff;
   -webkit-border-radius: 14px;
   border-radius: 14px;
 }
 
+/* 标题与三项统计排成一条：宽屏一行到底，放不下就自然折行。 */
 .lite-stats-title {
+  display: inline-block;
   font-family: "Amazon Ember", sans-serif;
-  font-size: 28px;
-  margin-bottom: 16px;
+  font-size: 24px;
+  margin: 0 16px 0 0;
   color: #2c3e50;
 }
 
 .lite-stat-item {
-  font-size: 26px;
-  margin-bottom: 12px;
+  display: inline-block;
+  font-size: 24px;
+  margin-right: 4px;
 }
 
 .lite-stat-label {
@@ -867,6 +871,12 @@ img {
 
 .lite-stat-value {
   font-family: "Amazon Ember", sans-serif;
+}
+
+/* 三项之间的间隔点 */
+.lite-stat-sep {
+  margin: 0 10px 0 6px;
+  color: #b8b8b8;
 }
 
 /* ── 关于（主站 /about） ──────────────────────────────────────────────── */
@@ -1103,7 +1113,8 @@ html.lite-js .lite-theme-sep {
   color: #767676;
 }
 
-/* 验证码输入框下方的「获取验证码」（主站是输入框内的按钮，这里放到下方） */
+/* 验证码输入框旁的「获取验证码」（主站是输入框内的按钮）。
+   默认排在输入框下方；720px 以上的媒体查询里挪到同一行右侧。 */
 .lite-code-btn {
   margin-top: 10px;
 }
@@ -1131,6 +1142,16 @@ html.lite-js .lite-theme-sep {
   line-height: 1.5;
   padding: 10px 0;
   font-size: 24px;
+}
+
+/* 显示密码开关：只有 lite.js 能把它接上，没有脚本时整个选项不出现，
+   免得留下一个点了没反应的复选框。 */
+.lite-checkbox-line.lite-show-password {
+  display: none;
+}
+
+html.lite-js .lite-checkbox-line.lite-show-password {
+  display: block;
 }
 
 .lite-form-actions-row {
@@ -1371,23 +1392,26 @@ html.lite-js .lite-editor-tabs {
 }
 
 .lite-rss-url {
-  padding: 18px;
+  overflow: hidden;
+  padding: 12px 18px;
   border: 2px dashed #b8b8b8;
   -webkit-border-radius: 10px;
   border-radius: 10px;
   background: #f6f6f6;
   color: #1a1a1a;
   font-family: monospace;
-  font-size: 22px;
+  font-size: 20px;
+  line-height: 1.5;
   word-wrap: break-word;
   word-break: break-all;
 }
 
-/* 复制按钮靠右，与地址框右缘对齐（地址本身仍左对齐）。
-   用 overflow 包住 float，容器高度才不会塌。 */
+/* 复制按钮浮在地址框右上角，地址文字绕着它排版：
+   宽屏时两者同一行，窄屏地址自己折行，不再把地址框撑得又高又空。
+   overflow 既包住 float，也让盒子高度把按钮算进去。 */
 .lite-rss-copy-row {
-  overflow: hidden;
-  margin-top: 14px;
+  float: right;
+  margin: 0 0 8px 14px;
 }
 
 .lite-rss-copy-row .lite-btn {
@@ -1435,6 +1459,65 @@ html.lite-js .lite-editor-tabs {
 
 .lite-form-actions .lite-btn {
   margin-right: 12px;
+}
+
+/* ── 激活结果页 ───────────────────────────────────────────────────────── */
+/* 成功 / 失败用徽标颜色区分：失败红系、成功青绿；标题比提示文字大一号，
+   层级是「徽标 → 标题 → 说明 → 操作」。 */
+
+.lite-activate {
+  text-align: center;
+}
+
+.lite-activate-badge {
+  display: inline-block;
+  padding: 2px 20px;
+  margin-bottom: 18px;
+  -webkit-border-radius: 999px;
+  border-radius: 999px;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 20px;
+  line-height: 36px;
+}
+
+.lite-activate-badge.is-ok {
+  border: 1px solid #0e9a9a;
+  background: #eef8f8;
+  color: #0e7a7a;
+}
+
+.lite-activate-badge.is-error {
+  border: 1px solid #c0392b;
+  background: #fdf5f5;
+  color: #c0392b;
+}
+
+.lite-activate-title {
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 38px;
+  font-weight: bold;
+  line-height: 1.3;
+  margin-bottom: 16px;
+}
+
+.lite-activate-msg {
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 1.7;
+  color: #4a4a4a;
+}
+
+/* 主按钮在 DOM 里排第一（窄屏铺满时排在上面），宽屏靠右浮动：
+   浮动后第一个按钮贴最右，第二个落在它左边 —— 次要操作在左、主要操作在右。 */
+.lite-activate-actions {
+  overflow: hidden;
+  margin-top: 26px;
+}
+
+.lite-activate-actions .lite-btn {
+  float: right;
+  margin-right: 0;
+  margin-left: 12px;
 }
 
 .lite-logout-form {
@@ -1721,6 +1804,11 @@ html.lite-js .lite-editor-tabs {
     font-size: 22px;
   }
 
+  .lite-stats-title {
+    font-size: 22px;
+    margin-right: 12px;
+  }
+
   /* 关于：页签横排，窄屏收紧间距免得折行 */
   .lite-about-head {
     margin-bottom: 24px;
@@ -1740,6 +1828,23 @@ html.lite-js .lite-editor-tabs {
   .lite-form-title {
     font-size: 28px;
     margin-bottom: 24px;
+  }
+
+  /* 激活结果页同步收小，按钮铺满一行（主按钮在上） */
+  .lite-activate-title {
+    font-size: 28px;
+  }
+
+  .lite-activate-msg {
+    font-size: 20px;
+  }
+
+  .lite-activate-actions .lite-btn {
+    float: none;
+    display: block;
+    width: 100%;
+    margin-left: 0;
+    margin-bottom: 12px;
   }
 
   .lite-rss-title {
@@ -1870,5 +1975,57 @@ html.lite-js .lite-editor-tabs {
   .lite-nav a {
     /* 同上：补足到原来的 20px 视觉间距 */
     margin-right: 4px;
+  }
+}
+
+/* ── 宽屏增强（断点 720px） ────────────────────────────────────────── */
+/* 只给更宽的屏幕加布局：老引擎按基础样式渲染，窄屏（老 Kindle）保持原样。
+   这里只动尺寸与位置，不写颜色 —— 颜色一律在基础样式里定义。 */
+
+@media (min-width: 720px) {
+
+  /* 列表页筛选：分类与标签并排两列，「应用 / 重置」自成一行靠右。
+     不用 flex / gap，两个 label 各占 47%，中间 6% 由左边那个的 margin 撑开。 */
+  .lite-filter-panel {
+    overflow: hidden;
+  }
+
+  .lite-field {
+    float: left;
+    width: 47%;
+    margin-right: 6%;
+    margin-bottom: 0;
+  }
+
+  .lite-field + .lite-field {
+    margin-right: 0;
+  }
+
+  .lite-filter-actions {
+    clear: both;
+    padding-top: 16px;
+    text-align: right;
+  }
+
+  .lite-filter-actions .lite-btn {
+    margin-right: 0;
+    margin-left: 12px;
+  }
+
+  /* 找回密码：验证码输入框与「获取验证码」同行，按钮贴右。
+     做法同 .lite-search-row —— 容器右侧留出按钮宽度，按钮绝对定位进去，
+     输入框仍是 width:100% 的自适应宽度。 */
+  .lite-code-row {
+    position: relative;
+    padding-right: 160px;
+  }
+
+  .lite-code-btn {
+    position: absolute;
+    top: 2px;
+    right: 0;
+    width: 144px;
+    margin-top: 0;
+    padding: 0;
   }
 }

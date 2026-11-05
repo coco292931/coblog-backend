@@ -3,6 +3,7 @@ package liteview
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -138,6 +139,23 @@ func AppendImageMarkdown(md string, urls []string) string {
 		body += "\n\n"
 	}
 	return body + strings.Join(lines, "\n\n") + "\n"
+}
+
+// AppendImageHTML 把图片以 HTML 片段追加到正文末尾（HTML 原文模式的写作页用）。
+// 地址来自服务端上传，这里仍按属性值转义，避免奇怪的字符截断标签。
+func AppendImageHTML(body string, urls []string) string {
+	if len(urls) == 0 {
+		return body
+	}
+	lines := make([]string, 0, len(urls))
+	for _, u := range urls {
+		lines = append(lines, `<p><img src="`+html.EscapeString(u)+`" alt=""></p>`)
+	}
+	out := strings.TrimRight(body, " \t\r\n")
+	if out != "" {
+		out += "\n"
+	}
+	return out + strings.Join(lines, "\n") + "\n"
 }
 
 // ThumbURL 给本站图片地址加上 ?thumb=1（后端换成压缩图，没有则回退原图）。幂等。

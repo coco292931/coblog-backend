@@ -19,7 +19,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 写作页。正文是纯 Markdown，只提交 md_content，由后端 goldmark 渲染出 content；
+// 写作页。正文有两种格式（与主站编辑器一致）：
+//   - Markdown（默认）：只提交 md_content，由后端 goldmark 渲染出 content；
+//   - HTML 原文：老文章没有 Markdown 源，原样回填 content 并按 content 保存。
+//
 // 写作时的「预览」由 write.js 调 /lite/preview（PreviewMarkdown）。
 //
 // 图片上传分两层：
@@ -35,10 +38,25 @@ const maxBodyImages = 5
 // 单张大小在 fileController 里卡，这里防的是一次塞进超大请求体。
 const maxWriteBody = int64(maxBodyImages+1)*10240000 + 2<<20
 
+// 正文字段的两种格式（与主站编辑器的 Markdown / HTML 双模式对应）
+const (
+	bodyTypeMD   = "md"
+	bodyTypeHTML = "html"
+)
+
+// parseBodyType 表单里的 body_type；不认识的值一律当 Markdown（缺省即默认）。
+func parseBodyType(raw string) string {
+	if strings.TrimSpace(raw) == bodyTypeHTML {
+		return bodyTypeHTML
+	}
+	return bodyTypeMD
+}
+
 // writeView 写作页公共的那几项
 func writeView(c *gin.Context) liteview.WriteView {
 	return liteview.WriteView{
 		BaseView:   newBaseView(c),
+		BodyType:   bodyTypeMD,
 		CanUpload:  hasPerm(c, permission.Perm_UploadFile),
 		MaxUploads: maxBodyImages,
 	}
@@ -89,7 +107,11 @@ func handleUploads(c *gin.Context, view *liteview.WriteView) (string, error) {
 		parts = append(parts, "封面已更新")
 	}
 	if len(urls) > 0 {
-		view.MdBody = liteview.AppendImageMarkdown(view.MdBody, urls)
+		if view.BodyType == bodyTypeHTML {
+			view.MdBody = liteview.AppendImageHTML(view.MdBody, urls)
+		} else {
+			view.MdBody = liteview.AppendImageMarkdown(view.MdBody, urls)
+		}
 		parts = append(parts, strconv.Itoa(len(urls))+" 张图片已追加到正文末尾")
 	}
 	return strings.Join(parts, "，"), nil
@@ -161,7 +183,8 @@ const previewTooLargeMsg = "正文太长，无法预览"
 // PreviewMarkdown POST /lite/preview：写作页「预览」用，返回渲染后的 HTML（JSON）。
 //
 // 主站的 /api/markdown/render 只认 Authorization 头，/lite 是 cookie 登录，所以单开一个。
-// 用的是发布时同一套 goldmark（不输出原始 HTML），再做与详情页相同的图片改写，
+// Markdown 用发布时同一套 goldmark（不输出原始 HTML）；HTML 模式原样返回用户写的原文
+// （与文章详情页直接输出 content 的行为一致）。两者都做与详情页相同的图片改写，
 // 预览看到的就是发布后的样子。CSRF 由 Guard 校验（脚本用 X-CSRF-Token 头带 token）。
 func PreviewMarkdown(c *gin.Context) {
 	if c.GetHeader("X-Requested-With") != "XMLHttpRequest" {
@@ -188,7 +211,13 @@ func PreviewMarkdown(c *gin.Context) {
 		xhrJSON(c, http.StatusOK, exception.ApiParamError.Msg, nil)
 		return
 	}
-	html, err := markdownService.ParseMarkdownToHTML(c.Request.PostForm.Get("md"))
+	body := c.Request.PostForm.Get("md")
+	if parseBodyType(c.Request.PostForm.Get("body_type")) == bodyTypeHTML {
+		// HTML 原文不做渲染，与详情页同样只改写图片地址
+		xhrJSON(c, http.StatusOK, "", gin.H{"html": liteview.RewriteContentImages(body)})
+		return
+	}
+	html, err := markdownService.ParseMarkdownToHTML(body)
 	if err != nil {
 		xhrJSON(c, http.StatusOK, "预览渲染失败，请稍后重试", nil)
 		return
@@ -259,6 +288,11 @@ func WriteEditPage(c *gin.Context) {
 	view.Category = liteview.JoinList(liteview.ParseJSONList(post.Category))
 	view.Tags = liteview.JoinList(liteview.ParseJSONList(post.Tags))
 	view.MdBody = post.MdContent
+	// 老文章只存了渲染好的 content（md_content 为空），用 HTML 原文回填
+	if strings.TrimSpace(view.MdBody) == "" {
+		view.MdBody = post.Content
+		view.BodyType = bodyTypeHTML
+	}
 	view.IsDeep = post.IsDeep
 	view.Hidden = post.Hidden
 	view.NoStats = post.NoStats
@@ -279,6 +313,7 @@ func writeViewFromForm(c *gin.Context) liteview.WriteView {
 	view.Category = strings.TrimSpace(c.PostForm("category"))
 	view.Tags = strings.TrimSpace(c.PostForm("tags"))
 	view.MdBody = c.PostForm("md_content")
+	view.BodyType = parseBodyType(c.PostForm("body_type"))
 	view.IsDeep = c.PostForm("is_deep") != ""
 	view.Hidden = c.PostForm("hidden") != ""
 	view.NoStats = c.PostForm("no_stats") != ""
@@ -353,7 +388,7 @@ func WriteSubmit(c *gin.Context) {
 	}
 
 	// 校验与后端接口一致：标题非空，且正文非空
-	// （主站允许 content / md_content 二选一，这里只有 Markdown 一种输入）
+	// （主站允许 content / md_content 二选一，这里按 body_type 决定填哪一个）
 	if msg := writeParamError(&view); msg != "" {
 		view.Error = msg
 		if notice != "" {
@@ -369,12 +404,17 @@ func WriteSubmit(c *gin.Context) {
 		Subtitle:   view.Subtitle,
 		Summary:    view.Summary,
 		CoverImage: view.Cover,
-		MdContent:  view.MdBody,
 		Category:   liteview.ToJSONList(view.Category),
 		Tags:       liteview.ToJSONList(view.Tags),
 		IsDeep:     view.IsDeep,
 		Hidden:     view.Hidden,
 		NoStats:    view.NoStats,
+	}
+	// 二选一：Markdown 交给服务端渲染，HTML 原文直接入库
+	if view.BodyType == bodyTypeHTML {
+		fields.Content = view.MdBody
+	} else {
+		fields.MdContent = view.MdBody
 	}
 
 	var postID uint64
