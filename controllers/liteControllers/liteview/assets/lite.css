@@ -1195,13 +1195,69 @@ html.lite-js .lite-checkbox-line.lite-show-password {
   background-size: cover;
 }
 
-/* 文件选择框：原生控件，只放大字号与点击区域 */
-.lite-file {
-  display: block;
+/* 文件选择：不用原生控件（深色界面里一块亮灰的「选择文件 未选择」，字号也压不住）。
+   做法是「按钮样子的 label + 透明铺上去的原生 file 框」：
+   - label 带 .lite-btn，外观与站内按钮一致，for 指向 input，label 本身也能唤起选择框；
+   - input 绝对定位铺满 .lite-file-field（opacity: 0），点击、键盘聚焦、随表单提交都是原生行为；
+   - 已选文件名放在 .lite-file-name，只有脚本能填（html.lite-js 见 layout.html）。 */
+.lite-file-row {
+  margin-top: 12px;
+}
+
+.lite-file-field {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.lite-file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  min-height: 56px;
-  padding: 12px 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* 比主按钮矮一点，免得把工具条撑得太高 */
+.lite-file-btn {
+  position: relative;
+  z-index: 1;
+  min-height: 48px;
+  padding: 0 24px;
+  line-height: 46px;
   font-size: 20px;
+  cursor: pointer;
+}
+
+/* 输入框是透明的，键盘聚焦时把焦点画在看得见的按钮上 */
+.lite-file-input:focus + .lite-file-btn {
+  border-color: #17bebb;
+  outline: 2px solid #17bebb;
+}
+
+.lite-file-name {
+  display: none;
+  max-width: 100%;
+  margin-left: 12px;
+  overflow: hidden;
+  font-family: "Amazon Ember", sans-serif;
+  font-size: 18px;
+  line-height: 24px;
+  color: #767676;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+html.lite-js .lite-file-name {
+  display: inline-block;
 }
 
 /* 编辑器：工具条 + 正文 + 字数，同主站 .editor-section */
@@ -1217,6 +1273,13 @@ html.lite-js .lite-checkbox-line.lite-show-password {
   padding: 14px 18px 10px;
   border-bottom: 1px solid #e0e0e0;
   background: #f6f8f8;
+}
+
+/* 预览态：上传工具条与「已选 xxx」都是编辑态控件，切到预览就收起。
+   write.js 只在表单上加 / 删 .is-preview，不用内联 style；提交前会切回编辑，藏起来的内容照样提交。 */
+.is-preview .lite-editor-toolbar,
+html.lite-js .is-preview .lite-file-name {
+  display: none;
 }
 
 /* 编辑 / 预览切换（同主站编辑器的视图切换）。预览要调接口，没有脚本时不显示 */

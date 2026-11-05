@@ -119,6 +119,8 @@ type LoginView struct {
 	Account  string // 提交失败后回填
 	Error    string // 直接显示后端业务错误的原文（与主站弹的 msg 一致）
 	Redirect string // 登录成功后的回跳地址（只接受站内相对路径）
+	// NeedLogin 被登录守卫拦下来时给一句说明，避免只看到一个没有上下文的登录框
+	NeedLogin bool
 }
 
 // WriteView 写作 / 编辑页。正文 textarea 的内容按 BodyType 解释：
@@ -147,6 +149,16 @@ type WriteView struct {
 
 	Error  string
 	Notice string
+}
+
+// NoPermView 没有发帖权限时的拦截页。
+//
+// 之前是把「用户无此权限」当一次性提示跳回 /lite/me，但那个页面写的是
+// 「无法查看个人信息」，与「想写文章」的上下文对不上。
+type NoPermView struct {
+	BaseView
+	// Activated 账户是否已激活：未激活时引导去「我的」重发激活邮件
+	Activated bool
 }
 
 // ConfirmDeleteView 删除确认页。主站是在弹窗里输入完整标题确认，

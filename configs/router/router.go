@@ -139,6 +139,9 @@ func InitEngine() *gin.Engine {
 		//普通用户重置RSS Token
 		user.PUT("/rst-rss/", middleware.NeedPerm(permission.Perm_UpdateProfile),
 			accountControllers.RstRSSToken)
+
+		//当前账号的权限开关：只要登录即可，供前端前置判断（如"写作"入口）
+		user.GET("/perm", accountControllers.GetMyPermissions)
 	}
 
 	//文章这一块

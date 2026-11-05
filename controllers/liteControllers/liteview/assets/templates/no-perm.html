@@ -1,0 +1,22 @@
+{{/* 没有发帖权限时的拦截页：说明原因 + 给出可走的路，而不是带着
+   「用户无此权限」跳回写着「无法查看个人信息」的个人中心。 */}}
+
+{{define "no-perm"}}{{template "head" .}}
+
+<div class="lite-form-box">
+  <div class="lite-activate-badge is-error">权限不足</div>
+  <div class="lite-form-title">当前账户还不能发布文章</div>
+  <p class="lite-me-hint">
+    {{if .Activated}}你的账户已激活，但当前权限组没有发布文章的权限。如需开通，请联系站点管理员。{{else}}你的账户还没有完成邮箱激活。未激活的账户权限与访客一致，激活后即可正常发布。{{end}}
+  </p>
+
+  <div class="lite-form-actions">
+    {{if not .Activated}}
+    <a class="lite-btn lite-btn-primary" href="/lite/me">去「我的」重新发送激活邮件</a>
+    {{end}}
+    <a class="lite-btn" href="/lite/articles">浏览文章</a>
+    <a class="lite-btn" href="/lite/">返回首页</a>
+  </div>
+</div>
+
+{{template "foot" .}}{{end}}

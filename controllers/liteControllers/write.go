@@ -11,9 +11,11 @@ import (
 	"coblog-backend/common/permission"
 	"coblog-backend/controllers/fileController"
 	"coblog-backend/controllers/liteControllers/liteview"
+	middleware "coblog-backend/middlewares"
 	"coblog-backend/models"
 	"coblog-backend/services/articleService"
 	"coblog-backend/services/markdownService"
+	"coblog-backend/services/userService"
 	"coblog-backend/utils"
 
 	"github.com/gin-gonic/gin"
@@ -232,13 +234,19 @@ func xhrJSON(c *gin.Context, status int, msg string, data gin.H) {
 }
 
 // requireWritePerm 取账号并校验发帖权限，未登录跳登录页。
+// 没有发帖权限时渲染专门的拦截页（403），不能带着提示跳回「我的」——
+// 那个页面的标题是「无法查看个人信息」，与「想写文章」对不上。
 func requireWritePerm(c *gin.Context) (uint64, bool) {
 	accountID, ok := requireAccount(c)
 	if !ok {
 		return 0, false
 	}
 	if !hasPerm(c, permission.Perm_PostPost) {
-		redirectMe(c, exception.UsrNotPermitted.Msg, false)
+		user := middleware.CurrentAccount(c)
+		liteview.Render(c, http.StatusForbidden, "no-perm", liteview.NoPermView{
+			BaseView:  newBaseView(c),
+			Activated: user != nil && userService.IsActivated(user),
+		})
 		return 0, false
 	}
 	return accountID, true

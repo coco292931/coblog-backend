@@ -424,6 +424,15 @@ html.lite-dark .lite-editor-toolbar {
   background: #2a2a2a;
 }
 
+html.lite-dark .lite-file-name {
+  color: rgba(235, 235, 235, 0.38);
+}
+
+html.lite-dark .lite-file-input:focus + .lite-file-btn {
+  border-color: #16b0b0;
+  outline: 2px solid #16b0b0;
+}
+
 html.lite-dark .lite-editor .lite-textarea {
   border: 0;
 }

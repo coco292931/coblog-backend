@@ -32,6 +32,43 @@
     el.className = 'lite-upload-status' + (isError ? ' is-error' : '');
   }
 
+  // 已选文件说明：模板里的 .lite-file-name 默认不显示，只有脚本能把它填上
+  function setFileNote(id, text) {
+    var el = $(id);
+    if (!el) {
+      return;
+    }
+    el.innerHTML = '';
+    el.appendChild(document.createTextNode(text));
+  }
+
+  function selectedNote(files) {
+    if (!files || files.length === 0) {
+      return '';
+    }
+    if (files.length === 1) {
+      return '已选 ' + (files[0].name || '1 个文件');
+    }
+    return '已选 ' + files.length + ' 张';
+  }
+
+  // 加 / 删一个 class：不整串赋值，免得把 is-enhanced 之类的冲掉
+  function toggleClass(el, name, on) {
+    if (!el) {
+      return;
+    }
+    var cls = ' ' + el.className + ' ';
+    var has = cls.indexOf(' ' + name + ' ') !== -1;
+    if (on === has) {
+      return;
+    }
+    if (on) {
+      el.className += ' ' + name;
+    } else {
+      el.className = cls.split(' ' + name + ' ').join(' ').replace(/^\s+|\s+$/g, '');
+    }
+  }
+
   // 上传一张图片。done(err, data)，data 为 { url, thumb_url }
   function upload(file, done) {
     var xhr = new XMLHttpRequest();
@@ -272,6 +309,9 @@
     prev.className = 'lite-editor-tab' + (preview ? ' is-active' : '');
     ta.style.display = preview ? 'none' : '';
     box.style.display = preview ? '' : 'none';
+    // 上传工具条与「已选 xxx」都是编辑态控件，预览时用 class 收起（样式见 lite.css）。
+    // 提交按钮的 onclick 会先调 setTab(false)，所以藏起来的内容照样随表单提交。
+    toggleClass($('write-form'), 'is-preview', preview);
     if (preview) {
       renderPreview();
     }
@@ -306,13 +346,17 @@
     var cover = $('cover_file');
     if (cover) {
       cover.onchange = function () {
+        var picked = cover.files || [];
+        setFileNote('cover-file-name', selectedNote(picked));
         uploadCover(cover);
       };
     }
     var images = $('images');
     if (images) {
       images.onchange = function () {
-        uploadImages(images.files || [], images);
+        var picked = images.files || [];
+        setFileNote('images-file-name', selectedNote(picked));
+        uploadImages(picked, images);
       };
     }
     var ta = $('md_content');

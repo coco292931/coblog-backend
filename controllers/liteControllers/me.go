@@ -150,11 +150,13 @@ func MeResendActivation(c *gin.Context) {
 // ────────────────────────────── 辅助 ──────────────────────────────
 
 // requireAccount 取当前登录账号；未登录时按主站的登录守卫跳到登录页并带上回跳地址。
+// need=1 让登录页说明一句「请先登录」，而不是只给一个没有上下文的表单。
 // 回跳地址取对应的 GET 页面：POST 时登录态过期，登录后不该以 GET 打到只有 POST 的地址。
 func requireAccount(c *gin.Context) (uint64, bool) {
 	accountID, err := accountControllers.GetAccountIDFromContext(c)
 	if err != nil || accountID == 0 {
-		c.Redirect(http.StatusFound, "/lite/login?redirect="+url.QueryEscape(getPathFor(c)))
+		c.Redirect(http.StatusFound,
+			"/lite/login?need=1&redirect="+url.QueryEscape(getPathFor(c)))
 		return 0, false
 	}
 	return accountID, true

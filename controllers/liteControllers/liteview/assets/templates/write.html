@@ -52,7 +52,16 @@
       <label class="lite-label" for="cover_image">封面图</label>
       <input class="lite-input" type="text" id="cover_image" name="cover_image" value="{{.Cover}}" placeholder="图片 URL{{if .CanUpload}}，或在下方上传{{end}}">
       {{if .CanUpload}}
-      <input class="lite-file" type="file" id="cover_file" name="cover_file" accept="image/jpeg,image/png,image/gif" aria-label="上传封面">
+      {{/* 原生文件框在深色界面里是一块亮灰控件，换成按钮样子的 label；
+           原生 file 框透明铺在按钮上，点击、键盘聚焦、随表单提交都还是原生行为。
+           已选文件名由 write.js 填（见 .lite-file-name），没有脚本时这块不显示。 */}}
+      <div class="lite-file-row">
+        <span class="lite-file-field">
+          <input class="lite-file-input" type="file" id="cover_file" name="cover_file" accept="image/jpeg,image/png,image/gif">
+          <label class="lite-btn lite-file-btn" for="cover_file">选择封面</label>
+        </span>
+        <span class="lite-file-name" id="cover-file-name"></span>
+      </div>
       {{end}}
       <div id="cover-preview" class="lite-write-cover"{{if .CoverPreview}} style="background-image: url('{{.CoverPreview}}')"{{else}} style="display: none"{{end}} role="img" aria-label="封面预览"></div>
     </div>
@@ -87,9 +96,16 @@
         <button type="button" class="lite-editor-tab is-active" id="tab-edit">编辑</button><button type="button" class="lite-editor-tab" id="tab-preview">预览</button>
       </div>
       {{if .CanUpload}}
+      {{/* 工具条属于编辑态控件：切到预览时 write.js 给表单加 .is-preview，整块收起（见 lite.css） */}}
       <div class="lite-editor-toolbar">
-        <label class="lite-label" for="images">插入图片（一次最多 {{.MaxUploads}} 张）</label>
-        <input class="lite-file" type="file" id="images" name="images" accept="image/jpeg,image/png,image/gif" multiple>
+        <div class="lite-label">插入图片（一次最多 {{.MaxUploads}} 张）</div>
+        <div class="lite-file-row">
+          <span class="lite-file-field">
+            <input class="lite-file-input" type="file" id="images" name="images" accept="image/jpeg,image/png,image/gif" multiple>
+            <label class="lite-btn lite-file-btn" for="images">选择图片</label>
+          </span>
+          <span class="lite-file-name" id="images-file-name"></span>
+        </div>
         <div class="lite-form-tip lite-tip-fallback">图片会在提交时一起上传，并追加到正文末尾。</div>
         <div class="lite-form-tip lite-tip-enhanced">选好后立即上传，插入到光标所在位置。</div>
         <div id="upload-status" class="lite-upload-status" aria-live="polite"></div>
