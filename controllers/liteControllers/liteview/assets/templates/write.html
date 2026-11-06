@@ -84,8 +84,8 @@
     <div class="lite-form-group">
       <label class="lite-label" for="body_type">正文格式</label>
       <select class="lite-input" id="body_type" name="body_type">
-        <option value="md"{{if ne .BodyType "html"}} selected{{end}}>Markdown（发布时自动渲染）</option>
-        <option value="html"{{if eq .BodyType "html"}} selected{{end}}>HTML 原文（老文章）</option>
+        <option value="md"{{if ne .BodyType "html"}} selected{{end}}>Markdown</option>
+        <option value="html"{{if eq .BodyType "html"}} selected{{end}}>HTML/CSS</option>
       </select>
       <div class="lite-form-tip">老文章只有 HTML 原文，会自动用 HTML 模式回填；改用 Markdown 模式保存会覆盖原来的 HTML。</div>
     </div>
