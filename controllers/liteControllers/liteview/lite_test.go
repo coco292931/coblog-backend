@@ -77,6 +77,44 @@ func TestHomeTemplateRendersContent(t *testing.T) {
 	mustContain(t, html, "海内存知己，天涯若比邻", "首屏是主站的那句欢迎语")
 }
 
+// 首页只渲染第一页，没有分页控件，所以「查看更多」与「没有更多了」必须二选一显示。
+func TestHomeTemplateViewMore(t *testing.T) {
+	more := renderToString(t, "home", HomeView{
+		BaseView: testBase(),
+		Articles: []ListItemView{sampleItem()},
+		HasMore:  true,
+		MoreURL:  "/lite/articles",
+	})
+	mustContain(t, more, `href="/lite/articles"`, "还有更多时给跳列表页的入口")
+	mustContain(t, more, "查看更多", "还有更多时的文案")
+	mustNotContain(t, more, "没有更多了", "还有更多时不应说没有更多")
+
+	done := renderToString(t, "home", HomeView{
+		BaseView: testBase(),
+		Articles: []ListItemView{sampleItem()},
+	})
+	mustContain(t, done, "没有更多了", "没有下一页时与主站一样给结尾提示")
+	mustNotContain(t, done, "查看更多", "没有下一页时不应再给入口")
+}
+
+// 没有发帖权限时的拦截页：不再带「用户无此权限」跳回个人中心，
+// 而是按「未激活 / 权限组不足」给出不同的出路。
+func TestNoPermTemplate(t *testing.T) {
+	pending := renderToString(t, "no-perm", NoPermView{BaseView: testBase()})
+	mustContain(t, pending, "当前账户还不能发布文章", "标题说明是发帖权限问题")
+	mustContain(t, pending, "还没有完成邮箱激活", "未激活时说明原因")
+	mustContain(t, pending, "去「我的」重新发送激活邮件", "未激活时引导去「我的」重发激活邮件")
+
+	activated := renderToString(t, "no-perm", NoPermView{BaseView: testBase(), Activated: true})
+	mustContain(t, activated, "当前权限组没有发布文章的权限", "已激活时说明是权限组问题")
+	mustNotContain(t, activated, "去「我的」重新发送激活邮件", "已激活时不必再引导去激活")
+
+	for _, html := range []string{pending, activated} {
+		mustNotContain(t, html, "无法查看个人信息", "不要再复用个人中心的文案")
+		mustNotContain(t, html, "用户无此权限", "不要把后端内部错误原文贴给用户")
+	}
+}
+
 func TestCardShowsOnlyMainSiteItems(t *testing.T) {
 	html := renderToString(t, "home", HomeView{
 		BaseView: testBase(),

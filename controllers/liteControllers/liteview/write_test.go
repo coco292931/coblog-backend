@@ -175,6 +175,26 @@ func TestAppendImageMarkdown(t *testing.T) {
 	}
 }
 
+func TestAppendImageHTML(t *testing.T) {
+	cases := []struct {
+		body string
+		urls []string
+		want string
+	}{
+		{"正文", nil, "正文"},
+		{"", []string{"a.jpg"}, `<p><img src="a.jpg" alt=""></p>` + "\n"},
+		{"正文\n\n", []string{"a.jpg", "b.png"},
+			"正文\n" + `<p><img src="a.jpg" alt=""></p>` + "\n" + `<p><img src="b.png" alt=""></p>` + "\n"},
+		// 上传地址来自服务端，仍按属性值转义，避免特殊字符截断标签
+		{"", []string{`a"b.jpg`}, `<p><img src="a&#34;b.jpg" alt=""></p>` + "\n"},
+	}
+	for _, c := range cases {
+		if got := AppendImageHTML(c.body, c.urls); got != c.want {
+			t.Errorf("AppendImageHTML(%q, %v) = %q, 期望 %q", c.body, c.urls, got, c.want)
+		}
+	}
+}
+
 func TestConfirmDeleteTemplateRenders(t *testing.T) {
 	var buf bytes.Buffer
 	data := ConfirmDeleteView{ID: 7, Title: `旧文章 <b>x</b>`}
